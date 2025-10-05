@@ -2,6 +2,34 @@ export type Element = 'fire' | 'water' | 'earth' | 'air' | 'spirit' | 'neutral';
 export type CardType = 'minion' | 'spell';
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
+export type AbilityType = 
+  | 'damage'
+  | 'heal'
+  | 'draw'
+  | 'summon'
+  | 'buff'
+  | 'destroy'
+  | 'return_to_hand'
+  | 'gain_mana'
+  | 'transform';
+
+export type AbilityTrigger = 
+  | 'battlecry'    // When played
+  | 'deathrattle'  // When destroyed
+  | 'end_of_turn'  
+  | 'start_of_turn'
+  | 'when_attack'
+  | 'passive';     // Always active
+
+export interface CardAbility {
+  trigger: AbilityTrigger;
+  type: AbilityType;
+  value?: number;           // Numeric value (damage amount, cards drawn, etc.)
+  target?: 'self' | 'enemy' | 'all' | 'random' | 'choose';
+  condition?: string;       // Optional condition (e.g., "if_fionn_in_play")
+  description: string;      // Text description of the ability
+}
+
 export interface Card {
   id: string;
   name: string;
@@ -9,9 +37,10 @@ export interface Card {
   type: CardType;
   rarity: Rarity;
   manaCost: number;
-  attack?: number; // minions only
-  health?: number; // minions only
+  attack?: number;
+  health?: number;
   description: string;
+  abilities?: CardAbility[];  // Needs to be optional for spell cards
 }
 
 export interface Minion extends Card {
