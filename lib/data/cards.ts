@@ -109,7 +109,7 @@ export const CARDS: Card[] = [
     element: 'water',
     type: 'spell',
     rarity: 'rare',
-    manaCost: 3,
+    manaCost: 1,
     description: 'Draw 3 cards.',
     abilities: [
       {
