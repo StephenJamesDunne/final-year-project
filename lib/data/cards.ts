@@ -12,6 +12,7 @@ export const CARDS: Card[] = [
     attack: 6,
     health: 6,
     description: 'Battlecry: Summon two 2/2 Connacht Warriors. Deal 1 damage to all enemies.',
+    imageUrl: '/images/cards/queenmaedhbh.png',
     abilities: [
       {
         trigger: 'battlecry',
@@ -83,7 +84,7 @@ export const CARDS: Card[] = [
     manaCost: 6,
     attack: 5,
     health: 6,
-    description: 'Battlecry: Add Salmon of Knowledge to hand. Your spells cost (1) less.',
+    description: 'Battlecry: Add a Salmon of Knowledge to hand. Your spells cost (1) less.',
     abilities: [
       {
         trigger: 'battlecry',

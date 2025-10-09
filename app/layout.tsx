@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PackQuest",
+  title: "Five Realms",
   description: "A card battle game inspired by Irish mythology.",
 };
 

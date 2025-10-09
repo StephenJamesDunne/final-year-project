@@ -104,7 +104,7 @@ export default function BattlePage() {
       {/* Header */}
       <div className="text-center py-4">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-          PackQuest
+          Five Realms
         </h1>
         <p className="text-gray-400 text-sm">Turn {Math.ceil(useBattleStore.getState().turnNumber / 2)}</p>
       </div>

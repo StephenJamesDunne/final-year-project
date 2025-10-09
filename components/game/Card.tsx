@@ -1,7 +1,9 @@
-import { Card as CardType, Minion } from '@/lib/types/game';
-import { motion } from 'framer-motion';
-import { useMemo } from 'react';
+import { Card as CardType, Minion, Element, Rarity } from '@/lib/types/game';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 
+// Constants
 const ELEMENT_COLORS = {
   fire: 'from-red-600 to-orange-600',
   water: 'from-blue-600 to-cyan-600',
@@ -20,6 +22,57 @@ const ELEMENT_BORDERS = {
   neutral: 'border-gray-500',
 };
 
+// Card animation presets
+const CARD_ANIMATIONS = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 }
+};
+
+const HOVER_ANIMATION = () => ({});
+
+const TAP_ANIMATION = (disabled: boolean) =>
+  !disabled ? { scale: 0.95 } : {};
+
+// Utility functions
+function generateUniqueCardId(card: CardType | Minion, location?: string, cardIndex?: number): string {
+  if ('instanceId' in card) {
+    return card.instanceId;
+  }
+  return `${card.id}-${location || 'unknown'}-${cardIndex || 0}`;
+}
+
+function getElementIcon(element: Element): string {
+  const icons: Record<Element, string> = {
+    fire: '🔥',
+    water: '💧',
+    earth: '🌿',
+    air: '💨',
+    spirit: '👻',
+    neutral: '⚪',
+  };
+  return icons[element];
+}
+
+function getCardClassNames(
+  card: CardType | Minion,
+  isMinion: boolean,
+  disabled: boolean,
+  compact: boolean
+): string {
+  const minion = isMinion ? (card as Minion) : null;
+
+  return `
+    relative ${compact ? 'w-24 h-32' : 'w-40 h-56'} 
+    rounded-lg border-4 ${ELEMENT_BORDERS[card.element]}
+    bg-gradient-to-b ${ELEMENT_COLORS[card.element]}
+    shadow-lg
+    ${disabled ? 'opacity-50' : ''}
+    ${isMinion && minion?.canAttack ? 'ring-4 ring-yellow-400' : ''}
+  `;
+}
+
+// Props interface
 interface CardProps {
   card: CardType | Minion;
   onClick?: () => void;
@@ -31,164 +84,230 @@ interface CardProps {
   location?: 'hand' | 'board' | 'deck';
 }
 
-export function Card({ card, onClick, disabled, isMinion, showHealth, compact = false, cardIndex, location }: CardProps) {
+// Card Detail Component for Hover/Inspect functionality
+function CardDetail({
+  card,
+  isMinion,
+  showHealth,
+  position
+}: {
+  card: CardType | Minion;
+  isMinion?: boolean;
+  showHealth?: boolean;
+  position: { x: number, y: number };
+}) {
   const isMinionCard = card.type === 'minion';
   const minion = isMinion ? (card as Minion) : null;
 
-  const uniqueCardId = useMemo(() => {
-    if (minion?.instanceId) {
-      // Board minions have instanceIds
-      return minion.instanceId;
-    } else if (location === 'hand' && cardIndex !== undefined) {
-      // Hand cards: use base ID + position + timestamp for uniqueness
-      return `${card.id}-hand-${cardIndex}-${Date.now()}`;
-    } else {
-      return `${card.id}-${location}-${Date.now()}`; // Fallback for copies in deck or unknown location
-    }
-  }, [card.id, minion?.instanceId, cardIndex, location]);
- 
+  // Calculate position to keep card on screen
+  const adjustedPosition = {
+    x: Math.min(Math.max(position.x, 20), window.innerWidth - 320),
+    y: Math.min(Math.max(position.y, 20), window.innerHeight - 480)
+  };
+
   return (
-    <motion.button
-      initial={{ opacity: 0, y: 20, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
-      
-      whileHover={!disabled ? { 
-        scale: 1.05, 
-        y: -10,
-        transition: { duration: 0.2 }
-      } : {}}
-      
-      whileTap={!disabled ? { scale: 0.95 } : {}}
-      
-      transition={{ 
-        duration: 0.3,
-        ease: "easeOut"
+      transition={{ duration: 0.2 }}
+      className="fixed z-50 pointer-events-none"
+      style={{
+        left: adjustedPosition.x,
+        top: adjustedPosition.y,
       }}
-      
-      onClick={onClick}
-      disabled={disabled}
-      className={`
-        relative ${compact ? 'w-24 h-32' : 'w-40 h-56'} rounded-lg border-4 ${ELEMENT_BORDERS[card.element]}
-        bg-gradient-to-b ${ELEMENT_COLORS[card.element]}
-        shadow-lg
-        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        ${isMinion && minion?.canAttack ? 'ring-4 ring-yellow-400' : ''}
-      `}
     >
-      {/* Mana Cost Badge */}
-      <motion.div 
-        className={`absolute -top-2 -left-2 ${compact ? 'w-6 h-6' : 'w-10 h-10'} rounded-full bg-blue-500 border-2 border-white flex items-center justify-center`}
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-      >
-        <span className={`${compact ? 'text-xs' : 'text-xl'} font-bold text-white`}>{card.manaCost}</span>
-      </motion.div>
-     
-      {/* Card Name */}
-      <div className={`absolute top-1 left-1 right-1 ${compact ? 'top-1' : 'top-2'}`}>
-        <h3 className={`${compact ? 'text-xs' : 'text-sm'} font-bold text-white text-center drop-shadow-lg line-clamp-1`}>
-          {card.name}
-        </h3>
-      </div>
-     
-      {/* Card Art Placeholder */}
-      <div className={`absolute ${compact ? 'top-6 left-2 right-2 h-12' : 'top-12 left-4 right-4 h-24'} bg-black/30 rounded flex items-center justify-center`}>
-        <motion.span 
-          className={compact ? 'text-xl' : 'text-4xl'}
-          animate={isMinion && minion?.canAttack ? {
-            scale: [1, 1.2, 1],
-            rotate: [0, 5, -5, 0]
-          } : {}}
-          transition={{
-            duration: 1,
-            repeat: Infinity,
-            repeatDelay: 0.5
-          }}
-        >
-          {getElementIcon(card.element)}
-        </motion.span>
-      </div>
-     
-      {/* Description - Hide in compact mode */}
-      {!compact && (
-        <div className="absolute top-40 left-2 right-2 text-xs text-white/90 text-center px-2 line-clamp-2">
-          {card.description}
+      <div className={`relative w-80 h-[450px] rounded-lg border-4 ${ELEMENT_BORDERS[card.element]} bg-gradient-to-b ${ELEMENT_COLORS[card.element]} shadow-2xl`}>
+        {/* Mana Cost Badge */}
+        <div className="absolute -top-3 -left-3 w-12 h-12 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center">
+          <span className="text-2xl font-bold text-white">{card.manaCost}</span>
         </div>
-      )}
-     
-      {/* Stats for Minions */}
-      {isMinionCard && (
-        <>
-          {/* Attack */}
-          <div className={`absolute bottom-1 left-1 ${compact ? 'w-5 h-5' : 'w-8 h-8'} rounded-full bg-yellow-600 border-2 border-white flex items-center justify-center`}>
-            <span className={compact ? 'text-xs' : 'text-sm'}>⚔️</span>
+
+        {/* Card Name */}
+        <div className="absolute top-3 left-3 right-3">
+          <h3 className="text-lg font-bold text-white text-center drop-shadow-lg">
+            {card.name}
+          </h3>
+        </div>
+
+        {/* Card Art */}
+        <div className="absolute top-12 left-4 right-4 h-56 bg-black/30 rounded overflow-hidden flex items-center justify-center">
+          {card.imageUrl ? (
+            <img
+              src={card.imageUrl}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="text-white/50 italic">No Image</div>
+          )}
+        </div>
+
+        {/* Description */}
+        <div className="absolute top-72 left-4 right-4 text-sm text-white/90 px-2">
+          <div className="bg-black/70 p-3 rounded text-center border-2 border-white/30">
+            <p className="text-sm">{card.description}</p>
           </div>
-          <motion.div 
-            className={`absolute bottom-1 ${compact ? 'left-6 text-sm' : 'left-10 text-xl'} font-bold text-white drop-shadow-lg`}
-            key={`attack-${uniqueCardId}-${card.attack}`}
-            initial={{ scale: 1 }}
-            animate={{ scale: [1, 1.3, 1] }}
-            transition={{ duration: 0.3 }}
-          >
-            {card.attack}
-          </motion.div>
-         
-          {/* Health */}
-          <div className={`absolute bottom-1 right-1 ${compact ? 'w-5 h-5' : 'w-8 h-8'} rounded-full bg-red-600 border-2 border-white flex items-center justify-center`}>
-            <span className={compact ? 'text-xs' : 'text-sm'}>❤️</span>
-          </div>
-          <motion.div 
-            className={`absolute bottom-1 ${compact ? 'right-6 text-sm' : 'right-10 text-xl'} font-bold text-white drop-shadow-lg`}
-            key={`health-${uniqueCardId}-${showHealth && minion ? minion.currentHealth : card.health}`}
-            initial={{ scale: 1 }}
-            animate={{ scale: [1, 1.3, 1] }}
-            transition={{ duration: 0.3 }}
-          >
-            {showHealth && minion ? minion.currentHealth : card.health}
-          </motion.div>
-        </>
-      )}
-     
-      {/* Rarity Gem */}
-      <motion.div 
-        className={`absolute top-1 right-1 ${compact ? 'w-3 h-3' : 'w-6 h-6'} rounded-full ${getRarityColor(card.rarity)}`}
-        animate={card.rarity === 'legendary' ? {
-          scale: [1, 1.2, 1],
-          boxShadow: [
-            '0 0 0px rgba(250, 204, 21, 0)',
-            '0 0 20px rgba(250, 204, 21, 0.8)',
-            '0 0 0px rgba(250, 204, 21, 0)'
-          ]
-        } : {}}
-        transition={{
-          duration: 2,
-          repeat: Infinity
-        }}
-      />
-    </motion.button>
+        </div>
+
+        {/* Stats for Minions */}
+        {isMinionCard && (
+          <>
+            {/* Attack */}
+            <div className="absolute -bottom-3 -left-3 w-12 h-12 rounded-full bg-yellow-600 border-2 border-white flex items-center justify-center">
+              <span className="text-2xl">⚔️</span>
+            </div>
+            <div className="absolute bottom-0 left-10 text-2xl font-bold text-white drop-shadow-lg">
+              {card.attack}
+            </div>
+
+            {/* Health */}
+            <div className="absolute -bottom-3 -right-3 w-12 h-12 rounded-full bg-red-600 border-2 border-white flex items-center justify-center">
+              <span className="text-2xl">❤️</span>
+            </div>
+            <div className="absolute bottom-0 right-10 text-2xl font-bold text-white drop-shadow-lg">
+              {showHealth && minion ? minion.currentHealth : card.health}
+            </div>
+          </>
+        )}
+
+        {/* Element Icon */}
+        <div className="absolute -top-3 -right-3 w-12 h-12 rounded-full bg-black/60 border-2 border-white flex items-center justify-center">
+          <span className="text-2xl">
+            {getElementIcon(card.element)}
+          </span>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
-function getElementIcon(element: string): string {
-  const icons = {
-    fire: '🔥',
-    water: '💧',
-    earth: '🌿',
-    air: '💨',
-    spirit: '👻',
-    neutral: '⚪',
-  };
-  return icons[element as keyof typeof icons] || '⚪';
-}
+// Main Card Component
+export function Card({
+  card,
+  onClick,
+  disabled = false,
+  isMinion = false,
+  showHealth = false,
+  compact = false,
+  cardIndex,
+  location = 'hand'
+}: CardProps) {
+  const isMinionCard = card.type === 'minion';
+  const minion = isMinion ? (card as Minion) : null;
+  const cardRef = useRef<HTMLButtonElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-function getRarityColor(rarity: string): string {
-  const colors = {
-    common: 'bg-gray-400',
-    rare: 'bg-blue-400',
-    epic: 'bg-purple-400',
-    legendary: 'bg-yellow-400',
+  // State for hover to view detail
+  const [showDetail, setShowDetail] = useState(false);
+  const [detailPosition, setDetailPosition] = useState({ x: 0, y: 0 });
+
+  const uniqueCardId = useMemo(
+    () => generateUniqueCardId(card, location, cardIndex),
+    [card, location, cardIndex]
+  );
+
+  // Handle hover to show card detail
+  const handleMouseEnter = () => {
+    if (wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      setDetailPosition({
+        x: rect.right + 20,
+        y: rect.top - 50
+      });
+      setShowDetail(true);
+    }
   };
-  return colors[rarity as keyof typeof colors] || 'bg-gray-400';
+
+  const handleMouseLeave = () => {
+    setShowDetail(false);
+  };
+
+  return (
+    <>
+      <div
+        ref={wrapperRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className="inline-block"
+      >
+        <motion.button
+          ref={cardRef}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          whileHover={HOVER_ANIMATION()}
+          whileTap={TAP_ANIMATION(disabled)}
+          onClick={onClick}
+          disabled={disabled}
+          className={getCardClassNames(card, isMinion, disabled, compact)}
+        >
+          {/* Mana Cost Badge */}
+          {location !== 'board' && (
+            <div className={`absolute -top-2 -left-2 ${compact ? 'w-6 h-6' : 'w-10 h-10'} rounded-full bg-blue-500 border-2 border-white flex items-center justify-center`}>
+              <span className={`${compact ? 'text-xs' : 'text-xl'} font-bold text-white`}>{card.manaCost}</span>
+            </div>
+          )}
+
+          {/* Card Art */}
+          <div className={`absolute ${compact ? 'top-4 left-1 right-1 h-16' : 'top-8 left-2 right-2 h-32'} bg-black/30 rounded overflow-hidden flex items-center justify-center`}>
+            {card.imageUrl && (
+              <img
+                src={card.imageUrl}
+                alt={card.name}
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
+
+          {/* Stats for Minions */}
+          {isMinionCard && (
+            <>
+              {/* Attack */}
+              <div className={`absolute ${compact ? '-bottom-1 -left-1 w-5 h-5' : '-bottom-2 -left-2 w-10 h-10'} rounded-full bg-yellow-600 border-2 border-white flex items-center justify-center`}>
+                <span className={compact ? 'text-xs' : 'text-xl'}>⚔️</span>
+              </div>
+              <div
+                key={`attack-${uniqueCardId}`}
+                className={`absolute ${compact ? 'bottom-0 left-4 text-sm' : 'bottom-1 left-9 text-xl'} font-bold text-white drop-shadow-lg`}
+              >
+                {card.attack}
+              </div>
+
+              {/* Health */}
+              <div className={`absolute ${compact ? '-bottom-1 -right-1 w-5 h-5' : '-bottom-2 -right-2 w-10 h-10'} rounded-full bg-red-600 border-2 border-white flex items-center justify-center`}>
+                <span className={compact ? 'text-xs' : 'text-xl'}>❤️</span>
+              </div>
+              <div
+                key={`health-${uniqueCardId}`}
+                className={`absolute ${compact ? 'bottom-0 right-4 text-sm' : 'bottom-1 right-9 text-xl'} font-bold text-white drop-shadow-lg`}
+              >
+                {showHealth && minion ? minion.currentHealth : card.health}
+              </div>
+            </>
+          )}
+
+          {/* Element Icon - replaces rarity gem */}
+          <div className={`absolute ${compact ? '-top-1 -right-1 w-5 h-5' : '-top-2 -right-2 w-10 h-10'} rounded-full bg-black/60 border-2 border-white flex items-center justify-center`}>
+            <span className={compact ? 'text-xs' : 'text-xl'}>
+              {getElementIcon(card.element)}
+            </span>
+          </div>
+        </motion.button>
+      </div>
+
+      {/* Render card detail on hover using portal */}
+      {typeof window !== 'undefined' && showDetail && createPortal(
+        <AnimatePresence>
+          <CardDetail
+            card={card}
+            isMinion={isMinion}
+            showHealth={showHealth}
+            position={detailPosition}
+          />
+        </AnimatePresence>,
+        document.body
+      )}
+    </>
+  );
 }
