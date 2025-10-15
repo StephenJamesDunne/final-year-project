@@ -58,7 +58,7 @@ fiverealms/
 └── package.json                  # Dependencies & scripts
 ```
 
-## 🆕 New Modular Architecture
+## New Modular Architecture
 
 ### **Game Logic Separation (`lib/game/`)**
 The game logic has been extracted from the monolithic `battleStore.ts` into focused modules:
@@ -206,7 +206,7 @@ cards.ts → Card.tsx → cardHelpers.ts → constants.ts
 - **End of Turn** - Triggers at the end of each turn
 - **Passive** - Always active effects
 
-### **🆕 AI Behavior**
+### ** AI Behavior**
 - **Smart Card Playing** - AI evaluates mana cost and board state
 - **Attack Strategy** - Prioritizes face damage for aggressive gameplay
 - **Turn Management** - Consistent turn completion with proper state transitions
@@ -231,7 +231,7 @@ graph TD
     L --> B
 ```
 
-## 🆕 Architecture Benefits
+## Architecture Benefits
 
 ### **Maintainability**
 - **Single Responsibility** - Each module has one clear purpose
@@ -263,7 +263,7 @@ graph TD
 5. Enhanced ability system
 6. PIXI.js integration planning
 
-### **🆕 Recent Improvements**
+### ** Recent Improvements**
 - **Fixed AI Turn Issues** - AI now consistently completes turns regardless of playable cards
 - **Resolved Hydration Errors** - Server/client state synchronization for smooth gameplay
 - **Expanded Card Database** - 28+ cards across all elements with diverse abilities
