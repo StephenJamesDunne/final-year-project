@@ -19,8 +19,13 @@ const createStartingDeck = (): Card[] => {
     { ...card, id: `${card.id}-copy2` }
   ]);
 
-  // Shuffle both decks
-  return shuffleDeck(deck);
+  // Only shuffle if we're on the client side
+  if (typeof window !== 'undefined') {
+    return shuffleDeck(deck);
+  }
+
+  // Return unshuffled deck for SSR
+  return deck;
 };
 
 const drawCards = (deck: Card[], count: number): { drawn: Card[], remaining: Card[] } => {
@@ -281,49 +286,59 @@ export const useBattleStore = create<BattleStore>((set, get) => {
       let aiState = { ...newState.ai };
       let currentLog = [...newState.combatLog];
 
-      const playableCard = aiState.hand.find(c => c.manaCost <= aiState.mana);
-      if (playableCard && playableCard.type === 'minion') {
+      const playableCardIndex = aiState.hand.findIndex(c => c.manaCost <= aiState.mana);
+      if (playableCardIndex !== -1) {
+        const playableCard = aiState.hand[playableCardIndex];
+        if (playableCard.type === 'minion') {
+          currentLog.push(`Enemy summons ${playableCard.name} (${playableCard.manaCost} mana)`);
 
-        currentLog.push(`Enemy summons ${playableCard.name} (${playableCard.manaCost} mana)`);
+          set({
+            ...newState,
+            currentTurn: 'ai',
+            combatLog: currentLog,
+            aiAction: `Summoning ${playableCard.name}...`,
+          });
+          await new Promise(resolve => setTimeout(resolve, 800));
 
-        set({
-          ...newState,
-          currentTurn: 'ai',
-          combatLog: currentLog,
-          aiAction: `Summoning ${playableCard.name}...`,
-          // TODO: aiAction property later when types are updated
-        });
-        await new Promise(resolve => setTimeout(resolve, 800)); // Shows card being played
+          const minion: Minion = {
+            ...playableCard,
+            type: 'minion',
+            attack: playableCard.attack!,
+            health: playableCard.health!,
+            currentHealth: playableCard.health!,
+            canAttack: false,
+            instanceId: `${playableCard.id}-${Date.now()}`,
+          };
 
-        const minion: Minion = {
-          ...playableCard,
-          type: 'minion',
-          attack: playableCard.attack!,
-          health: playableCard.health!,
-          currentHealth: playableCard.health!,
-          canAttack: false,
-          instanceId: `${playableCard.id}-${Date.now()}`,
-        };
-        aiState = {
-          ...aiState,
-          hand: aiState.hand.filter(c => c.id !== playableCard.id),
-          mana: aiState.mana - playableCard.manaCost,
-          board: [...aiState.board, minion],
-        };
+          aiState = {
+            ...aiState,
+            hand: aiState.hand.filter((_, index) => index !== playableCardIndex),
+            mana: aiState.mana - playableCard.manaCost,
+            board: [...aiState.board, minion],
+          };
 
-        // Process AI battlecry
-        newState.ai = aiState;
-        newState = processAbilities(playableCard, 'battlecry', newState, false);
-        aiState = newState.ai;
+          // Process AI battlecry
+          newState.ai = aiState;
+          newState = processAbilities(playableCard, 'battlecry', newState, false);
+          aiState = newState.ai;
 
-        // Log battlecry effects
-        if (playableCard.abilities?.some(a => a.trigger === 'battlecry')) {
-          currentLog.push(`${playableCard.name}'s battlecry triggers`);
+          // Log enemy battlecry effects
+          if (playableCard.abilities?.some(a => a.trigger === 'battlecry')) {
+            currentLog.push(`${playableCard.name}'s battlecry triggers`);
+          }
+
+          set({ ...newState, currentTurn: 'ai', combatLog: currentLog });
+          await new Promise(resolve => setTimeout(resolve, 600));
         }
-
+      } else {
+        // AI can't play any cards
+        currentLog.push("Enemy has no playable cards this turn");
         set({ ...newState, currentTurn: 'ai', combatLog: currentLog });
-        await new Promise(resolve => setTimeout(resolve, 600));
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
+
+      // Update newState with the latest aiState
+      newState.ai = aiState;
 
       // Process AI end of turn effects
       aiState.board.forEach(minion => {
@@ -331,27 +346,26 @@ export const useBattleStore = create<BattleStore>((set, get) => {
       });
 
       // AI attacks with all minions
-      if (aiState.board.length > 0) {
-        currentLog.push(`Enemy attacks: (${aiState.board.filter(m => m.canAttack).length} minions)`);
+      const attackingMinions = aiState.board.filter(m => m.canAttack);
+      if (attackingMinions.length > 0) {
+        currentLog.push(`Enemy attacks with ${attackingMinions.length} minion(s)`);
 
         set({ ...newState, currentTurn: 'ai', combatLog: currentLog, aiAction: 'Attacking...' });
-        await new Promise(resolve => setTimeout(resolve, 800)); // Shows attacks happening
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
 
       let playerHealth = newState.player.health;
       let totalDamage = 0;
-      aiState.board.forEach(minion => {
-        if (minion.canAttack) {
-          playerHealth -= minion.attack;
-          totalDamage += minion.attack;
-        }
+      attackingMinions.forEach(minion => {
+        playerHealth -= minion.attack;
+        totalDamage += minion.attack;
       });
 
       if (totalDamage > 0) {
         currentLog.push(`Enemy deals ${totalDamage} damage to you`);
       }
 
-      // Draw card and increment turn
+      // Draw cards and increment turn
       const newMaxMana = Math.min(newState.player.maxMana + 1, 10);
       const playerDraw = drawCards(newState.player.deck, 1);
       const aiDraw = drawCards(aiState.deck, 1);
@@ -362,12 +376,12 @@ export const useBattleStore = create<BattleStore>((set, get) => {
 
       currentLog.push(`Your turn begins! (${newMaxMana} mana available)`);
 
+      // Final state update - always happens regardless of whether AI played cards
       set({
         currentTurn: 'player',
         turnNumber: newState.turnNumber + 1,
         combatLog: currentLog,
         aiAction: undefined,
-        // Update both sides
         player: {
           ...newState.player,
           health: playerHealth,
@@ -390,6 +404,8 @@ export const useBattleStore = create<BattleStore>((set, get) => {
       });
     },
 
-    resetBattle: () => set(createInitialState()),
+    resetBattle: () => {
+      set(initialState);
+    },
   };
 });

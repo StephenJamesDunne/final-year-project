@@ -76,6 +76,52 @@ export const CARDS: Card[] = [
     ]
   },
 
+  // FIRE ADDITIONS
+  {
+    id: 'f_rare_1',
+    name: 'Red Branch Knight',
+    element: 'fire',
+    type: 'minion',
+    rarity: 'rare',
+    manaCost: 4,
+    attack: 4,
+    health: 3,
+    description: 'Elite warrior of Ulster.',
+    imageUrl: ''
+  },
+
+  {
+    id: 'f_common_1',
+    name: 'Connacht Warrior',
+    element: 'fire',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 2,
+    attack: 2,
+    health: 2,
+    description: 'Loyal soldier of Queen Maedhbh.',
+    imageUrl: ''
+  },
+
+  {
+    id: 'f_spell_1',
+    name: 'Beltane Flames',
+    element: 'fire',
+    type: 'spell',
+    rarity: 'common',
+    manaCost: 3,
+    description: 'Deal 3 damage to an enemy.',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'damage',
+        value: 3,
+        target: 'choose',
+        description: 'Deal 3 damage to an enemy'
+      }
+    ]
+  },
+
   // WATER LEGENDARY
   {
     id: 'w_leg_1',
@@ -121,6 +167,74 @@ export const CARDS: Card[] = [
         value: 3,
         target: 'self',
         description: 'Draw 3 cards'
+      }
+    ]
+  },
+
+  // WATER ADDITIONS
+  {
+    id: 'w_leg_2',
+    name: 'Manannán mac Lir',
+    element: 'water',
+    type: 'minion',
+    rarity: 'legendary',
+    manaCost: 8,
+    attack: 6,
+    health: 8,
+    description: 'Battlecry: Return all enemy minions to their owner\'s hand.',
+    imageUrl: '',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'return_to_hand',
+        value: 999,
+        target: 'enemy',
+        description: 'Return all enemy minions to hand'
+      }
+    ]
+  },
+
+  {
+    id: 'w_rare_1',
+    name: 'Oisín the Wanderer',
+    element: 'water',
+    type: 'minion',
+    rarity: 'rare',
+    manaCost: 3,
+    attack: 2,
+    health: 3,
+    description: 'Battlecry: If Fionn mac Cumhaill is in play, draw 2 cards.',
+    imageUrl: '',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'draw',
+        value: 2,
+        target: 'self',
+        condition: 'if_fionn_in_play',
+        description: 'If Fionn is in play, draw 2 cards'
+      }
+    ]
+  },
+
+  {
+    id: 'w_common_2',
+    name: 'Children of Lir',
+    element: 'water',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 2,
+    attack: 1,
+    health: 3,
+    description: 'Deathrattle: Return this to your hand.',
+    imageUrl: '',
+    abilities: [
+      {
+        trigger: 'deathrattle',
+        type: 'return_to_hand',
+        value: 1,
+        target: 'self',
+        description: 'Return this minion to your hand'
       }
     ]
   },
@@ -174,6 +288,64 @@ export const CARDS: Card[] = [
     ]
   },
 
+  // EARTH ADDITIONS
+  {
+    id: 'e_leg_2',
+    name: 'The Dagda',
+    element: 'earth',
+    type: 'minion',
+    rarity: 'legendary',
+    manaCost: 5,
+    attack: 4,
+    health: 5,
+    description: 'Battlecry: Gain +2 maximum mana this game.',
+    imageUrl: '',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'gain_mana',
+        value: 2,
+        target: 'self',
+        description: 'Gain +2 maximum mana permanently'
+      }
+    ]
+  },
+
+  {
+    id: 'e_rare_1',
+    name: 'Dian Cécht',
+    element: 'earth',
+    type: 'minion',
+    rarity: 'rare',
+    manaCost: 4,
+    attack: 2,
+    health: 6,
+    description: 'End of Turn: Restore 2 Health to your hero.',
+    imageUrl: '',
+    abilities: [
+      {
+        trigger: 'end_of_turn',
+        type: 'heal',
+        value: 2,
+        target: 'self',
+        description: 'Restore 2 Health to your hero'
+      }
+    ]
+  },
+
+  {
+    id: 'e_common_2',
+    name: 'Fir Bolg Defender',
+    element: 'earth',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 3,
+    attack: 1,
+    health: 6,
+    description: 'Sturdy defender of the ancient lands.',
+    imageUrl: ''
+  },
+
   // AIR LEGENDARY
   {
     id: 'a_leg_1',
@@ -192,6 +364,61 @@ export const CARDS: Card[] = [
         value: 4,
         target: 'self',
         description: 'Discover cards from each element'
+      }
+    ]
+  },
+
+  // AIR ADDITIONS
+  {
+    id: 'a_rare_1',
+    name: 'Púca Trickster',
+    element: 'air',
+    type: 'minion',
+    rarity: 'rare',
+    manaCost: 3,
+    attack: 2,
+    health: 2,
+    description: 'Battlecry: Transform a random enemy minion into a 1/1 Sheep.',
+    imageUrl: '',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'transform',
+        value: 1,
+        target: 'random',
+        description: 'Transform random enemy into 1/1 Sheep'
+      }
+    ]
+  },
+
+  {
+    id: 'a_common_1',
+    name: 'Aos Sí Scout',
+    element: 'air',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 2,
+    attack: 3,
+    health: 1,
+    description: 'Swift fairy scout.',
+    imageUrl: ''
+  },
+
+  {
+    id: 'a_spell_1',
+    name: 'Leprechaun\'s Gold',
+    element: 'air',
+    type: 'spell',
+    rarity: 'common',
+    manaCost: 1,
+    description: 'Gain +1 mana this turn only.',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'gain_mana',
+        value: 1,
+        target: 'self',
+        description: 'Gain +1 mana this turn'
       }
     ]
   },
@@ -246,6 +473,70 @@ export const CARDS: Card[] = [
       }
     ]
   },
+
+  // SPIRIT ADDITIONS
+  {
+    id: 's_rare_1',
+    name: 'Dullahan',
+    element: 'spirit',
+    type: 'minion',
+    rarity: 'rare',
+    manaCost: 5,
+    attack: 5,
+    health: 3,
+    description: 'Battlecry: Deal 2 damage to the enemy hero.',
+    imageUrl: '',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'damage',
+        value: 2,
+        target: 'enemy',
+        description: 'Deal 2 damage to enemy hero'
+      }
+    ]
+  },
+
+  {
+    id: 's_common_2',
+    name: 'Cat Sìth',
+    element: 'spirit',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 2,
+    attack: 2,
+    health: 1,
+    description: 'Deathrattle: Summon a 1/1 copy of an enemy minion that died this turn.',
+    imageUrl: '',
+    abilities: [
+      {
+        trigger: 'deathrattle',
+        type: 'summon',
+        value: 1,
+        target: 'self',
+        description: 'Summon copy of enemy minion that died'
+      }
+    ]
+  },
+
+  {
+    id: 's_spell_1',
+    name: 'Banshee Wail',
+    element: 'spirit',
+    type: 'spell',
+    rarity: 'rare',
+    manaCost: 4,
+    description: 'Deal 1 damage to all enemy minions. If any die, deal 2 damage to enemy hero.',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'damage',
+        value: 1,
+        target: 'enemy',
+        description: 'Deal 1 damage to all enemies, bonus if kills'
+      }
+    ]
+  },
   
   // NEUTRAL LEGENDARY
   {
@@ -296,4 +587,49 @@ export const CARDS: Card[] = [
       }
     ]
   },
+
+  // NEUTRAL ADDITIONS
+  {
+    id: 'n_rare_1',
+    name: 'Brian Boru',
+    element: 'neutral',
+    type: 'minion',
+    rarity: 'rare',
+    manaCost: 5,
+    attack: 4,
+    health: 4,
+    description: 'Battlecry: Give all friendly minions +1/+1.',
+    imageUrl: '',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'buff',
+        value: 1,
+        target: 'all',
+        description: 'Give all friendly minions +1/+1'
+      }
+    ]
+  },
+
+  {
+    id: 'n_common_2',
+    name: 'Cú Chulainn',
+    element: 'neutral',
+    type: 'minion',
+    rarity: 'epic',
+    manaCost: 4,
+    attack: 5,
+    health: 2,
+    description: 'When this attacks, deal 1 damage to all enemies.',
+    imageUrl: '',
+    abilities: [
+      {
+        trigger: 'when_attack',
+        type: 'damage',
+        value: 1,
+        target: 'enemy',
+        description: 'Deal 1 damage to all enemies when attacking'
+      }
+    ]
+  }
 ];
