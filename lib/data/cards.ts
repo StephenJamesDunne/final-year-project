@@ -41,6 +41,7 @@ export const CARDS: Card[] = [
     attack: 7,
     health: 7,
     description: 'End of Turn: Deal 2 damage to ALL characters.',
+    imageUrl: '/images/cards/balor.png',
     abilities: [
       {
         trigger: 'end_of_turn',
@@ -63,6 +64,7 @@ export const CARDS: Card[] = [
     attack: 5,
     health: 4,
     description: 'Battlecry: Give a friendly minion +3 Attack.',
+    imageUrl: '/images/cards/scáthach.png',
     abilities: [
       {
         trigger: 'battlecry',

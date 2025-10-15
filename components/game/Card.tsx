@@ -1,33 +1,8 @@
-import { Card as CardType, Minion, Element, Rarity } from '@/lib/types/game';
+import { Card as CardType, Minion, Element} from '@/lib/types/game';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-
-// Constants
-const ELEMENT_COLORS = {
-  fire: 'from-red-600 to-orange-600',
-  water: 'from-blue-600 to-cyan-600',
-  earth: 'from-green-600 to-emerald-600',
-  air: 'from-purple-600 to-pink-600',
-  spirit: 'from-indigo-600 to-violet-600',
-  neutral: 'from-gray-600 to-slate-600',
-};
-
-const ELEMENT_BORDERS = {
-  fire: 'border-red-500',
-  water: 'border-blue-500',
-  earth: 'border-green-500',
-  air: 'border-purple-500',
-  spirit: 'border-indigo-500',
-  neutral: 'border-gray-500',
-};
-
-// Card animation presets
-const CARD_ANIMATIONS = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 }
-};
+import { ELEMENT_COLORS, ELEMENT_BORDERS, ELEMENT_ICONS } from '@/lib/utils/constants';
 
 const HOVER_ANIMATION = () => ({});
 

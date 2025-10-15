@@ -5,14 +5,14 @@ import { Card } from '@/components/game/Card';
 import { useState } from 'react';
 
 export default function BattlePage() {
-  const { player, ai, currentTurn, gameOver, winner, playCard, attack, endTurn, resetBattle } = useBattleStore();
+  const { player, ai, currentTurn, gameOver, winner, combatLog, turnNumber, aiAction, playCard, attack, endTurn, resetBattle } = useBattleStore();
   const [selectedMinion, setSelectedMinion] = useState<string | null>(null);
-  
+
   const handleMinionClick = (minionId: string) => {
     if (currentTurn !== 'player' || gameOver) return;
     setSelectedMinion(minionId);
   };
-  
+
   const handleTargetClick = (targetId: string) => {
     if (!selectedMinion) return;
     attack(selectedMinion, targetId);
@@ -24,7 +24,7 @@ export default function BattlePage() {
     attack(selectedMinion, 'face');
     setSelectedMinion(null);
   };
-  
+
   return (
     <div className="h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white overflow-hidden">
       {/* Game Over Overlay */}
@@ -43,13 +43,12 @@ export default function BattlePage() {
           </div>
         </div>
       )}
-      
+
       {/* AI Health/Mana - Top Left */}
       <div className="absolute top-4 left-4 z-10">
-        <div 
-          className={`bg-red-900/80 border-2 border-red-600 rounded-lg p-4 backdrop-blur-sm transition-all ${
-            selectedMinion ? 'cursor-crosshair ring-4 ring-yellow-400 hover:bg-red-800/90' : ''
-          }`}
+        <div
+          className={`bg-red-900/80 border-2 border-red-600 rounded-lg p-4 backdrop-blur-sm transition-all ${selectedMinion ? 'cursor-crosshair ring-4 ring-yellow-400 hover:bg-red-800/90' : ''
+            }`}
           onClick={selectedMinion ? handleAIFaceClick : undefined}
         >
           <div className="text-center">
@@ -61,14 +60,13 @@ export default function BattlePage() {
             <div className="mt-2 flex items-center justify-center gap-1">
               <span className="text-lg font-bold text-blue-300">{ai.mana}/{ai.maxMana}</span>
               <div className="flex gap-1">
-              {Array.from({ length: ai.maxMana }).map((_, i) => (
-                <div
-                  key={`ai-mana-${i}`}
-                  className={`w-3 h-3 rounded-full ${
-                    i < ai.mana ? 'bg-blue-400' : 'bg-gray-600'
-                  }`}
-                />
-              ))}
+                {Array.from({ length: ai.maxMana }).map((_, i) => (
+                  <div
+                    key={`ai-mana-${i}`}
+                    className={`w-3 h-3 rounded-full ${i < ai.mana ? 'bg-blue-400' : 'bg-gray-600'
+                      }`}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -87,14 +85,13 @@ export default function BattlePage() {
             <div className="mt-2 flex items-center justify-center gap-1">
               <span className="text-lg font-bold text-blue-300">{player.mana}/{player.maxMana}</span>
               <div className="flex gap-1">
-              {Array.from({ length: player.maxMana }).map((_, i) => (
-                <div
-                  key={`player-mana-${i}`}
-                  className={`w-3 h-3 rounded-full ${
-                    i < player.mana ? 'bg-blue-400' : 'bg-gray-600'
-                  }`}
-                />
-              ))}
+                {Array.from({ length: player.maxMana }).map((_, i) => (
+                  <div
+                    key={`player-mana-${i}`}
+                    className={`w-3 h-3 rounded-full ${i < player.mana ? 'bg-blue-400' : 'bg-gray-600'
+                      }`}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -111,7 +108,7 @@ export default function BattlePage() {
 
       {/* Main Game Area */}
       <div className="flex flex-col h-[calc(100vh-120px)] max-w-6xl mx-auto px-4">
-        
+
         {/* AI Hand (hidden cards) */}
         <div className="flex justify-center gap-1 mb-2">
           {ai.hand.map((_, i) => (
@@ -141,9 +138,9 @@ export default function BattlePage() {
                 onClick={() => handleTargetClick(minion.instanceId)}
                 className={selectedMinion ? 'cursor-crosshair' : ''}
               >
-                <Card 
-                  card={minion} 
-                  isMinion 
+                <Card
+                  card={minion}
+                  isMinion
                   showHealth
                   onClick={() => handleTargetClick(minion.instanceId)}
                   disabled={!selectedMinion}
@@ -185,9 +182,9 @@ export default function BattlePage() {
                 onClick={() => handleMinionClick(minion.instanceId)}
                 className={minion.canAttack && currentTurn === 'player' ? 'cursor-pointer' : ''}
               >
-                <Card 
-                  card={minion} 
-                  isMinion 
+                <Card
+                  card={minion}
+                  isMinion
                   showHealth
                   disabled={!minion.canAttack || currentTurn !== 'player'}
                   compact
@@ -212,6 +209,34 @@ export default function BattlePage() {
                 location='hand'
               />
             ))}
+          </div>
+        </div>
+        {/* Combat Log for Player */}
+        <div className="fixed top-20 right-6 w-80 max-h-96 z-20">
+          <div className="bg-slate-900/90 border-2 border-amber-500/60 rounded-xl backdrop-blur-md shadow-2xl">
+            <div className="bg-gradient-to-r from-amber-600 to-emerald-600 px-4 py-2 rounded-t-lg">
+              <h3 className="text-white font-bold text-center">Combat Log</h3>
+            </div>
+
+            <div className="p-3 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-amber-500/50 scrollbar-track-slate-800/50">
+              {combatLog.slice(-8).map((logEntry, index) => (
+                <div
+                  key={`log-${turnNumber}-${index}`}
+                  className="text-sm mb-2 text-emerald-200 animate-fadeIn"
+                  style={{
+                    animationDelay: `${index * 100}ms`
+                  }}
+                >
+                  {logEntry}
+                </div>
+              ))}
+
+              {aiAction && (
+                <div className="text-sm text-yellow-300 italic animate-pulse border-l-2 border-yellow-400 pl-2">
+                  {aiAction}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -69,4 +69,6 @@ export interface BattleState {
   turnNumber: number;
   gameOver: boolean;
   winner?: 'player' | 'ai';
+  combatLog: string[];
+  aiAction?: string; // Current AI action being shown
 }
