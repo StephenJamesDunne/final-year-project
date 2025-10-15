@@ -1,109 +1,11 @@
 import { create } from 'zustand';
-import { BattleState, Card, Minion } from '../types/game';
-import { CARDS } from '../data/cards';
+import { BattleState } from '../types/game';
 
-// Function to shuffle both decks before starting a match
-const shuffleDeck = <T>(array: T[]): T[] => {
-  const shuffledDeck = [...array];
-  for (let i = shuffledDeck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffledDeck[i], shuffledDeck[j]] = [shuffledDeck[j], shuffledDeck[i]];
-  }
-  return shuffledDeck;
-};
-
-const createStartingDeck = (): Card[] => {
-  // Simple: 2 copies of each card
-  const deck = CARDS.flatMap(card => [
-    { ...card, id: `${card.id}-copy1` },
-    { ...card, id: `${card.id}-copy2` }
-  ]);
-
-  // Only shuffle if we're on the client side
-  if (typeof window !== 'undefined') {
-    return shuffleDeck(deck);
-  }
-
-  // Return unshuffled deck for SSR
-  return deck;
-};
-
-const drawCards = (deck: Card[], count: number): { drawn: Card[], remaining: Card[] } => {
-  const drawn = deck.slice(0, count);
-  const remaining = deck.slice(count);
-  return { drawn, remaining };
-};
-
-// Process card abilities when they trigger
-function processAbilities(
-  card: Card,
-  trigger: 'battlecry' | 'deathrattle' | 'end_of_turn',
-  state: BattleState,
-  isPlayer: boolean
-): BattleState {
-  if (!card.abilities) return state;
-
-  const relevantAbilities = card.abilities.filter(a => a.trigger === trigger);
-  let newState = { ...state };
-
-  relevantAbilities.forEach(ability => {
-    const currentPlayer = isPlayer ? newState.player : newState.ai;
-    const opponent = isPlayer ? newState.ai : newState.player;
-
-    switch (ability.type) {
-      case 'draw':
-        const drawn = drawCards(currentPlayer.deck, ability.value || 1);
-        currentPlayer.hand = [...currentPlayer.hand, ...drawn.drawn];
-        currentPlayer.deck = drawn.remaining;
-        break;
-
-      case 'heal':
-        if (ability.target === 'self') {
-          currentPlayer.health = Math.min(currentPlayer.health + (ability.value || 0), 30);
-        }
-        break;
-
-      case 'damage':
-        if (ability.target === 'enemy') {
-          opponent.health -= ability.value || 0;
-        } else if (ability.target === 'all') {
-          // Damage all enemy minions
-          opponent.board = opponent.board.map(m => ({
-            ...m,
-            currentHealth: m.currentHealth - (ability.value || 0)
-          })).filter(m => m.currentHealth > 0);
-
-          // Also damage enemy hero for cards like Balor
-          if (trigger === 'end_of_turn') {
-            opponent.health -= ability.value || 0;
-            currentPlayer.health -= ability.value || 0; // Damage friendly side too
-
-            // Damage friendly minions
-            currentPlayer.board = currentPlayer.board.map(m => ({
-              ...m,
-              currentHealth: m.currentHealth - (ability.value || 0)
-            })).filter(m => m.currentHealth > 0);
-          }
-        }
-        break;
-
-      case 'summon':
-        // Basic implementation - summon generic tokens
-        // TODO: Implement specific minion summoning
-        break;
-
-      case 'buff':
-        // TODO: Implement when adding targeting system
-        break;
-
-      case 'destroy':
-        // TODO: Implement when adding targeting system
-        break;
-    }
-  });
-
-  return newState;
-}
+// Import game modules
+import { createMinion, checkGameOver, calculateCombatDamage, updateMinionHealth, enableMinionAttacks, disableMinionAttack, removeDead, incrementTurn } from '../game/gameLogic';
+import { createStartingDeck, drawCards, removeCardFromHand, addCardsToHand } from '../game/deckManager';
+import { processAbilities, processDeathrattles, processEndOfTurnEffects } from '../game/abilitySystem';
+import { getAIAction, executeAIPlayCard, executeAIAttacks, getAIDecisionDelay } from '../game/aiPlayer';
 
 interface BattleStore extends BattleState {
   playCard: (cardIndex: number, targetId?: string) => void;
@@ -112,7 +14,7 @@ interface BattleStore extends BattleState {
   resetBattle: () => void;
 }
 
-const createInitialState = (): BattleState => {
+function createInitialState(): BattleState {
   const playerDeck = createStartingDeck();
   const aiDeck = createStartingDeck();
 
@@ -142,270 +44,206 @@ const createInitialState = (): BattleState => {
     combatLog: ["The sound of battle roars across the Five Realms!"],
     aiAction: undefined,
   };
-};
+}
 
-// Helper to extract just the state data
-const getStateData = (state: BattleStore): BattleState => ({
-  player: state.player,
-  ai: state.ai,
-  currentTurn: state.currentTurn,
-  turnNumber: state.turnNumber,
-  gameOver: state.gameOver,
-  winner: state.winner,
-  combatLog: state.combatLog,
-  aiAction: state.aiAction,
-});
+export const useBattleStore = create<BattleStore>((set, get) => ({
+  ...createInitialState(),
 
-export const useBattleStore = create<BattleStore>((set, get) => {
-  const initialState = createInitialState();
+  playCard: (cardIndex: number, targetId?: string) => {
+    const state = get();
+    if (state.currentTurn !== 'player' || state.gameOver) return;
 
-  return {
-    ...initialState,
+    const card = state.player.hand[cardIndex];
+    if (!card || card.manaCost > state.player.mana) return;
 
-    playCard: (cardIndex: number, targetId?: string) => {
-      const store = get();
-      const state = getStateData(store);
+    let newState: BattleState = {
+      player: { ...state.player },
+      ai: { ...state.ai },
+      currentTurn: state.currentTurn,
+      turnNumber: state.turnNumber,
+      gameOver: state.gameOver,
+      winner: state.winner,
+      combatLog: [...state.combatLog],
+      aiAction: state.aiAction,
+    };
 
-      if (state.currentTurn !== 'player' || state.gameOver) return;
+    // Remove card from hand and reduce mana
+    newState.player = {
+      ...newState.player,
+      hand: removeCardFromHand(newState.player.hand, cardIndex),
+      mana: newState.player.mana - card.manaCost,
+    };
 
-      const card = state.player.hand[cardIndex];
-      if (!card || card.manaCost > state.player.mana) return;
+    if (card.type === 'minion') {
+      const minion = createMinion(card);
+      newState.player.board = [...newState.player.board, minion];
+    }
 
-      const newHand = state.player.hand.filter((_, i) => i !== cardIndex);
-      const newMana = state.player.mana - card.manaCost;
+    // Process abilities
+    newState = processAbilities(card, 'battlecry', newState, true);
+    set(newState);
+  },
 
-      // Start with updated hand and mana
-      let newState = {
-        ...state,
-        player: {
-          ...state.player,
-          hand: newHand,
-          mana: newMana,
-        }
-      };
+  attack: (attackerId: string, targetId: string) => {
+    const state = get();
+    if (state.currentTurn !== 'player' || state.gameOver) return;
 
-      if (card.type === 'minion') {
-        // Create minion and add to board
-        const minion: Minion = {
-          ...card,
-          type: 'minion',
-          attack: card.attack!,
-          health: card.health!,
-          currentHealth: card.health!,
-          canAttack: false,
-          instanceId: `${card.id}-${Date.now()}`,
-        };
+    const attacker = state.player.board.find(m => m.instanceId === attackerId);
+    if (!attacker || !attacker.canAttack) return;
 
-        newState.player.board = [...newState.player.board, minion];
+    // Clone state for modifications
+    let newState: BattleState = {
+      player: { ...state.player },
+      ai: { ...state.ai },
+      currentTurn: state.currentTurn,
+      turnNumber: state.turnNumber,
+      gameOver: state.gameOver,
+      winner: state.winner,
+      combatLog: [...state.combatLog],
+      aiAction: state.aiAction,
+    };
 
-        // Process battlecry abilities AFTER minion is on board
-        newState = processAbilities(card, 'battlecry', newState, true);
+    if (targetId === 'face') {
+      // Attack enemy hero
+      newState.ai.health -= attacker.attack;
+      newState.player.board = disableMinionAttack(newState.player.board, attackerId);
 
-        set(newState);
-      } else {
-        // Spell: process battlecry abilities immediately
-        newState = processAbilities(card, 'battlecry', newState, true);
-        set(newState);
-      }
-    },
+      const gameResult = checkGameOver(newState.player.health, newState.ai.health);
+      Object.assign(newState, gameResult);
 
-    attack: (attackerId: string, targetId: string) => {
-      const state = get();
-      if (state.currentTurn !== 'player' || state.gameOver) return;
+    } else {
+      // Attack enemy minion
+      const target = newState.ai.board.find(m => m.instanceId === targetId);
+      if (!target) return;
 
-      const attacker = state.player.board.find(m => m.instanceId === attackerId);
-      if (!attacker || !attacker.canAttack) return;
+      const combatResult = calculateCombatDamage(attacker, target);
 
-      if (targetId === 'face') {
-        const newAIHealth = state.ai.health - attacker.attack;
-
-        set({
-          ai: { ...state.ai, health: newAIHealth },
-          player: {
-            ...state.player,
-            board: state.player.board.map(m =>
-              m.instanceId === attackerId ? { ...m, canAttack: false } : m
-            ),
-          },
-          gameOver: newAIHealth <= 0,
-          winner: newAIHealth <= 0 ? 'player' : undefined,
-        });
-      } else {
-        const target = state.ai.board.find(m => m.instanceId === targetId);
-        if (!target) return;
-
-        const newAttacker = {
-          ...attacker,
-          currentHealth: attacker.currentHealth - target.attack,
-          canAttack: false
-        };
-        const newTarget = {
-          ...target,
-          currentHealth: target.currentHealth - attacker.attack
-        };
-
-        let newState: BattleState = { ...state };
-
-        // Check if target dies - trigger deathrattle
-        if (newTarget.currentHealth <= 0 && target.abilities) {
-          newState = processAbilities(target, 'deathrattle', newState, false);
-        }
-
-        // Check if attacker dies - trigger deathrattle
-        if (newAttacker.currentHealth <= 0 && attacker.abilities) {
-          newState = processAbilities(attacker, 'deathrattle', newState, true);
-        }
-
-        // Update boards (remove dead minions)
-        newState.player.board = newState.player.board
-          .map(m => m.instanceId === attackerId ? newAttacker : m)
-          .filter(m => m.currentHealth > 0);
-
-        newState.ai.board = newState.ai.board
-          .map(m => m.instanceId === targetId ? newTarget : m)
-          .filter(m => m.currentHealth > 0);
-
-        set(newState);
-      }
-    },
-
-    endTurn: async () => {
-      const state = get();
-      if (state.currentTurn !== 'player' || state.gameOver) return;
-
-      set({ ...state, currentTurn: 'ai' });
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Process end of turn effects for player minions
-      let newState: BattleState = { ...state, currentTurn: 'ai' };
-      state.player.board.forEach(minion => {
-        newState = processAbilities(minion, 'end_of_turn', newState, true);
-      });
-
-      // Simple AI: play first affordable card
-      let aiState = { ...newState.ai };
-      let currentLog = [...newState.combatLog];
-
-      const playableCardIndex = aiState.hand.findIndex(c => c.manaCost <= aiState.mana);
-      if (playableCardIndex !== -1) {
-        const playableCard = aiState.hand[playableCardIndex];
-        if (playableCard.type === 'minion') {
-          currentLog.push(`Enemy summons ${playableCard.name} (${playableCard.manaCost} mana)`);
-
-          set({
-            ...newState,
-            currentTurn: 'ai',
-            combatLog: currentLog,
-            aiAction: `Summoning ${playableCard.name}...`,
-          });
-          await new Promise(resolve => setTimeout(resolve, 800));
-
-          const minion: Minion = {
-            ...playableCard,
-            type: 'minion',
-            attack: playableCard.attack!,
-            health: playableCard.health!,
-            currentHealth: playableCard.health!,
-            canAttack: false,
-            instanceId: `${playableCard.id}-${Date.now()}`,
-          };
-
-          aiState = {
-            ...aiState,
-            hand: aiState.hand.filter((_, index) => index !== playableCardIndex),
-            mana: aiState.mana - playableCard.manaCost,
-            board: [...aiState.board, minion],
-          };
-
-          // Process AI battlecry
-          newState.ai = aiState;
-          newState = processAbilities(playableCard, 'battlecry', newState, false);
-          aiState = newState.ai;
-
-          // Log enemy battlecry effects
-          if (playableCard.abilities?.some(a => a.trigger === 'battlecry')) {
-            currentLog.push(`${playableCard.name}'s battlecry triggers`);
-          }
-
-          set({ ...newState, currentTurn: 'ai', combatLog: currentLog });
-          await new Promise(resolve => setTimeout(resolve, 600));
-        }
-      } else {
-        // AI can't play any cards
-        currentLog.push("Enemy has no playable cards this turn");
-        set({ ...newState, currentTurn: 'ai', combatLog: currentLog });
-        await new Promise(resolve => setTimeout(resolve, 500));
+      // Update minion health
+      if (combatResult.attackerSurvives) {
+        newState.player.board = newState.player.board.map(m =>
+          m.instanceId === attackerId
+            ? updateMinionHealth(m, combatResult.attackerNewHealth)
+            : m
+        );
       }
 
-      // Update newState with the latest aiState
-      newState.ai = aiState;
-
-      // Process AI end of turn effects
-      aiState.board.forEach(minion => {
-        newState = processAbilities(minion, 'end_of_turn', newState, false);
-      });
-
-      // AI attacks with all minions
-      const attackingMinions = aiState.board.filter(m => m.canAttack);
-      if (attackingMinions.length > 0) {
-        currentLog.push(`Enemy attacks with ${attackingMinions.length} minion(s)`);
-
-        set({ ...newState, currentTurn: 'ai', combatLog: currentLog, aiAction: 'Attacking...' });
-        await new Promise(resolve => setTimeout(resolve, 800));
+      if (combatResult.targetSurvives) {
+        newState.ai.board = newState.ai.board.map(m =>
+          m.instanceId === targetId
+            ? updateMinionHealth(m, combatResult.targetNewHealth)
+            : m
+        );
       }
 
-      let playerHealth = newState.player.health;
-      let totalDamage = 0;
-      attackingMinions.forEach(minion => {
-        playerHealth -= minion.attack;
-        totalDamage += minion.attack;
-      });
-
-      if (totalDamage > 0) {
-        currentLog.push(`Enemy deals ${totalDamage} damage to you`);
+      // Process deathrattles for dying minions
+      if (!combatResult.targetSurvives && target.abilities) {
+        newState = processAbilities(target, 'deathrattle', newState, false);
+      }
+      if (!combatResult.attackerSurvives && attacker.abilities) {
+        newState = processAbilities(attacker, 'deathrattle', newState, true);
       }
 
-      // Draw cards and increment turn
-      const newMaxMana = Math.min(newState.player.maxMana + 1, 10);
-      const playerDraw = drawCards(newState.player.deck, 1);
-      const aiDraw = drawCards(aiState.deck, 1);
+      // Remove dead minions
+      newState.player.board = removeDead(newState.player.board);
+      newState.ai.board = removeDead(newState.ai.board);
+    }
 
-      if (playerDraw.drawn.length > 0) {
-        currentLog.push(`You draw: ${playerDraw.drawn[0].name}`);
-      }
+    set(newState);
+  },
 
-      currentLog.push(`Your turn begins! (${newMaxMana} mana available)`);
+  endTurn: async () => {
+    const state = get();
+    if (state.currentTurn !== 'player' || state.gameOver) return;
 
-      // Final state update - always happens regardless of whether AI played cards
+    // Switch to AI turn
+    set({ ...state, currentTurn: 'ai' });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    let newState: BattleState = { ...state, currentTurn: 'ai' };
+    let currentLog = [...newState.combatLog];
+
+    // Process end of turn effects for player minions
+    newState = processEndOfTurnEffects(newState.player.board, newState, true);
+
+    // AI Decision Making
+    const aiAction = getAIAction(newState.ai, newState);
+
+    if (aiAction.type === 'play_card' && aiAction.cardIndex !== undefined) {
+      const result = executeAIPlayCard(aiAction.cardIndex, newState);
+      newState = result.newState;
+      currentLog.push(result.logMessage);
+
+      // Show AI action
       set({
-        currentTurn: 'player',
-        turnNumber: newState.turnNumber + 1,
+        ...newState,
         combatLog: currentLog,
-        aiAction: undefined,
-        player: {
-          ...newState.player,
-          health: playerHealth,
-          maxMana: newMaxMana,
-          mana: newMaxMana,
-          hand: [...newState.player.hand, ...playerDraw.drawn],
-          deck: playerDraw.remaining,
-          board: newState.player.board.map(m => ({ ...m, canAttack: true })),
-        },
-        ai: {
-          ...aiState,
-          maxMana: newMaxMana,
-          mana: newMaxMana,
-          hand: [...aiState.hand, ...aiDraw.drawn],
-          deck: aiDraw.remaining,
-          board: aiState.board.map(m => ({ ...m, canAttack: true })),
-        },
-        gameOver: playerHealth <= 0 || newState.ai.health <= 0,
-        winner: playerHealth <= 0 ? 'ai' : (newState.ai.health <= 0 ? 'player' : undefined),
+        aiAction: result.actionMessage,
       });
-    },
+      await new Promise(resolve => setTimeout(resolve, getAIDecisionDelay()));
 
-    resetBattle: () => {
-      set(initialState);
-    },
-  };
-});
+      // Log battlecry effects if any
+      const playedCard = newState.ai.hand[aiAction.cardIndex] || result.newState.ai.board[result.newState.ai.board.length - 1];
+      if (playedCard?.abilities?.some(a => a.trigger === 'battlecry')) {
+        currentLog.push(`${playedCard.name}'s battlecry triggers`);
+      }
+    } else {
+      currentLog.push("Enemy has no playable cards this turn");
+      set({ ...newState, combatLog: currentLog });
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    // Process AI end of turn effects
+    newState = processEndOfTurnEffects(newState.ai.board, newState, false);
+
+    // AI Attacks
+    const attackResult = executeAIAttacks(newState);
+    newState = attackResult.newState;
+    currentLog.push(...attackResult.logMessages);
+
+    if (attackResult.totalDamage > 0) {
+      set({ ...newState, combatLog: currentLog, aiAction: 'Attacking...' });
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+
+    // End turn: draw cards, increment turn, reset mana
+    const turnResult = incrementTurn(newState.turnNumber, newState.player.maxMana);
+    const playerDraw = drawCards(newState.player.deck, 1);
+    const aiDraw = drawCards(newState.ai.deck, 1);
+
+    if (playerDraw.drawn.length > 0) {
+      currentLog.push(`You draw: ${playerDraw.drawn[0].name}`);
+    }
+    currentLog.push(`Your turn begins. (${turnResult.newMaxMana} mana available)`);
+
+    // Check game over conditions
+    const gameResult = checkGameOver(newState.player.health, newState.ai.health);
+
+    // Final state update
+    set({
+      ...newState,
+      currentTurn: 'player',
+      turnNumber: turnResult.turnNumber,
+      combatLog: currentLog,
+      aiAction: undefined,
+      player: {
+        ...newState.player,
+        maxMana: turnResult.newMaxMana,
+        mana: turnResult.newMaxMana,
+        hand: addCardsToHand(newState.player.hand, playerDraw.drawn),
+        deck: playerDraw.remaining,
+        board: enableMinionAttacks(newState.player.board),
+      },
+      ai: {
+        ...newState.ai,
+        maxMana: turnResult.newMaxMana,
+        mana: turnResult.newMaxMana,
+        hand: addCardsToHand(newState.ai.hand, aiDraw.drawn),
+        deck: aiDraw.remaining,
+        board: enableMinionAttacks(newState.ai.board),
+      },
+      ...gameResult,
+    });
+  },
+
+  resetBattle: () => set(createInitialState()),
+}));
