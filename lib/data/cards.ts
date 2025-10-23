@@ -87,7 +87,7 @@ export const CARDS: Card[] = [
     attack: 4,
     health: 3,
     description: 'Elite warrior of Ulster.',
-    imageUrl: ''
+    imageUrl: '/images/cards/redbranchknight.png'
   },
 
   {
@@ -133,6 +133,7 @@ export const CARDS: Card[] = [
     attack: 5,
     health: 6,
     description: 'Battlecry: Add a Salmon of Knowledge to hand. Your spells cost (1) less.',
+    imageUrl: '/images/cards/fionnmaccumhaill.png',
     abilities: [
       {
         trigger: 'battlecry',
