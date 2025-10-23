@@ -58,58 +58,6 @@ fiverealms/
 └── package.json                  # Dependencies & scripts
 ```
 
-## New Modular Architecture
-
-### **Game Logic Separation (`lib/game/`)**
-The game logic has been extracted from the monolithic `battleStore.ts` into focused modules:
-
-#### **`gameLogic.ts`** - Pure Game Mechanics
-```typescript
-// Core game functions
-createMinion(card: Card): Minion
-enableMinionAttacks(minions: Minion[]): Minion[]
-removeDead(minions: Minion[]): Minion[]
-calculateCombatDamage(attacker: Minion, target: Minion): CombatResult
-handleMinionCombat(attacker: Minion, target: Minion): CombatResult
-handleHeroAttack(attacker: Minion, currentHealth: number): { damage: number; updatedAttacker: Minion }
-updateBoardAfterCombat(board: Minion[], minionId: string, updatedMinion: Minion | null): Minion[]
-incrementTurn(currentTurn: number, maxMana?: number): { turnNumber: number, newMaxMana: number }
-checkGameOver(playerHealth: number, aiHealth: number): { gameOver: boolean, winner?: 'player' | 'ai' }
-```
-
-#### **`deckManager.ts`** - Deck & Card Management
-```typescript
-// Deck operations
-createStartingDeck(): Card[]
-drawCards(deck: Card[], count: number)
-findPlayableCard(hand: Card[], availableMana: number)
-removeCardFromHand(hand: Card[], cardIndex: number)
-```
-
-#### **`abilitySystem.ts`** - Card Abilities Processing
-```typescript
-// Ability processing
-processAbilities(card: Card, trigger: 'battlecry' | 'deathrattle' | 'end_of_turn', state: BattleState, isPlayer: boolean)
-processDeathrattles(minions: Minion[], state: BattleState, isPlayer: boolean)
-processEndOfTurnEffects(minions: Minion[], state: BattleState, isPlayer: boolean)
-```
-
-#### **`aiPlayer.ts`** - AI Decision Making
-```typescript
-// AI behavior
-getAIAction(aiState: Player, gameState: BattleState): AIAction
-executeAIPlayCard(cardIndex: number, gameState: BattleState)
-executeAIAttacks(gameState: BattleState)
-evaluateBoardState(gameState: BattleState)
-```
-
-### **Simplified State Management**
-The `battleStore.ts` is now focused purely on state management and UI concerns:
-- **150 lines** (down from 300+)
-- **Clean separation** between UI state and game logic
-- **Better testability** through pure functions
-- **Easier maintenance** with focused responsibilities
-
 ## File Interactions
 
 ### Core Game Flow
@@ -139,34 +87,6 @@ cards.ts → Card.tsx → cardHelpers.ts → constants.ts
     ↓         ↓           ↓              ↓
 28+ cards → rendering → utilities → Celtic styling
 ```
-
-## Key Files Explained
-
-### **App Router (`app/`)**
-- **`layout.tsx`**: Root layout with Geist fonts and metadata
-- **`page.tsx`**: Landing page with game navigation
-- **`battle/page.tsx`**: Main game interface with Celtic theming and SSR hydration fixes
-- **`card-editor/page.tsx`**: Visual card creation tool
-- **`globals.css`**: Tailwind imports and CSS variables
-
-### ** Game Logic (`lib/game/`)**
-- **`gameLogic.ts`**: Pure functions for combat, health, and game state calculations
-- **`deckManager.ts`**: Deck creation, shuffling, and card drawing with SSR compatibility  
-- **`abilitySystem.ts`**: Comprehensive ability processing system for all card effects
-- **`aiPlayer.ts`**: Intelligent AI decision making with board evaluation and strategy
-
-### **State Management (`lib/store/`)**
-- **`battleStore.ts`**: Simplified Zustand store focused on UI state and async operations
-
-### **Game Data (`lib/`)**
-- **`types/game.ts`**: TypeScript definitions for cards, players, abilities
-- **`data/cards.ts`**: Expanded card database with 28+ Irish mythology cards across all elements
-- **`utils/cardHelpers.ts`**: Card utilities (ID generation, validation, filtering)
-- **`utils/constants.ts`**: Game constants, Celtic styling themes, element colors
-
-### **Components (`components/`)**
-- **`game/Card.tsx`**: Interactive card with hover details and Celtic styling
-- **`game/BattleCanvas.tsx`**: Placeholder for future PIXI.js game board
 
 ## Current Technology Stack
 
@@ -212,16 +132,6 @@ graph TD
     K[card-editor/page.tsx] --> L[localStorage]
     L --> B
 ```
-
-## Development Notes
-
-### **Current Priorities**
-1. Modular architecture refactoring
-2. AI consistency improvements  
-3. SSR hydration fixes
-4. Expanded card collection
-5. Enhanced ability system
-6. PIXI.js integration planning
 
 ## Project Flow Explained
 
@@ -301,6 +211,16 @@ import { CARDS } from '../data/cards'
 2. **`game/` modules** use these types for all function signatures
 3. **`battleStore.ts`** maintains type safety when calling game functions
 4. **Components** receive properly typed props for rendering
+
+## Development Notes
+
+### **Current Priorities**
+1. Modular architecture refactoring
+2. AI consistency improvements  
+3. SSR hydration fixes
+4. Expanded card collection
+5. Enhanced ability system
+6. PIXI.js integration planning
 
 ### Recent Improvements
 - **Combat System Refactor** - Centralized combat logic in gameLogic.ts
