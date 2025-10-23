@@ -1,4 +1,4 @@
-import { BattleState, Player, Minion } from '../types/game';
+import { BattleState, Player, Minion, Card } from '../types/game';
 import { createMinion } from './gameLogic';
 import { processAbilities } from './abilitySystem';
 import { findPlayableCard, removeCardFromHand } from './deckManager';
@@ -44,32 +44,33 @@ export function getAIAction(aiState: Player, gameState: BattleState): AIAction {
 export function executeAIPlayCard(
   cardIndex: number,
   gameState: BattleState
-): { newState: BattleState; logMessage: string; actionMessage: string } {
-  const playableCard = gameState.ai.hand[cardIndex];
+): { newState: BattleState; logMessage: string; actionMessage: string; playedCard: Card } {
+  const playedCard = { ...gameState.ai.hand[cardIndex] };
   let newState = { ...gameState };
   
   // Remove card from hand and reduce mana
   newState.ai = {
     ...newState.ai,
     hand: removeCardFromHand(newState.ai.hand, cardIndex),
-    mana: newState.ai.mana - playableCard.manaCost,
+    mana: newState.ai.mana - playedCard.manaCost,
   };
 
-  if (playableCard.type === 'minion') {
-    const minion = createMinion(playableCard);
+  if (playedCard.type === 'minion') {
+    const minion = createMinion(playedCard);
     newState.ai.board = [...newState.ai.board, minion];
   }
 
   // Process battlecry abilities
-  newState = processAbilities(playableCard, 'battlecry', newState, false);
+  newState = processAbilities(playedCard, 'battlecry', newState, false);
 
-  const actionMessage = `Playing ${playableCard.name}...`;
-  const logMessage = `Enemy plays ${playableCard.name} (${playableCard.manaCost} mana)`;
+  const actionMessage = `Playing ${playedCard.name}...`;
+  const logMessage = `Enemy plays ${playedCard.name} (${playedCard.manaCost} mana)`;
 
   return {
     newState,
     logMessage,
-    actionMessage
+    actionMessage,
+    playedCard
   };
 }
 

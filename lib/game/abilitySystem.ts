@@ -43,54 +43,124 @@ function processAbility(ability: any, state: BattleState, isPlayer: boolean): Ba
 
 function processDrawAbility(ability: any, state: BattleState, player: Player): BattleState {
   const drawn = drawCards(player.deck, ability.value || 1);
-  player.hand = [...player.hand, ...drawn.drawn];
-  player.deck = drawn.remaining;
-  return state;
+  return {
+    ...state,
+    player: player === state.player ? {
+      ...player,
+      hand: [...player.hand, ...drawn.drawn],
+      deck: drawn.remaining
+    } : state.player,
+    ai: player === state.ai ? {
+      ...player,
+      hand: [...player.hand, ...drawn.drawn],
+      deck: drawn.remaining
+    } : state.ai
+  };
 }
 
 function processHealAbility(ability: any, state: BattleState, player: Player): BattleState {
   if (ability.target === 'self') {
-    player.health = Math.min(player.health + (ability.value || 0), 30);
+    return {
+      ...state,
+      player: player === state.player ? {
+        ...player,
+        health: Math.min(player.health + (ability.value || 0), 30)
+      } : state.player,
+      ai: player === state.ai ? {
+        ...player,
+        health: Math.min(player.health + (ability.value || 0), 30)
+      } : state.ai
+    };
   }
   return state;
 }
 
 function processDamageAbility(ability: any, state: BattleState, currentPlayer: Player, opponent: Player): BattleState {
   const damageValue = ability.value || 0;
+  let newState = { ...state };
 
   if (ability.target === 'enemy') {
-    opponent.health -= damageValue;
+    // Direct damage to enemy hero
+    newState = {
+      ...newState,
+      player: opponent === state.player ? {
+        ...opponent,
+        health: opponent.health - damageValue
+      } : state.player,
+      ai: opponent === state.ai ? {
+        ...opponent,
+        health: opponent.health - damageValue
+      } : state.ai
+    };
   } else if (ability.target === 'all') {
     // Damage all enemy minions
-    opponent.board = opponent.board.map(m => ({
+    const updatedOpponentBoard = opponent.board.map(m => ({
       ...m,
       currentHealth: m.currentHealth - damageValue
     })).filter(m => m.currentHealth > 0);
 
     // Special case: cards like Balor that damage everything
     if (ability.description?.includes('everything')) {
-      opponent.health -= damageValue;
-      currentPlayer.health -= damageValue;
+      // Damage both heroes
+      const updatedCurrentPlayer = {
+        ...currentPlayer,
+        health: currentPlayer.health - damageValue,
+        board: currentPlayer.board.map(m => ({
+          ...m,
+          currentHealth: m.currentHealth - damageValue
+        })).filter(m => m.currentHealth > 0)
+      };
 
-      // Damage friendly minions too
-      currentPlayer.board = currentPlayer.board.map(m => ({
-        ...m,
-        currentHealth: m.currentHealth - damageValue
-      })).filter(m => m.currentHealth > 0);
+      const updatedOpponent = {
+        ...opponent,
+        health: opponent.health - damageValue,
+        board: updatedOpponentBoard
+      };
+
+      newState = {
+        ...newState,
+        player: currentPlayer === state.player ? updatedCurrentPlayer : updatedOpponent,
+        ai: currentPlayer === state.ai ? updatedCurrentPlayer : updatedOpponent
+      };
+    } else {
+      // Only damage enemy board
+      newState = {
+        ...newState,
+        player: opponent === state.player ? {
+          ...opponent,
+          board: updatedOpponentBoard
+        } : state.player,
+        ai: opponent === state.ai ? {
+          ...opponent,
+          board: updatedOpponentBoard
+        } : state.ai
+      };
     }
   } else if (ability.target === 'random') {
     // Damage random enemy minion
     if (opponent.board.length > 0) {
       const randomIndex = Math.floor(Math.random() * opponent.board.length);
-      opponent.board[randomIndex] = {
-        ...opponent.board[randomIndex],
-        currentHealth: opponent.board[randomIndex].currentHealth - damageValue
+      const updatedBoard = [...opponent.board];
+      updatedBoard[randomIndex] = {
+        ...updatedBoard[randomIndex],
+        currentHealth: updatedBoard[randomIndex].currentHealth - damageValue
       };
-      opponent.board = opponent.board.filter(m => m.currentHealth > 0);
+
+      newState = {
+        ...newState,
+        player: opponent === state.player ? {
+          ...opponent,
+          board: updatedBoard.filter(m => m.currentHealth > 0)
+        } : state.player,
+        ai: opponent === state.ai ? {
+          ...opponent,
+          board: updatedBoard.filter(m => m.currentHealth > 0)
+        } : state.ai
+      };
     }
   }
 
-  return state;
+  return newState;
 }
 
 function processSummonAbility(ability: any, state: BattleState, player: Player): BattleState {

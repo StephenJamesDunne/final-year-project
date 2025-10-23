@@ -67,9 +67,14 @@ The game logic has been extracted from the monolithic `battleStore.ts` into focu
 ```typescript
 // Core game functions
 createMinion(card: Card): Minion
-checkGameOver(playerHealth: number, aiHealth: number)
-calculateCombatDamage(attacker: Minion, target: Minion)
-updateMinionHealth(minion: Minion, newHealth: number)
+enableMinionAttacks(minions: Minion[]): Minion[]
+removeDead(minions: Minion[]): Minion[]
+calculateCombatDamage(attacker: Minion, target: Minion): CombatResult
+handleMinionCombat(attacker: Minion, target: Minion): CombatResult
+handleHeroAttack(attacker: Minion, currentHealth: number): { damage: number; updatedAttacker: Minion }
+updateBoardAfterCombat(board: Minion[], minionId: string, updatedMinion: Minion | null): Minion[]
+incrementTurn(currentTurn: number, maxMana?: number): { turnNumber: number, newMaxMana: number }
+checkGameOver(playerHealth: number, aiHealth: number): { gameOver: boolean, winner?: 'player' | 'ai' }
 ```
 
 #### **`deckManager.ts`** - Deck & Card Management
@@ -117,12 +122,15 @@ navigation → game board → state mgmt → pure logic → type safety
 ### New Game Logic Flow
 ```
 battleStore.ts
-    ↓ imports & delegates to
+    ↓ delegates combat & state updates to
 lib/game/
-├── gameLogic.ts      # Combat, health, win conditions
-├── deckManager.ts    # Card drawing, deck shuffling
-├── abilitySystem.ts  # Battlecries, deathrattles
-└── aiPlayer.ts       # AI decision trees
+├── gameLogic.ts      # Combat resolution, board updates, game state
+│   ├── Combat System        # handleMinionCombat, handleHeroAttack
+│   ├── Board Management    # updateBoardAfterCombat, removeDead
+│   └── State Management   # incrementTurn, checkGameOver
+├── deckManager.ts    # Deck & hand management
+├── abilitySystem.ts # Card ability processing
+└── aiPlayer.ts      # AI decision making
 ```
 
 ### Card System
@@ -186,32 +194,6 @@ cards.ts → Card.tsx → cardHelpers.ts → constants.ts
 - **PostCSS** - CSS processing
 - **Turbopack** - Fast bundling (Next.js built-in)
 
-## Game Mechanics
-
-### **Elements System**
-- **🔥 Fire** - Aggressive damage dealers (Queen Maedhbh, Red Branch Knights)
-- **💧 Water** - Card draw and wisdom (Fionn mac Cumhaill, Manannán mac Lir)
-- **🌿 Earth** - Healing and protection (The Dagda, Dian Cécht)
-- **💨 Air** - Versatility and discovery (Púca Trickster, Leprechaun's Gold)
-- **👻 Spirit** - Death and resurrection (Dullahan, Banshee Wail)
-- **⚪ Neutral** - Universal effects (Cú Chulainn, Brian Boru)
-
-### **Card Types**
-- **Minions** - Creatures with Attack/Health that fight on the battlefield
-- **Spells** - One-time magical effects with immediate impact
-
-### **Abilities**
-- **Battlecry** - Triggers when the card is played
-- **Deathrattle** - Triggers when the minion is destroyed
-- **End of Turn** - Triggers at the end of each turn
-- **Passive** - Always active effects
-
-### ** AI Behavior**
-- **Smart Card Playing** - AI evaluates mana cost and board state
-- **Attack Strategy** - Prioritizes face damage for aggressive gameplay
-- **Turn Management** - Consistent turn completion with proper state transitions
-- **Board Evaluation** - Assesses game state for tactical decisions
-
 ## Data Flow
 
 ```mermaid
@@ -231,28 +213,6 @@ graph TD
     L --> B
 ```
 
-## Architecture Benefits
-
-### **Maintainability**
-- **Single Responsibility** - Each module has one clear purpose
-- **Easy to Navigate** - Related functions grouped together
-- **Reduced Complexity** - Smaller, focused files instead of monolithic store
-
-### **Testability**
-- **Pure Functions** - Game logic can be unit tested independently
-- **No Side Effects** - Functions don't mutate external state
-- **Isolated Logic** - Test game mechanics without UI concerns
-
-### **Scalability**
-- **Easy to Extend** - Add new abilities, card types, or AI strategies
-- **Modular Imports** - Only import what you need
-- **Clear Dependencies** - No circular imports, clean dependency flow
-
-### **Performance**
-- **SSR Compatible** - Proper hydration handling for server-side rendering
-- **Efficient State** - Reduced state management overhead
-- **Optimized AI** - Intelligent decision making with configurable delays
-
 ## Development Notes
 
 ### **Current Priorities**
@@ -262,12 +222,6 @@ graph TD
 4. Expanded card collection
 5. Enhanced ability system
 6. PIXI.js integration planning
-
-### ** Recent Improvements**
-- **Fixed AI Turn Issues** - AI now consistently completes turns regardless of playable cards
-- **Resolved Hydration Errors** - Server/client state synchronization for smooth gameplay
-- **Expanded Card Database** - 28+ cards across all elements with diverse abilities
-- **Modular Refactoring** - Clean separation of concerns for better maintainability
 
 ## Project Flow Explained
 
@@ -290,10 +244,19 @@ graph TD
 ### **Game Action Flow**
 *When players take actions:*
 
-1. **Player plays card** → **`Card.tsx`** → **`battleStore.playCard()`**
-2. **`battleStore.ts`** delegates to **`gameLogic.createMinion()`** and **`abilitySystem.processAbilities()`**
-3. **Player attacks** → **`battleStore.attack()`** → **`gameLogic.calculateCombatDamage()`**
-4. **Turn ends** → **`battleStore.endTurn()`** → **`aiPlayer.getAIAction()`** and **`executeAIPlayCard()`**
+1. **Player attacks** → `battleStore.attack()`
+   - Delegates to `handleMinionCombat` or `handleHeroAttack`
+   - Updates board using `updateBoardAfterCombat`
+   - Processes any deathrattles
+2. **Combat Resolution**
+   - Calculate damage using `calculateCombatDamage`
+   - Update minion states
+   - Remove dead minions using `removeDead`
+   - Update combat log
+3. **State Updates**
+   - Board state changes
+   - Health updates
+   - Turn management
 
 ### ** AI Turn Flow**
 *When AI takes their turn:*
@@ -338,3 +301,9 @@ import { CARDS } from '../data/cards'
 2. **`game/` modules** use these types for all function signatures
 3. **`battleStore.ts`** maintains type safety when calling game functions
 4. **Components** receive properly typed props for rendering
+
+### Recent Improvements
+- **Combat System Refactor** - Centralized combat logic in gameLogic.ts
+- **Board State Management** - Improved minion death handling and combat resolution
+- **Type Safety** - Better TypeScript interfaces for combat results
+- **Code Organization** - Clearer separation between game logic and state management

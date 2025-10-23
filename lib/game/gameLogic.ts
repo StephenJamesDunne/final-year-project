@@ -1,5 +1,6 @@
 import { BattleState, Card, Minion } from '../types/game';
 
+// Minion Creation and Management
 export function createMinion(card: Card): Minion {
   return {
     ...card,
@@ -12,11 +13,21 @@ export function createMinion(card: Card): Minion {
   };
 }
 
-export function checkGameOver(playerHealth: number, aiHealth: number) {
-  return {
-    gameOver: playerHealth <= 0 || aiHealth <= 0,
-    winner: playerHealth <= 0 ? 'ai' as const : (aiHealth <= 0 ? 'player' as const : undefined)
-  };
+export function enableMinionAttacks(minions: Minion[]): Minion[] {
+  return minions.map(m => ({ ...m, canAttack: true }));
+}
+
+export function removeDead(minions: Minion[]): Minion[] {
+  return minions.filter(m => m.currentHealth > 0);
+}
+
+// Combat System Types and Core Logic
+export interface CombatResult {
+  updatedAttacker: Minion | null;
+  updatedTarget: Minion | null;
+  attackerDied: boolean;
+  targetDied: boolean;
+  damageDealt: number;
 }
 
 export function calculateCombatDamage(attacker: Minion, target: Minion) {
@@ -28,31 +39,63 @@ export function calculateCombatDamage(attacker: Minion, target: Minion) {
   };
 }
 
-export function updateMinionHealth(minion: Minion, newHealth: number): Minion {
+export function handleMinionCombat(
+  attacker: Minion,
+  target: Minion
+): CombatResult {
+  const combatResult = calculateCombatDamage(attacker, target);
+
   return {
-    ...minion,
-    currentHealth: newHealth,
-    canAttack: false // Minion has attacked this turn
+    updatedAttacker: combatResult.attackerSurvives ? {
+      ...attacker,
+      currentHealth: combatResult.attackerNewHealth,
+      canAttack: false
+    } : null,
+    updatedTarget: combatResult.targetSurvives ? {
+      ...target,
+      currentHealth: combatResult.targetNewHealth
+    } : null,
+    attackerDied: !combatResult.attackerSurvives,
+    targetDied: !combatResult.targetSurvives,
+    damageDealt: attacker.attack
   };
 }
 
-export function enableMinionAttacks(minions: Minion[]): Minion[] {
-  return minions.map(m => ({ ...m, canAttack: true }));
+export function handleHeroAttack(
+  attacker: Minion,
+  currentHealth: number
+): { damage: number; updatedAttacker: Minion } {
+  return {
+    damage: attacker.attack,
+    updatedAttacker: {
+      ...attacker,
+      canAttack: false
+    }
+  };
 }
 
-export function disableMinionAttack(minions: Minion[], minionId: string): Minion[] {
-  return minions.map(m => 
-    m.instanceId === minionId ? { ...m, canAttack: false } : m
-  );
+export function updateBoardAfterCombat(
+  board: Minion[],
+  minionId: string,
+  updatedMinion: Minion | null
+): Minion[] {
+  if (!updatedMinion) {
+    return removeDead(board.filter(m => m.instanceId !== minionId));
+  }
+  return board.map(m => m.instanceId === minionId ? updatedMinion : m);
 }
 
-export function removeDead(minions: Minion[]): Minion[] {
-  return minions.filter(m => m.currentHealth > 0);
-}
-
+// Game State Management
 export function incrementTurn(currentTurn: number, maxMana: number = 10): { turnNumber: number, newMaxMana: number } {
   return {
     turnNumber: currentTurn + 1,
     newMaxMana: Math.min(maxMana + 1, 10)
+  };
+}
+
+export function checkGameOver(playerHealth: number, aiHealth: number) {
+  return {
+    gameOver: playerHealth <= 0 || aiHealth <= 0,
+    winner: playerHealth <= 0 ? 'ai' as const : (aiHealth <= 0 ? 'player' as const : undefined)
   };
 }
