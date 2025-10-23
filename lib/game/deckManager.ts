@@ -1,3 +1,4 @@
+import { isClient } from '../utils/clientUtils';
 import { Card } from '../types/game';
 import { CARDS } from '../data/cards';
 
@@ -12,18 +13,18 @@ export function shuffleDeck<T>(array: T[]): T[] {
 
 export function createStartingDeck(): Card[] {
   // Simple: 2 copies of each card
-  const deck = CARDS.flatMap(card => [
+  const baseDeck = CARDS.flatMap(card => [
     { ...card, id: `${card.id}-copy1` },
     { ...card, id: `${card.id}-copy2` }
   ]);
 
-  // Only shuffle if we're on the client side
-  if (typeof window !== 'undefined') {
-    return shuffleDeck(deck);
-  }
+  // Only shuffle on client-side
+  return isClient ? shuffleDeck(baseDeck) : baseDeck;
+}
 
-  // Return unshuffled deck for SSR
-  return deck;
+// Add new function for client-side deck initialization
+export function initializeClientDeck(serverDeck: Card[]): Card[] {
+  return isClient ? shuffleDeck([...serverDeck]) : serverDeck;
 }
 
 export function drawCards(deck: Card[], count: number): { drawn: Card[], remaining: Card[] } {

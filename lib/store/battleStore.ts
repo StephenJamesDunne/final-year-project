@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { BattleState } from '../types/game';
+import { BattleState, Card } from '../types/game';
 
 // Import game modules
 import { createMinion, checkGameOver, updateBoardAfterCombat, handleMinionCombat, handleHeroAttack, enableMinionAttacks, incrementTurn } from '../game/gameLogic';
@@ -7,14 +7,25 @@ import { createStartingDeck, drawCards, removeCardFromHand, addCardsToHand } fro
 import { processAbilities, processDeathrattles, processEndOfTurnEffects } from '../game/abilitySystem';
 import { getAIAction, executeAIPlayCard, executeAIAttacks, getAIDecisionDelay } from '../game/aiPlayer';
 
+
 interface BattleStore extends BattleState {
   playCard: (cardIndex: number, targetId?: string) => void;
   attack: (attackerId: string, targetId: string) => void;
   endTurn: () => void;
   resetBattle: () => void;
+  initialized: boolean;
+  initializeClientState: () => void;
 }
 
-function createInitialState(): BattleState {
+// Add instanceId to cards for client-side tracking
+function initializeClientDeck(deck: Card[]): Card[] {
+  return deck.map((card, index) => ({
+    ...card,
+    instanceId: `${card.id}-deck-${index}-${Date.now()}-${Math.random()}`
+  }));
+}
+
+function createInitialState(): BattleState & { initialized: boolean } {
   const playerDeck = createStartingDeck();
   const aiDeck = createStartingDeck();
 
@@ -43,11 +54,26 @@ function createInitialState(): BattleState {
     gameOver: false,
     combatLog: ["The sound of battle roars across the Five Realms!"],
     aiAction: undefined,
+    initialized: false
   };
 }
 
 export const useBattleStore = create<BattleStore>((set, get) => ({
   ...createInitialState(),
+
+  initializeClientState: () => {
+    // Only initialize if we're on the client and haven't initialized yet
+    if (typeof window === 'undefined') return;
+
+    const state = get();
+    if (state.initialized) return;
+
+    set({
+      player: { ...state.player, deck: initializeClientDeck(state.player.deck) },
+      ai: { ...state.ai, deck: initializeClientDeck(state.ai.deck) },
+      initialized: true
+    });
+  },
 
   playCard: (cardIndex: number, targetId?: string) => {
     const state = get();
@@ -75,8 +101,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     };
 
     if (card.type === 'minion') {
-      const minion = createMinion(card);
-      newState.player.board = [...newState.player.board, minion];
+      newState.player.board = [...newState.player.board, createMinion(card)];
     }
 
     // Process abilities
@@ -105,24 +130,24 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
         attackerId,
         heroAttack.updatedAttacker
       );
-      
+
       const gameResult = checkGameOver(newState.player.health, newState.ai.health);
       Object.assign(newState, gameResult);
-      
+
     } else {
       // Attack enemy minion
       const target = newState.ai.board.find(m => m.instanceId === targetId);
       if (!target) return;
 
       const combatResult = handleMinionCombat(attacker, target);
-      
+
       // Update both boards
       newState.player.board = updateBoardAfterCombat(
         newState.player.board,
         attackerId,
         combatResult.updatedAttacker
       );
-      
+
       newState.ai.board = updateBoardAfterCombat(
         newState.ai.board,
         targetId,

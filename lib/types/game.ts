@@ -71,4 +71,5 @@ export interface BattleState {
   winner?: 'player' | 'ai';
   combatLog: string[];
   aiAction?: string; // Current AI action being shown
+  initialized?: boolean;
 }

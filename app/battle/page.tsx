@@ -1,12 +1,18 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useBattleStore } from '@/lib/store/battleStore';
 import { Card } from '@/components/game/Card';
 import { useState } from 'react';
 
 export default function BattlePage() {
   const { player, ai, currentTurn, gameOver, winner, combatLog, turnNumber, aiAction, playCard, attack, endTurn, resetBattle } = useBattleStore();
+  const { initializeClientState } = useBattleStore();
   const [selectedMinion, setSelectedMinion] = useState<string | null>(null);
+
+  useEffect(() => {
+    initializeClientState();
+  }, []);
 
   const handleMinionClick = (minionId: string) => {
     if (currentTurn !== 'player' || gameOver) return;

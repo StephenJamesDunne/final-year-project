@@ -1,6 +1,6 @@
 import { Card as CardType, Minion, Element} from '@/lib/types/game';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ELEMENT_COLORS, ELEMENT_BORDERS, ELEMENT_ICONS } from '@/lib/utils/constants';
 
@@ -172,6 +172,8 @@ export function Card({
   const cardRef = useRef<HTMLButtonElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
+  const [isHydrated, setIsHydrated] = useState(false);
+
   // State for hover to view detail
   const [showDetail, setShowDetail] = useState(false);
   const [detailPosition, setDetailPosition] = useState({ x: 0, y: 0 });
@@ -180,6 +182,15 @@ export function Card({
     () => generateUniqueCardId(card, location, cardIndex),
     [card, location, cardIndex]
   );
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  const animations = isHydrated ? {
+    whileHover: HOVER_ANIMATION(),
+    whileTap: TAP_ANIMATION(disabled)
+  } : {};
 
   // Handle hover to show card detail
   const handleMouseEnter = () => {
@@ -211,8 +222,7 @@ export function Card({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          whileHover={HOVER_ANIMATION()}
-          whileTap={TAP_ANIMATION(disabled)}
+          {...animations}
           onClick={onClick}
           disabled={disabled}
           className={getCardClassNames(card, isMinion, disabled, compact)}
