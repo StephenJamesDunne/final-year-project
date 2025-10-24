@@ -161,6 +161,7 @@ export const CARDS: Card[] = [
     rarity: 'rare',
     manaCost: 1,
     description: 'Draw 3 cards.',
+    imageUrl: '/images/cards/salmonofknowledge.png',
     abilities: [
       {
         trigger: 'battlecry',
@@ -183,7 +184,7 @@ export const CARDS: Card[] = [
     attack: 6,
     health: 8,
     description: 'Battlecry: Return all enemy minions to their owner\'s hand.',
-    imageUrl: '',
+    imageUrl: '/images/cards/manannan.png',
     abilities: [
       {
         trigger: 'battlecry',
