@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { BattleState, Card } from '../types/game';
+import { waitForHydration } from '../utils/clientUtils';
 
 // Import game modules
 import { createMinion, checkGameOver, updateBoardAfterCombat, handleMinionCombat, handleHeroAttack, enableMinionAttacks, incrementTurn } from '../game/gameLogic';
@@ -25,7 +26,7 @@ function initializeClientDeck(deck: Card[]): Card[] {
   }));
 }
 
-function createInitialState(): BattleState & { initialized: boolean } {
+function createInitialState(): BattleState & {} {
   const playerDeck = createStartingDeck();
   const aiDeck = createStartingDeck();
 
@@ -52,18 +53,18 @@ function createInitialState(): BattleState & { initialized: boolean } {
     currentTurn: 'player',
     turnNumber: 1,
     gameOver: false,
+    winner: undefined,
     combatLog: ["The sound of battle roars across the Five Realms!"],
     aiAction: undefined,
-    initialized: false
   };
 }
 
 export const useBattleStore = create<BattleStore>((set, get) => ({
   ...createInitialState(),
+  initialized: false,
 
-  initializeClientState: () => {
-    // Only initialize if we're on the client and haven't initialized yet
-    if (typeof window === 'undefined') return;
+  initializeClientState: async () => {
+    await waitForHydration();
 
     const state = get();
     if (state.initialized) return;
@@ -71,6 +72,12 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     set({
       player: { ...state.player, deck: initializeClientDeck(state.player.deck) },
       ai: { ...state.ai, deck: initializeClientDeck(state.ai.deck) },
+      currentTurn: state.currentTurn,
+      turnNumber: state.turnNumber,
+      gameOver: state.gameOver,
+      winner: state.winner,
+      combatLog: state.combatLog,
+      aiAction: state.aiAction,
       initialized: true
     });
   },
@@ -268,5 +275,5 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     });
   },
 
-  resetBattle: () => set(createInitialState()),
+  resetBattle: () => set({ ...createInitialState(), initialized: false }),
 }));

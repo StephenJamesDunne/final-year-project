@@ -18,7 +18,7 @@ export function createStartingDeck(): Card[] {
     { ...card, id: `${card.id}-copy2` }
   ]);
 
-  // Only shuffle on client-side
+  // Only shuffle on client-side to prevent hydration issues
   return isClient ? shuffleDeck(baseDeck) : baseDeck;
 }
 

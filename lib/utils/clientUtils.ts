@@ -3,10 +3,23 @@ export const isClient = typeof window !== 'undefined';
 export function waitForHydration(): Promise<void> {
   return new Promise((resolve) => {
     if (isClient) {
-      resolve();
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        setTimeout(resolve, 0);
+      });
     } else {
-      // Wait for next tick to ensure hydration
-      setTimeout(resolve, 0);
+      resolve();
     }
   });
+}
+
+export function safeLocalStorage() {
+  if (!isClient) {
+    return {
+      getItem: () => null,
+      setItem: () => { },
+      removeItem: () => { },
+    };
+  }
+  return window.localStorage;
 }
