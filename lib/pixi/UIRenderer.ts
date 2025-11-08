@@ -1,130 +1,198 @@
 import * as PIXI from 'pixi.js';
 
-/**
- * Handles rendering of UI elements (health, mana, buttons, log)
- */
 export class UIRenderer {
   /**
-   * Create health and mana display
+   * Create Hearthstone-style hero portrait with health/mana
    */
-  createHealthDisplay(
+  createHeroPortrait(
     health: number,
     mana: number,
     maxMana: number,
-    label: string,
-    isAI: boolean = false
+    name: string,
+    isAI: boolean
   ): PIXI.Container {
     const container = new PIXI.Container();
 
-    // Background
-    const bg = new PIXI.Graphics();
-    bg.roundRect(0, 0, 200, 120, 15);
-    bg.fill({ color: isAI ? 0x4a1a1a : 0x1a1a4a, alpha: 0.9 });
-    bg.stroke({ width: 3, color: isAI ? 0x8b0000 : 0x1e40af });
-    container.addChild(bg);
+    // Portrait frame (circular, like Hearthstone)
+    const portraitSize = 120;
+    const frame = new PIXI.Graphics();
+    
+    // Outer border (gold/bronze)
+    frame.circle(portraitSize / 2, portraitSize / 2, portraitSize / 2);
+    frame.fill({ color: isAI ? 0xcc3333 : 0x3366cc, alpha: 0.3 });
+    frame.stroke({ width: 4, color: 0xd4af37 });
+    
+    container.addChild(frame);
 
-    // Label
-    const labelText = new PIXI.Text({
-      text: label,
+    // Name banner (top)
+    const nameBg = new PIXI.Graphics();
+    nameBg.roundRect(10, 5, portraitSize - 20, 25, 5);
+    nameBg.fill({ color: 0x1e293b, alpha: 0.9 });
+    container.addChild(nameBg);
+
+    const nameText = new PIXI.Text({
+      text: name,
       style: {
-        fontFamily: 'Arial, sans-serif',
         fontSize: 14,
         fontWeight: 'bold',
-        fill: 0xcccccc,
-      }
+        fill: isAI ? 0xef4444 : 0x3b82f6,
+        align: 'center',
+      },
     });
-    labelText.x = 10;
-    labelText.y = 5;
-    container.addChild(labelText);
+    nameText.x = portraitSize / 2;
+    nameText.y = 12;
+    nameText.anchor.set(0.5, 0);
+    container.addChild(nameText);
 
-    // Health icon
-    const healthIcon = new PIXI.Text({
-      text: '❤️',
-      style: { fontSize: 24 }
-    });
-    healthIcon.x = 20;
-    healthIcon.y = 20;
-    container.addChild(healthIcon);
+    // Health gem (bottom center - Hearthstone style)
+    const healthGem = this.createStatGem(health, 0xef4444, '❤️');
+    healthGem.x = portraitSize / 2 - 30;
+    healthGem.y = portraitSize - 20;
+    container.addChild(healthGem);
 
-    // Health text
-    const healthText = new PIXI.Text({
-      text: health.toString(),
-      style: {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: 28,
-        fontWeight: 'bold',
-        fill: 0xffffff,
-      }
-    });
-    healthText.x = 55;
-    healthText.y = 18;
-    container.addChild(healthText);
-
-    // Mana crystals container
-    const manaContainer = new PIXI.Container();
-    manaContainer.x = 20;
-    manaContainer.y = 70;
-
-    for (let i = 0; i < maxMana; i++) {
-      const crystal = new PIXI.Graphics();
-      crystal.circle(0, 0, 8);
-      crystal.fill({ color: i < mana ? 0x60a5fa : 0x374151 });
-      crystal.stroke({ width: 2, color: 0x1e40af });
-      crystal.x = i * 20;
-      manaContainer.addChild(crystal);
-    }
-
-    container.addChild(manaContainer);
-
-    // Mana text
-    const manaText = new PIXI.Text({
-      text: `${mana}/${maxMana}`,
-      style: {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: 16,
-        fontWeight: 'bold',
-        fill: 0x60a5fa,
-      }
-    });
-    manaText.x = maxMana * 20 + 30;
-    manaText.y = 65;
-    manaContainer.addChild(manaText);
+    // Mana gem (bottom right)
+    const manaText = `${mana}/${maxMana}`;
+    const manaGem = this.createStatGem(manaText, 0x3b82f6, '💎');
+    manaGem.x = portraitSize / 2 + 10;
+    manaGem.y = portraitSize - 20;
+    container.addChild(manaGem);
 
     return container;
   }
 
   /**
-   * Create end turn button
+   * Create stat gem (health/mana display)
    */
-  createEndTurnButton(enabled: boolean): PIXI.Container {
-    const container = new PIXI.Container();
+  private createStatGem(value: number | string, color: number, icon: string): PIXI.Container {
+    const gem = new PIXI.Container();
 
-    const button = new PIXI.Graphics();
-    button.roundRect(0, 0, 160, 50, 10);
-    button.fill({ color: enabled ? 0xf59e0b : 0x374151 });
-    button.stroke({ width: 2, color: enabled ? 0xfbbf24 : 0x6b7280 });
-    container.addChild(button);
+    // Gem background
+    const bg = new PIXI.Graphics();
+    bg.circle(20, 20, 20);
+    bg.fill(color);
+    bg.stroke({ width: 3, color: 0xfbbf24 });
+    gem.addChild(bg);
 
+    // Value text
     const text = new PIXI.Text({
-      text: 'End Turn',
+      text: value.toString(),
       style: {
-        fontFamily: 'Arial, sans-serif',
         fontSize: 18,
         fontWeight: 'bold',
-        fill: enabled ? 0xffffff : 0x9ca3af,
-      }
+        fill: 0xffffff,
+        stroke: { color: 0x000000, width: 3 },
+      },
     });
+    text.x = 20;
+    text.y = 20;
     text.anchor.set(0.5);
-    text.x = 80;
-    text.y = 25;
-    container.addChild(text);
+    gem.addChild(text);
 
-    if (enabled) {
-      container.eventMode = 'static';
-      container.cursor = 'pointer';
-    }
+    return gem;
+  }
+
+  /**
+   * Create deck indicator (card back with count)
+   */
+  createDeckIndicator(cardCount: number, isAI: boolean): PIXI.Container {
+    const container = new PIXI.Container();
+
+    // Deck card back
+    const deckBg = new PIXI.Graphics();
+    deckBg.roundRect(0, 0, 80, 112, 8);
+    deckBg.fill({ color: 0x334155, alpha: 0.9 });
+    deckBg.stroke({ width: 2, color: 0x64748b });
+    container.addChild(deckBg);
+
+    // Celtic pattern placeholder
+    const pattern = new PIXI.Text({
+      text: '🍀',
+      style: { fontSize: 30 },
+    });
+    pattern.x = 40;
+    pattern.y = 40;
+    pattern.anchor.set(0.5);
+    container.addChild(pattern);
+
+    // Card count badge
+    const countBadge = new PIXI.Graphics();
+    countBadge.circle(40, 90, 18);
+    countBadge.fill(0x1e293b);
+    countBadge.stroke({ width: 2, color: 0xfbbf24 });
+    container.addChild(countBadge);
+
+    const countText = new PIXI.Text({
+      text: cardCount.toString(),
+      style: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        fill: 0xffffff,
+      },
+    });
+    countText.x = 40;
+    countText.y = 90;
+    countText.anchor.set(0.5);
+    container.addChild(countText);
 
     return container;
+  }
+
+  /**
+   * Create End Turn button
+   */
+  createEndTurnButton(enabled: boolean): PIXI.Container {
+    const button = new PIXI.Container();
+
+    // Circular button
+    const bg = new PIXI.Graphics();
+    bg.circle(60, 60, 60);
+    
+    if (enabled) {
+      bg.fill({ color: 0x10b981, alpha: 0.9 });
+      bg.stroke({ width: 4, color: 0xfbbf24 });
+      button.eventMode = 'static';
+      button.cursor = 'pointer';
+    } else {
+      bg.fill({ color: 0x64748b, alpha: 0.5 });
+      bg.stroke({ width: 4, color: 0x475569 });
+    }
+    
+    button.addChild(bg);
+
+    // Text
+    const text = new PIXI.Text({
+      text: 'END\nTURN',
+      style: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        fill: enabled ? 0xffffff : 0x94a3b8,
+        align: 'center',
+        lineHeight: 20,
+      },
+    });
+    text.x = 60;
+    text.y = 60;
+    text.anchor.set(0.5);
+    button.addChild(text);
+
+    // Hover effect
+    if (enabled) {
+      button.on('pointerover', () => {
+        bg.clear();
+        bg.circle(60, 60, 60);
+        bg.fill({ color: 0x059669, alpha: 1 });
+        bg.stroke({ width: 5, color: 0xfde047 });
+      });
+      
+      button.on('pointerout', () => {
+        bg.clear();
+        bg.circle(60, 60, 60);
+        bg.fill({ color: 0x10b981, alpha: 0.9 });
+        bg.stroke({ width: 4, color: 0xfbbf24 });
+      });
+    }
+
+    return button;
   }
 
   /**
@@ -133,87 +201,97 @@ export class UIRenderer {
   createCombatLog(combatLog: string[], aiAction?: string): PIXI.Container {
     const container = new PIXI.Container();
 
-    // Background
+    // Compact background
     const bg = new PIXI.Graphics();
-    bg.roundRect(0, 0, 350, 400, 10);
-    bg.fill({ color: 0x1a1a2a, alpha: 0.95 });
-    bg.stroke({ width: 2, color: 0xfbbf24 });
+    bg.roundRect(0, 0, 250, 300, 8);
+    bg.fill({ color: 0x1e293b, alpha: 0.7 });
+    bg.stroke({ width: 2, color: 0x475569 });
     container.addChild(bg);
 
-    // Header
-    const header = new PIXI.Graphics();
-    header.roundRect(0, 0, 350, 40, 10);
-    header.fill({ color: 0xf59e0b });
-    container.addChild(header);
-
-    const headerText = new PIXI.Text({
+    // Title
+    const title = new PIXI.Text({
       text: 'Combat Log',
       style: {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: 'bold',
-        fill: 0xffffff,
-      }
+        fill: 0xfbbf24,
+      },
     });
-    headerText.anchor.set(0.5);
-    headerText.x = 175;
-    headerText.y = 20;
-    container.addChild(headerText);
+    title.x = 125;
+    title.y = 8;
+    title.anchor.set(0.5, 0);
+    container.addChild(title);
 
-    // Log entries
-    const logContainer = new PIXI.Container();
-    logContainer.x = 10;
-    logContainer.y = 50;
-
-    const recentLogs = combatLog.slice(-12);
-    recentLogs.forEach((log, index) => {
+    // Recent logs (last 8)
+    const recentLogs = combatLog.slice(-8).reverse();
+    recentLogs.forEach((log, i) => {
       const logText = new PIXI.Text({
-        text: log,
+        text: `• ${log}`,
         style: {
-          fontFamily: 'Arial, sans-serif',
-          fontSize: 12,
-          fill: 0x10b981,
+          fontSize: 10,
+          fill: 0xe2e8f0,
           wordWrap: true,
-          wordWrapWidth: 330,
-        }
+          wordWrapWidth: 230,
+        },
       });
-      logText.y = index * 25;
-      logContainer.addChild(logText);
+      logText.x = 10;
+      logText.y = 30 + i * 32;
+      container.addChild(logText);
     });
 
-    // AI Action
-    if (aiAction) {
-      const aiText = new PIXI.Text({
-        text: `AI: ${aiAction}`,
-        style: {
-          fontFamily: 'Arial, sans-serif',
-          fontSize: 12,
-          fill: 0xfbbf24,
-          fontStyle: 'italic',
-          wordWrap: true,
-          wordWrapWidth: 330,
-        }
-      });
-      aiText.y = recentLogs.length * 25 + 10;
-      logContainer.addChild(aiText);
-    }
-
-    container.addChild(logContainer);
     return container;
   }
 
   /**
-   * Create turn indicator
+   * Create turn indicator (simple corner badge)
    */
-  createTurnIndicator(turnNumber: number, currentTurn: 'player' | 'ai'): PIXI.Text {
-    return new PIXI.Text({
-      text: `Turn ${Math.ceil(turnNumber / 2)} - ${currentTurn === 'player' ? 'Your Turn' : 'AI Turn'}`,
+  createTurnIndicator(turnNumber: number, currentTurn: 'player' | 'ai'): PIXI.Container {
+    const container = new PIXI.Container();
+
+    const bg = new PIXI.Graphics();
+    bg.roundRect(0, 0, 120, 50, 8);
+    bg.fill({ color: 0x1e293b, alpha: 0.9 });
+    bg.stroke({ width: 2, color: currentTurn === 'player' ? 0x10b981 : 0xef4444 });
+    container.addChild(bg);
+
+    const turnText = new PIXI.Text({
+      text: `Turn ${turnNumber}`,
       style: {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: 16,
-        fill: 0xfbbf24,
+        fontSize: 14,
         fontWeight: 'bold',
-      }
+        fill: 0xfbbf24,
+      },
     });
+    turnText.x = 60;
+    turnText.y = 12;
+    turnText.anchor.set(0.5, 0);
+    container.addChild(turnText);
+
+    const playerText = new PIXI.Text({
+      text: currentTurn === 'player' ? 'Your Turn' : 'AI Turn',
+      style: {
+        fontSize: 11,
+        fill: currentTurn === 'player' ? 0x10b981 : 0xef4444,
+      },
+    });
+    playerText.x = 60;
+    playerText.y = 30;
+    playerText.anchor.set(0.5, 0);
+    container.addChild(playerText);
+
+    return container;
+  }
+
+  /**
+   * Legacy method - now redirects to createHeroPortrait
+   */
+  createHealthDisplay(
+    health: number,
+    mana: number,
+    maxMana: number,
+    name: string,
+    isAI: boolean
+  ): PIXI.Container {
+    return this.createHeroPortrait(health, mana, maxMana, name, isAI);
   }
 }

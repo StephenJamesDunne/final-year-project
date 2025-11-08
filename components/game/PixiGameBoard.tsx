@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Card as CardType, Minion } from '@/lib/types/game';
 import { PixiBoard, BoardCallbacks, BoardState } from '@/lib/pixi/PixiBoard';
 
 interface PixiGameBoardProps {
-  playerBoard: Minion[];
-  aiBoard: Minion[];
-  playerHand: CardType[];
+  playerBoard: any[];
+  aiBoard: any[];
+  playerHand: any[];
   aiHandCount: number;
   onCardPlay: (cardIndex: number) => void;
   onMinionClick: (minionId: string, isPlayer: boolean) => void;

@@ -2,6 +2,11 @@
 
 import { Element, CardType, Rarity} from '@/lib/types/game';
 
+export const BOARD_DIMENSIONS = {
+  width: 1400,
+  height: 900,
+};
+
 // Element styling constants
 export const ELEMENT_COLORS = {
   fire: 'from-red-600 to-orange-600',

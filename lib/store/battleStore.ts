@@ -12,9 +12,13 @@ import { getAIAction, executeAIPlayCard, executeAIAttacks, getAIDecisionDelay } 
 interface BattleStore extends BattleState {
   playCard: (cardIndex: number, targetId?: string) => void;
   attack: (attackerId: string, targetId: string) => void;
+  attackHero: (attackerId: string) => void;
+  selectMinion: (minionId: string | null) => void;
   endTurn: () => void;
   resetBattle: () => void;
+  resetGame: () => void;
   initialized: boolean;
+  selectedMinion: string | null;
   initializeClientState: () => void;
 }
 
@@ -26,7 +30,7 @@ function initializeClientDeck(deck: Card[]): Card[] {
   }));
 }
 
-function createInitialState(): BattleState & {} {
+function createInitialState(): BattleState & { selectedMinion: string | null } {
   const playerDeck = createStartingDeck();
   const aiDeck = createStartingDeck();
 
@@ -56,6 +60,7 @@ function createInitialState(): BattleState & {} {
     winner: undefined,
     combatLog: ["The sound of battle roars across the Five Realms!"],
     aiAction: undefined,
+    selectedMinion: null,
   };
 }
 
@@ -78,8 +83,13 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       winner: state.winner,
       combatLog: state.combatLog,
       aiAction: state.aiAction,
+      selectedMinion: state.selectedMinion,
       initialized: true
     });
+  },
+
+  selectMinion: (minionId: string | null) => {
+    set({ selectedMinion: minionId });
   },
 
   playCard: (cardIndex: number, targetId?: string) => {
@@ -109,11 +119,12 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
 
     if (card.type === 'minion') {
       newState.player.board = [...newState.player.board, createMinion(card)];
+      newState.combatLog.push(`You play ${card.name}`);
     }
 
     // Process abilities
     newState = processAbilities(card, 'battlecry', newState, true);
-    set(newState);
+    set({ ...newState, selectedMinion: null });
   },
 
   attack: (attackerId: string, targetId: string) => {
@@ -128,63 +139,80 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       combatLog: [...state.combatLog]
     };
 
-    if (targetId === 'face') {
-      // Attack enemy hero
-      const heroAttack = handleHeroAttack(attacker, newState.ai.health);
-      newState.ai.health -= heroAttack.damage;
-      newState.player.board = updateBoardAfterCombat(
-        newState.player.board,
-        attackerId,
-        heroAttack.updatedAttacker
-      );
+    // Attack enemy minion
+    const target = newState.ai.board.find(m => m.instanceId === targetId);
+    if (!target) return;
 
-      const gameResult = checkGameOver(newState.player.health, newState.ai.health);
-      Object.assign(newState, gameResult);
+    const combatResult = handleMinionCombat(attacker, target);
 
-    } else {
-      // Attack enemy minion
-      const target = newState.ai.board.find(m => m.instanceId === targetId);
-      if (!target) return;
+    // Update both boards
+    newState.player.board = updateBoardAfterCombat(
+      newState.player.board,
+      attackerId,
+      combatResult.updatedAttacker
+    );
 
-      const combatResult = handleMinionCombat(attacker, target);
+    newState.ai.board = updateBoardAfterCombat(
+      newState.ai.board,
+      targetId,
+      combatResult.updatedTarget
+    );
 
-      // Update both boards
-      newState.player.board = updateBoardAfterCombat(
-        newState.player.board,
-        attackerId,
-        combatResult.updatedAttacker
-      );
-
-      newState.ai.board = updateBoardAfterCombat(
-        newState.ai.board,
-        targetId,
-        combatResult.updatedTarget
-      );
-
-      // Combat log
-      newState.combatLog.push(`${attacker.name} attacks ${target.name}`);
-      if (combatResult.attackerDied) {
-        newState.combatLog.push(`${attacker.name} dies!`);
-      }
-      if (combatResult.targetDied) {
-        newState.combatLog.push(`${target.name} dies!`);
-      }
-
-      // Process deathrattles
-      if (combatResult.targetDied && target.abilities) {
-        newState = processAbilities(target, 'deathrattle', newState, false);
-      }
-      if (combatResult.attackerDied && attacker.abilities) {
-        newState = processAbilities(attacker, 'deathrattle', newState, true);
-      }
+    // Combat log
+    newState.combatLog.push(`${attacker.name} attacks ${target.name}`);
+    if (combatResult.attackerDied) {
+      newState.combatLog.push(`${attacker.name} dies!`);
+    }
+    if (combatResult.targetDied) {
+      newState.combatLog.push(`${target.name} dies!`);
     }
 
-    set(newState);
+    // Process deathrattles
+    if (combatResult.targetDied && target.abilities) {
+      newState = processAbilities(target, 'deathrattle', newState, false);
+    }
+    if (combatResult.attackerDied && attacker.abilities) {
+      newState = processAbilities(attacker, 'deathrattle', newState, true);
+    }
+
+    set({ ...newState, selectedMinion: null });
+  },
+
+  attackHero: (attackerId: string) => {
+    const state = get();
+    if (state.currentTurn !== 'player' || state.gameOver) return;
+
+    const attacker = state.player.board.find(m => m.instanceId === attackerId);
+    if (!attacker || !attacker.canAttack) return;
+
+    let newState: BattleState = {
+      ...state,
+      combatLog: [...state.combatLog]
+    };
+
+    // Attack enemy hero
+    const heroAttack = handleHeroAttack(attacker, newState.ai.health);
+    newState.ai.health -= heroAttack.damage;
+    newState.player.board = updateBoardAfterCombat(
+      newState.player.board,
+      attackerId,
+      heroAttack.updatedAttacker
+    );
+
+    newState.combatLog.push(`${attacker.name} attacks the enemy hero for ${heroAttack.damage} damage!`);
+
+    const gameResult = checkGameOver(newState.player.health, newState.ai.health);
+    Object.assign(newState, gameResult);
+
+    set({ ...newState, selectedMinion: null });
   },
 
   endTurn: async () => {
     const state = get();
     if (state.currentTurn !== 'player' || state.gameOver) return;
+
+    // Clear selection
+    set({ selectedMinion: null });
 
     // Switch to AI turn
     set({ ...state, currentTurn: 'ai' });
@@ -212,7 +240,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       });
       await new Promise(resolve => setTimeout(resolve, getAIDecisionDelay()));
 
-      // Log battlecry effects if any
+      // Log battlecry effects, if any 
       if (result.playedCard?.abilities?.some(a => a.trigger === 'battlecry')) {
         currentLog.push(`${result.playedCard.name}'s battlecry triggers`);
       }
@@ -255,6 +283,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       turnNumber: turnResult.turnNumber,
       combatLog: currentLog,
       aiAction: undefined,
+      selectedMinion: null,
       player: {
         ...newState.player,
         maxMana: turnResult.newMaxMana,
@@ -276,4 +305,8 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   },
 
   resetBattle: () => set({ ...createInitialState(), initialized: false }),
+
+  resetGame: () => {
+    set({ ...createInitialState(), initialized: false });
+  },
 }));
