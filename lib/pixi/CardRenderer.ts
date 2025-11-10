@@ -5,155 +5,474 @@ export class CardRenderer {
   private textures: Map<string, PIXI.Texture> = new Map();
   private readonly CARD_WIDTH = 100;
   private readonly CARD_HEIGHT = 140;
+  private loadingPromises: Map<string, Promise<PIXI.Texture>> = new Map();
 
   /**
-   * Load card assets (placeholder for now)
+   * Load card assets - now with actual image loading
    */
   async loadAssets(): Promise<void> {
-    // For now, I'm using procedural graphics
-    // Later, load actual card images here
-    console.log('CardRenderer: Assets loaded (using procedural graphics)');
+    console.log('CardRenderer: Loading assets...');
+    
+    // Pre-load common textures
+    try {
+      // Card frame textures (you can create these as SVG or PNG assets)
+      await this.loadTexture('card-frame', '/images/default/card-frame.png');
+      await this.loadTexture('card-back', '/images/default/card-back.png');
+      
+      console.log('CardRenderer: Assets loaded successfully');
+    } catch (error) {
+      console.warn('CardRenderer: Some assets failed to load, using fallbacks', error);
+    }
   }
 
   /**
-   * Create a card from CardType (for hand)
+   * Load a texture with caching
+   */
+  private async loadTexture(key: string, path: string): Promise<PIXI.Texture> {
+    if (this.textures.has(key)) {
+      return this.textures.get(key)!;
+    }
+
+    // Check if we're already loading this texture
+    if (this.loadingPromises.has(key)) {
+      return this.loadingPromises.get(key)!;
+    }
+
+    const loadPromise = PIXI.Assets.load(path).then((texture: PIXI.Texture) => {
+      this.textures.set(key, texture);
+      this.loadingPromises.delete(key);
+      return texture;
+    }).catch((error) => {
+      console.warn(`Failed to load texture: ${path}`, error);
+      this.loadingPromises.delete(key);
+      // Return a placeholder texture
+      const graphics = new PIXI.Graphics();
+      graphics.rect(0, 0, 100, 100);
+      graphics.fill(0x333333);
+      const texture = PIXI.RenderTexture.create({ width: 100, height: 100 });
+      return texture;
+    });
+
+    this.loadingPromises.set(key, loadPromise);
+    return loadPromise;
+  }
+
+  /**
+   * Create a card with actual artwork
    */
   createCard(card: CardType): PIXI.Container {
     const container = new PIXI.Container();
 
-    // Card background
-    const bg = new PIXI.Graphics();
-    bg.roundRect(0, 0, this.CARD_WIDTH, this.CARD_HEIGHT, 8);
-    
-    // Color based on cost
-    const color = this.getCardColor(card.manaCost);
-    bg.fill({ color, alpha: 0.9 });
-    bg.stroke({ width: 2, color: 0xfbbf24 });
-    
+    // Card base with shadow
+    const shadow = this.createCardShadow();
+    container.addChild(shadow);
+
+    // Card background with gradient
+    const bg = this.createCardBackground(card);
     container.addChild(bg);
 
-    // Card name
-    const nameText = new PIXI.Text({
-      text: card.name,
-      style: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        fill: 0xffffff,
-        wordWrap: true,
-        wordWrapWidth: this.CARD_WIDTH - 10,
-        align: 'center',
-      },
-    });
-    nameText.x = this.CARD_WIDTH / 2;
-    nameText.y = 10;
-    nameText.anchor.set(0.5, 0);
-    container.addChild(nameText);
+    // Card art (load asynchronously)
+    if (card.imageUrl) {
+      this.loadCardArt(card.imageUrl, container);
+    } else {
+      // Fallback placeholder
+      const placeholder = this.createArtPlaceholder(card);
+      container.addChild(placeholder);
+    }
 
-    // Mana cost badge
-    const manaCost = this.createManaBadge(card.manaCost);
-    manaCost.x = 5;
-    manaCost.y = 5;
+    // Decorative frame overlay
+    const frame = this.createCardFrame(card);
+    container.addChild(frame);
+
+    // Card name banner
+    const nameBanner = this.createNameBanner(card.name);
+    nameBanner.y = 5;
+    container.addChild(nameBanner);
+
+    // Mana cost crystal
+    const manaCost = this.createManaCrystal(card.manaCost);
+    manaCost.x = -8;
+    manaCost.y = -8;
     container.addChild(manaCost);
 
-    // Stats (if minion)
+    // Stats for minions
     if (card.type === 'minion' && card.attack !== undefined && card.health !== undefined) {
-      const stats = this.createStats(card.attack, card.health);
-      stats.y = this.CARD_HEIGHT - 25;
-      container.addChild(stats);
+      const attackBadge = this.createAttackBadge(card.attack);
+      attackBadge.x = -8;
+      attackBadge.y = this.CARD_HEIGHT - 20;
+      container.addChild(attackBadge);
+
+      const healthBadge = this.createHealthBadge(card.health);
+      healthBadge.x = this.CARD_WIDTH - 20;
+      healthBadge.y = this.CARD_HEIGHT - 20;
+      container.addChild(healthBadge);
     }
+
+    // Element gem
+    const elementGem = this.createElementGem(card.element);
+    elementGem.x = this.CARD_WIDTH - 20;
+    elementGem.y = -8;
+    container.addChild(elementGem);
 
     return container;
   }
 
   /**
-   * Create a minion card (for board)
+   * Create minion card for board
    */
   createMinionCard(minion: Minion, isPlayer: boolean): PIXI.Container {
     const container = new PIXI.Container();
 
-    // Card background
-    const bg = new PIXI.Graphics();
-    bg.roundRect(0, 0, this.CARD_WIDTH, this.CARD_HEIGHT, 8);
-    
-    // Different color for player/AI
-    const color = isPlayer ? 0x10b981 : 0xef4444;
-    bg.fill({ color, alpha: 0.8 });
-    bg.stroke({ width: 2, color: 0xfbbf24 });
-    
+    // Card shadow
+    const shadow = this.createCardShadow();
+    container.addChild(shadow);
+
+    // Background with team color tint
+    const bg = this.createCardBackground(minion, isPlayer);
     container.addChild(bg);
 
-    // Minion name
-    const nameText = new PIXI.Text({
-      text: minion.name,
-      style: {
-        fontSize: 11,
-        fontWeight: 'bold',
-        fill: 0xffffff,
-        wordWrap: true,
-        wordWrapWidth: this.CARD_WIDTH - 10,
-        align: 'center',
-      },
-    });
-    nameText.x = this.CARD_WIDTH / 2;
-    nameText.y = 10;
-    nameText.anchor.set(0.5, 0);
-    container.addChild(nameText);
+    // Card art
+    if (minion.imageUrl) {
+      this.loadCardArt(minion.imageUrl, container);
+    } else {
+      const placeholder = this.createArtPlaceholder(minion);
+      container.addChild(placeholder);
+    }
 
-    // Stats
-    const stats = this.createStats(minion.attack, minion.currentHealth, minion.health);
-    stats.y = this.CARD_HEIGHT - 25;
-    container.addChild(stats);
+    // Frame overlay
+    const frame = this.createCardFrame(minion);
+    container.addChild(frame);
 
-    // "Can Attack" indicator
+    // Name banner
+    const nameBanner = this.createNameBanner(minion.name, true);
+    nameBanner.y = 5;
+    container.addChild(nameBanner);
+
+    // Attack badge
+    const attackBadge = this.createAttackBadge(minion.attack);
+    attackBadge.x = -8;
+    attackBadge.y = this.CARD_HEIGHT - 20;
+    container.addChild(attackBadge);
+
+    // Health badge (shows current/max health)
+    const isDamaged = minion.currentHealth < minion.health;
+    const healthBadge = this.createHealthBadge(minion.currentHealth, isDamaged);
+    healthBadge.x = this.CARD_WIDTH - 20;
+    healthBadge.y = this.CARD_HEIGHT - 20;
+    container.addChild(healthBadge);
+
+    // "Can Attack" glow effect
     if (minion.canAttack) {
-      const indicator = new PIXI.Graphics();
-      indicator.circle(this.CARD_WIDTH / 2, this.CARD_HEIGHT / 2, 8);
-      indicator.fill({ color: 0x22c55e, alpha: 0.7 });
-      container.addChild(indicator);
+      const glow = this.createAttackGlow();
+      container.addChildAt(glow, 0); // Behind everything
     }
 
     return container;
   }
 
   /**
-   * Create card back (for AI hand)
+   * Create card back for AI hand
    */
   createCardBack(): PIXI.Container {
     const container = new PIXI.Container();
 
+    // Shadow
+    const shadow = this.createCardShadow();
+    container.addChild(shadow);
+
+    // Background
     const bg = new PIXI.Graphics();
     bg.roundRect(0, 0, this.CARD_WIDTH, this.CARD_HEIGHT, 8);
-    bg.fill({ color: 0x334155, alpha: 0.9 });
-    bg.stroke({ width: 2, color: 0x64748b });
-
+    bg.fill({ color: 0x2d1810, alpha: 0.95 });
+    bg.stroke({ width: 3, color: 0x8b4513 });
     container.addChild(bg);
 
-    // Celtic pattern placeholder for cardbacks TODO: Replace with actual texture
-    const pattern = new PIXI.Text({
-      text: '🍀',
-      style: { fontSize: 40 },
-    });
-    pattern.x = this.CARD_WIDTH / 2;
-    pattern.y = this.CARD_HEIGHT / 2;
-    pattern.anchor.set(0.5);
-    container.addChild(pattern);
+    // Try to load card back texture
+    const cardBackKey = 'card-back';
+    if (this.textures.has(cardBackKey)) {
+      const sprite = new PIXI.Sprite(this.textures.get(cardBackKey));
+      sprite.width = this.CARD_WIDTH - 10;
+      sprite.height = this.CARD_HEIGHT - 10;
+      sprite.x = 5;
+      sprite.y = 5;
+      container.addChild(sprite);
+    } else {
+      // Celtic knot pattern as fallback
+      const pattern = this.createCelticPattern();
+      pattern.x = this.CARD_WIDTH / 2;
+      pattern.y = this.CARD_HEIGHT / 2;
+      container.addChild(pattern);
+    }
 
     return container;
   }
 
-  /**
-   * Create attack glow effect
-   */
+  // ============================================
+  // HELPER METHODS FOR CARD ELEMENTS
+  // ============================================
+
+  private createCardShadow(): PIXI.Graphics {
+    const shadow = new PIXI.Graphics();
+    shadow.roundRect(2, 2, this.CARD_WIDTH, this.CARD_HEIGHT, 8);
+    shadow.fill({ color: 0x000000, alpha: 0.4 });
+    return shadow;
+  }
+
+  private createCardBackground(card: CardType | Minion, isPlayer?: boolean): PIXI.Graphics {
+    const bg = new PIXI.Graphics();
+    bg.roundRect(0, 0, this.CARD_WIDTH, this.CARD_HEIGHT, 8);
+    
+    // Different colors based on element or team
+    let color = this.getElementColor(card.element);
+    
+    if ('instanceId' in card && isPlayer !== undefined) {
+      // Add team tint for board minions
+      color = isPlayer ? 0x1a472a : 0x7f1d1d;
+    }
+    
+    bg.fill({ color, alpha: 0.9 });
+    bg.stroke({ width: 3, color: this.getElementBorderColor(card.element) });
+    
+    return bg;
+  }
+
+  private async loadCardArt(imageUrl: string, container: PIXI.Container): Promise<void> {
+    try {
+      const texture = await this.loadTexture(imageUrl, imageUrl);
+      
+      // Create art container with clipping
+      const artContainer = new PIXI.Container();
+      artContainer.x = 8;
+      artContainer.y = 30;
+      
+      const mask = new PIXI.Graphics();
+      mask.roundRect(0, 0, this.CARD_WIDTH - 16, 70, 4);
+      mask.fill(0xffffff);
+      
+      const sprite = new PIXI.Sprite(texture);
+      sprite.width = this.CARD_WIDTH - 16;
+      sprite.height = 70;
+      
+      artContainer.addChild(mask);
+      artContainer.addChild(sprite);
+      sprite.mask = mask;
+      
+      // Insert after background but before frame
+      container.addChildAt(artContainer, 2);
+    } catch (error) {
+      console.warn('Failed to load card art:', imageUrl);
+    }
+  }
+
+  private createArtPlaceholder(card: CardType | Minion): PIXI.Container {
+    const placeholder = new PIXI.Container();
+    placeholder.x = 8;
+    placeholder.y = 30;
+    
+    const bg = new PIXI.Graphics();
+    bg.roundRect(0, 0, this.CARD_WIDTH - 16, 70, 4);
+    bg.fill({ color: 0x1e293b, alpha: 0.8 });
+    placeholder.addChild(bg);
+    
+    // Element icon as placeholder
+    const icon = new PIXI.Text({
+      text: this.getElementEmoji(card.element),
+      style: { fontSize: 40 }
+    });
+    icon.x = (this.CARD_WIDTH - 16) / 2;
+    icon.y = 35;
+    icon.anchor.set(0.5);
+    placeholder.addChild(icon);
+    
+    return placeholder;
+  }
+
+  private createCardFrame(card: CardType | Minion): PIXI.Graphics {
+    const frame = new PIXI.Graphics();
+    
+    // Ornate border
+    frame.roundRect(0, 0, this.CARD_WIDTH, this.CARD_HEIGHT, 8);
+    frame.stroke({ width: 2, color: 0xd4af37, alpha: 0.6 });
+    
+    // Inner decorative lines
+    frame.roundRect(4, 4, this.CARD_WIDTH - 8, this.CARD_HEIGHT - 8, 6);
+    frame.stroke({ width: 1, color: 0xfbbf24, alpha: 0.3 });
+    
+    return frame;
+  }
+
+  private createNameBanner(name: string, compact: boolean = false): PIXI.Container {
+    const banner = new PIXI.Container();
+    
+    const bg = new PIXI.Graphics();
+    bg.roundRect(5, 0, this.CARD_WIDTH - 10, 20, 4);
+    bg.fill({ color: 0x1e293b, alpha: 0.95 });
+    bg.stroke({ width: 1, color: 0xfbbf24 });
+    banner.addChild(bg);
+    
+    const text = new PIXI.Text({
+      text: name,
+      style: {
+        fontSize: compact ? 9 : 10,
+        fontWeight: 'bold',
+        fill: 0xffffff,
+        stroke: { color: 0x000000, width: 2 },
+        align: 'center',
+      }
+    });
+    text.x = this.CARD_WIDTH / 2;
+    text.y = 10;
+    text.anchor.set(0.5);
+    banner.addChild(text);
+    
+    return banner;
+  }
+
+  private createManaCrystal(cost: number): PIXI.Container {
+    const crystal = new PIXI.Container();
+    
+    // Hexagonal shape
+    const hexagon = new PIXI.Graphics();
+    const size = 16;
+    const points = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i;
+      points.push(
+        size + size * Math.cos(angle),
+        size + size * Math.sin(angle)
+      );
+    }
+    hexagon.poly(points);
+    hexagon.fill({ color: 0x3b82f6, alpha: 0.95 });
+    hexagon.stroke({ width: 2, color: 0x1e40af });
+    crystal.addChild(hexagon);
+    
+    const text = new PIXI.Text({
+      text: cost.toString(),
+      style: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        fill: 0xffffff,
+        stroke: { color: 0x000000, width: 3 },
+      }
+    });
+    text.x = size;
+    text.y = size;
+    text.anchor.set(0.5);
+    crystal.addChild(text);
+    
+    return crystal;
+  }
+
+  private createAttackBadge(attack: number): PIXI.Container {
+    const badge = new PIXI.Container();
+    
+    // Sword-shaped background
+    const bg = new PIXI.Graphics();
+    bg.circle(16, 16, 16);
+    bg.fill({ color: 0xdc2626, alpha: 0.95 });
+    bg.stroke({ width: 2, color: 0xfbbf24 });
+    badge.addChild(bg);
+    
+    const text = new PIXI.Text({
+      text: attack.toString(),
+      style: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        fill: 0xffffff,
+        stroke: { color: 0x000000, width: 3 },
+      }
+    });
+    text.x = 16;
+    text.y = 16;
+    text.anchor.set(0.5);
+    badge.addChild(text);
+    
+    return badge;
+  }
+
+  private createHealthBadge(health: number, isDamaged: boolean = false): PIXI.Container {
+    const badge = new PIXI.Container();
+    
+    const bg = new PIXI.Graphics();
+    bg.circle(16, 16, 16);
+    bg.fill({ 
+      color: isDamaged ? 0xdc2626 : 0x16a34a, 
+      alpha: 0.95 
+    });
+    bg.stroke({ width: 2, color: 0xfbbf24 });
+    badge.addChild(bg);
+    
+    const text = new PIXI.Text({
+      text: health.toString(),
+      style: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        fill: 0xffffff,
+        stroke: { color: 0x000000, width: 3 },
+      }
+    });
+    text.x = 16;
+    text.y = 16;
+    text.anchor.set(0.5);
+    badge.addChild(text);
+    
+    return badge;
+  }
+
+  private createElementGem(element: string): PIXI.Container {
+    const gem = new PIXI.Container();
+    
+    const bg = new PIXI.Graphics();
+    bg.circle(16, 16, 16);
+    bg.fill({ color: this.getElementColor(element), alpha: 0.95 });
+    bg.stroke({ width: 2, color: 0xfbbf24 });
+    gem.addChild(bg);
+    
+    const icon = new PIXI.Text({
+      text: this.getElementEmoji(element),
+      style: { fontSize: 16 }
+    });
+    icon.x = 16;
+    icon.y = 16;
+    icon.anchor.set(0.5);
+    gem.addChild(icon);
+    
+    return gem;
+  }
+
+  private createCelticPattern(): PIXI.Graphics {
+    const pattern = new PIXI.Graphics();
+    
+    // Simple Celtic knot representation
+    pattern.circle(0, 0, 30);
+    pattern.stroke({ width: 3, color: 0x8b4513 });
+    
+    pattern.circle(0, 0, 20);
+    pattern.stroke({ width: 2, color: 0xd4af37 });
+    
+    // Interwoven effect
+    for (let i = 0; i < 4; i++) {
+      const angle = (Math.PI / 2) * i;
+      const x = 15 * Math.cos(angle);
+      const y = 15 * Math.sin(angle);
+      pattern.circle(x, y, 8);
+      pattern.fill({ color: 0x2d1810, alpha: 0.8 });
+      pattern.stroke({ width: 2, color: 0xd4af37 });
+    }
+    
+    return pattern;
+  }
+
   createAttackGlow(): PIXI.Graphics {
     const glow = new PIXI.Graphics();
     glow.roundRect(-5, -5, this.CARD_WIDTH + 10, this.CARD_HEIGHT + 10, 10);
     glow.fill({ color: 0x22c55e, alpha: 0.3 });
+    
+    // Pulsing effect can be added via animation
     return glow;
   }
 
-  /**
-   * Create target glow effect
-   */
   createTargetGlow(): PIXI.Graphics {
     const glow = new PIXI.Graphics();
     glow.roundRect(-5, -5, this.CARD_WIDTH + 10, this.CARD_HEIGHT + 10, 10);
@@ -161,78 +480,40 @@ export class CardRenderer {
     return glow;
   }
 
-  // Helper methods
-
-  private createManaBadge(cost: number): PIXI.Container {
-    const badge = new PIXI.Container();
-
-    const circle = new PIXI.Graphics();
-    circle.circle(12, 12, 12);
-    circle.fill(0x3b82f6);
-    circle.stroke({ width: 2, color: 0x1e40af });
-    badge.addChild(circle);
-
-    const text = new PIXI.Text({
-      text: cost.toString(),
-      style: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        fill: 0xffffff,
-      },
-    });
-    text.x = 12;
-    text.y = 12;
-    text.anchor.set(0.5);
-    badge.addChild(text);
-
-    return badge;
+  // Utility methods
+  private getElementColor(element: string): number {
+    const colors: Record<string, number> = {
+      fire: 0xdc2626,
+      water: 0x2563eb,
+      earth: 0x16a34a,
+      air: 0x9333ea,
+      spirit: 0x4f46e5,
+      neutral: 0x6b7280,
+    };
+    return colors[element] || 0x6b7280;
   }
 
-  private createStats(attack: number, currentHealth: number, maxHealth?: number): PIXI.Container {
-    const stats = new PIXI.Container();
-
-    // Attack (left)
-    const attackBg = new PIXI.Graphics();
-    attackBg.circle(20, 12, 12);
-    attackBg.fill(0xef4444);
-    attackBg.stroke({ width: 2, color: 0x991b1b });
-    stats.addChild(attackBg);
-
-    const attackText = new PIXI.Text({
-      text: attack.toString(),
-      style: { fontSize: 14, fontWeight: 'bold', fill: 0xffffff },
-    });
-    attackText.x = 20;
-    attackText.y = 12;
-    attackText.anchor.set(0.5);
-    stats.addChild(attackText);
-
-    // Health (right)
-    const healthBg = new PIXI.Graphics();
-    healthBg.circle(80, 12, 12);
-    
-    // Red if damaged, green if full health
-    const healthColor = maxHealth && currentHealth < maxHealth ? 0xf59e0b : 0x10b981;
-    healthBg.fill(healthColor);
-    healthBg.stroke({ width: 2, color: 0x065f46 });
-    stats.addChild(healthBg);
-
-    const healthText = new PIXI.Text({
-      text: currentHealth.toString(),
-      style: { fontSize: 14, fontWeight: 'bold', fill: 0xffffff },
-    });
-    healthText.x = 80;
-    healthText.y = 12;
-    healthText.anchor.set(0.5);
-    stats.addChild(healthText);
-
-    return stats;
+  private getElementBorderColor(element: string): number {
+    const colors: Record<string, number> = {
+      fire: 0xfbbf24,
+      water: 0x60a5fa,
+      earth: 0x4ade80,
+      air: 0xc084fc,
+      spirit: 0x818cf8,
+      neutral: 0x9ca3af,
+    };
+    return colors[element] || 0x9ca3af;
   }
 
-  private getCardColor(cost: number): number {
-    if (cost <= 2) return 0x6366f1; // Indigo
-    if (cost <= 4) return 0x8b5cf6; // Violet
-    if (cost <= 6) return 0xa855f7; // Purple
-    return 0xc026d3; // Fuchsia
+  private getElementEmoji(element: string): string {
+    const emojis: Record<string, string> = {
+      fire: '🔥',
+      water: '💧',
+      earth: '🌿',
+      air: '💨',
+      spirit: '👻',
+      neutral: '⚪',
+    };
+    return emojis[element] || '⚪';
   }
 }
