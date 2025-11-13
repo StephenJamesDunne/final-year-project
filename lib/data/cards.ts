@@ -204,7 +204,7 @@ export const CARDS: Card[] = [
     attack: 2,
     health: 1,
     description: 'Fast and fragile - strike first.',
-    imageUrl: ''
+    imageUrl: '/images/cards/fiannascout.png'
   },
   {
     id: 'f_common_2',

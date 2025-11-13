@@ -12,13 +12,13 @@ export class CardRenderer {
    */
   async loadAssets(): Promise<void> {
     console.log('CardRenderer: Loading assets...');
-    
+
     // Pre-load common textures
     try {
       // Card frame textures (you can create these as SVG or PNG assets)
       await this.loadTexture('card-frame', '/images/default/card-frame.png');
       await this.loadTexture('card-back', '/images/default/card-back.png');
-      
+
       console.log('CardRenderer: Assets loaded successfully');
     } catch (error) {
       console.warn('CardRenderer: Some assets failed to load, using fallbacks', error);
@@ -60,7 +60,7 @@ export class CardRenderer {
   /**
    * Create a card with actual artwork
    */
-  createCard(card: CardType): PIXI.Container {
+  createCard(card: CardType, showName: boolean = true): PIXI.Container {
     const container = new PIXI.Container();
 
     // Card base with shadow
@@ -73,10 +73,10 @@ export class CardRenderer {
 
     // Card art (load asynchronously)
     if (card.imageUrl) {
-      this.loadCardArt(card.imageUrl, container);
+      this.loadCardArt(card.imageUrl, container, showName ? card.name : undefined);
     } else {
       // Fallback placeholder
-      const placeholder = this.createArtPlaceholder(card);
+      const placeholder = this.createArtPlaceholder(card, showName ? card.name : undefined);
       container.addChild(placeholder);
     }
 
@@ -84,10 +84,12 @@ export class CardRenderer {
     const frame = this.createCardFrame(card);
     container.addChild(frame);
 
-    // Card name banner
-    const nameBanner = this.createNameBanner(card.name);
-    nameBanner.y = 5;
-    container.addChild(nameBanner);
+    // Card name banner - only show if requested
+    if (showName) {
+      const nameBanner = this.createNameBanner(card.name);
+      nameBanner.y = this.CARD_HEIGHT - 25; // Position at bottom
+      container.addChild(nameBanner);
+    }
 
     // Mana cost crystal
     const manaCost = this.createManaCrystal(card.manaCost);
@@ -108,12 +110,6 @@ export class CardRenderer {
       container.addChild(healthBadge);
     }
 
-    // Element gem
-    const elementGem = this.createElementGem(card.element);
-    elementGem.x = this.CARD_WIDTH - 20;
-    elementGem.y = -8;
-    container.addChild(elementGem);
-
     return container;
   }
 
@@ -127,11 +123,11 @@ export class CardRenderer {
     const shadow = this.createCardShadow();
     container.addChild(shadow);
 
-    // Background with team color tint
+    /* // Background with team color tint
     const bg = this.createCardBackground(minion, isPlayer);
-    container.addChild(bg);
+    container.addChild(bg); */
 
-    // Card art
+    // Card art - no name on board cards
     if (minion.imageUrl) {
       this.loadCardArt(minion.imageUrl, container);
     } else {
@@ -142,11 +138,6 @@ export class CardRenderer {
     // Frame overlay
     const frame = this.createCardFrame(minion);
     container.addChild(frame);
-
-    // Name banner
-    const nameBanner = this.createNameBanner(minion.name, true);
-    nameBanner.y = 5;
-    container.addChild(nameBanner);
 
     // Attack badge
     const attackBadge = this.createAttackBadge(minion.attack);
@@ -162,10 +153,10 @@ export class CardRenderer {
     container.addChild(healthBadge);
 
     // "Can Attack" glow effect
-    if (minion.canAttack) {
+    /* if (minion.canAttack) {
       const glow = this.createAttackGlow();
       container.addChildAt(glow, 0); // Behind everything
-    }
+    } */
 
     return container;
   }
@@ -221,42 +212,42 @@ export class CardRenderer {
   private createCardBackground(card: CardType | Minion, isPlayer?: boolean): PIXI.Graphics {
     const bg = new PIXI.Graphics();
     bg.roundRect(0, 0, this.CARD_WIDTH, this.CARD_HEIGHT, 8);
-    
+
     // Different colors based on element or team
     let color = this.getElementColor(card.element);
-    
+
     if ('instanceId' in card && isPlayer !== undefined) {
       // Add team tint for board minions
       color = isPlayer ? 0x1a472a : 0x7f1d1d;
     }
-    
+
     bg.fill({ color, alpha: 0.9 });
     bg.stroke({ width: 3, color: this.getElementBorderColor(card.element) });
-    
+
     return bg;
   }
 
   private async loadCardArt(imageUrl: string, container: PIXI.Container): Promise<void> {
     try {
       const texture = await this.loadTexture(imageUrl, imageUrl);
-      
+
       // Create art container with clipping
       const artContainer = new PIXI.Container();
       artContainer.x = 8;
       artContainer.y = 30;
-      
+
       const mask = new PIXI.Graphics();
       mask.roundRect(0, 0, this.CARD_WIDTH - 16, 70, 4);
       mask.fill(0xffffff);
-      
+
       const sprite = new PIXI.Sprite(texture);
       sprite.width = this.CARD_WIDTH - 16;
       sprite.height = 70;
-      
+
       artContainer.addChild(mask);
       artContainer.addChild(sprite);
       sprite.mask = mask;
-      
+
       // Insert after background but before frame
       container.addChildAt(artContainer, 2);
     } catch (error) {
@@ -268,12 +259,12 @@ export class CardRenderer {
     const placeholder = new PIXI.Container();
     placeholder.x = 8;
     placeholder.y = 30;
-    
+
     const bg = new PIXI.Graphics();
     bg.roundRect(0, 0, this.CARD_WIDTH - 16, 70, 4);
     bg.fill({ color: 0x1e293b, alpha: 0.8 });
     placeholder.addChild(bg);
-    
+
     // Element icon as placeholder
     const icon = new PIXI.Text({
       text: this.getElementEmoji(card.element),
@@ -283,33 +274,33 @@ export class CardRenderer {
     icon.y = 35;
     icon.anchor.set(0.5);
     placeholder.addChild(icon);
-    
+
     return placeholder;
   }
 
   private createCardFrame(card: CardType | Minion): PIXI.Graphics {
     const frame = new PIXI.Graphics();
-    
+
     // Ornate border
     frame.roundRect(0, 0, this.CARD_WIDTH, this.CARD_HEIGHT, 8);
     frame.stroke({ width: 2, color: 0xd4af37, alpha: 0.6 });
-    
+
     // Inner decorative lines
     frame.roundRect(4, 4, this.CARD_WIDTH - 8, this.CARD_HEIGHT - 8, 6);
     frame.stroke({ width: 1, color: 0xfbbf24, alpha: 0.3 });
-    
+
     return frame;
   }
 
   private createNameBanner(name: string, compact: boolean = false): PIXI.Container {
     const banner = new PIXI.Container();
-    
+
     const bg = new PIXI.Graphics();
     bg.roundRect(5, 0, this.CARD_WIDTH - 10, 20, 4);
     bg.fill({ color: 0x1e293b, alpha: 0.95 });
     bg.stroke({ width: 1, color: 0xfbbf24 });
     banner.addChild(bg);
-    
+
     const text = new PIXI.Text({
       text: name,
       style: {
@@ -324,13 +315,13 @@ export class CardRenderer {
     text.y = 10;
     text.anchor.set(0.5);
     banner.addChild(text);
-    
+
     return banner;
   }
 
   private createManaCrystal(cost: number): PIXI.Container {
     const crystal = new PIXI.Container();
-    
+
     // Hexagonal shape
     const hexagon = new PIXI.Graphics();
     const size = 16;
@@ -346,7 +337,7 @@ export class CardRenderer {
     hexagon.fill({ color: 0x3b82f6, alpha: 0.95 });
     hexagon.stroke({ width: 2, color: 0x1e40af });
     crystal.addChild(hexagon);
-    
+
     const text = new PIXI.Text({
       text: cost.toString(),
       style: {
@@ -360,20 +351,20 @@ export class CardRenderer {
     text.y = size;
     text.anchor.set(0.5);
     crystal.addChild(text);
-    
+
     return crystal;
   }
 
   private createAttackBadge(attack: number): PIXI.Container {
     const badge = new PIXI.Container();
-    
+
     // Sword-shaped background
     const bg = new PIXI.Graphics();
     bg.circle(16, 16, 16);
     bg.fill({ color: 0xdc2626, alpha: 0.95 });
     bg.stroke({ width: 2, color: 0xfbbf24 });
     badge.addChild(bg);
-    
+
     const text = new PIXI.Text({
       text: attack.toString(),
       style: {
@@ -387,22 +378,22 @@ export class CardRenderer {
     text.y = 16;
     text.anchor.set(0.5);
     badge.addChild(text);
-    
+
     return badge;
   }
 
   private createHealthBadge(health: number, isDamaged: boolean = false): PIXI.Container {
     const badge = new PIXI.Container();
-    
+
     const bg = new PIXI.Graphics();
     bg.circle(16, 16, 16);
-    bg.fill({ 
-      color: isDamaged ? 0xdc2626 : 0x16a34a, 
-      alpha: 0.95 
+    bg.fill({
+      color: isDamaged ? 0xdc2626 : 0x16a34a,
+      alpha: 0.95
     });
     bg.stroke({ width: 2, color: 0xfbbf24 });
     badge.addChild(bg);
-    
+
     const text = new PIXI.Text({
       text: health.toString(),
       style: {
@@ -416,19 +407,19 @@ export class CardRenderer {
     text.y = 16;
     text.anchor.set(0.5);
     badge.addChild(text);
-    
+
     return badge;
   }
 
   private createElementGem(element: string): PIXI.Container {
     const gem = new PIXI.Container();
-    
+
     const bg = new PIXI.Graphics();
     bg.circle(16, 16, 16);
     bg.fill({ color: this.getElementColor(element), alpha: 0.95 });
     bg.stroke({ width: 2, color: 0xfbbf24 });
     gem.addChild(bg);
-    
+
     const icon = new PIXI.Text({
       text: this.getElementEmoji(element),
       style: { fontSize: 16 }
@@ -437,20 +428,20 @@ export class CardRenderer {
     icon.y = 16;
     icon.anchor.set(0.5);
     gem.addChild(icon);
-    
+
     return gem;
   }
 
   private createCelticPattern(): PIXI.Graphics {
     const pattern = new PIXI.Graphics();
-    
+
     // Simple Celtic knot representation
     pattern.circle(0, 0, 30);
     pattern.stroke({ width: 3, color: 0x8b4513 });
-    
+
     pattern.circle(0, 0, 20);
     pattern.stroke({ width: 2, color: 0xd4af37 });
-    
+
     // Interwoven effect
     for (let i = 0; i < 4; i++) {
       const angle = (Math.PI / 2) * i;
@@ -460,7 +451,7 @@ export class CardRenderer {
       pattern.fill({ color: 0x2d1810, alpha: 0.8 });
       pattern.stroke({ width: 2, color: 0xd4af37 });
     }
-    
+
     return pattern;
   }
 
@@ -468,7 +459,7 @@ export class CardRenderer {
     const glow = new PIXI.Graphics();
     glow.roundRect(-5, -5, this.CARD_WIDTH + 10, this.CARD_HEIGHT + 10, 10);
     glow.fill({ color: 0x22c55e, alpha: 0.3 });
-    
+
     // Pulsing effect can be added via animation
     return glow;
   }

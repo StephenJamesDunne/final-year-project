@@ -33,8 +33,10 @@ export function DeckSelector({ selectedDeck, onSelectDeck, label }: DeckSelector
                 ${isSelected ? 'opacity-100' : 'opacity-80 hover:opacity-100'}
               `}
             >
-              <div className="text-6xl mb-2 text-center">
-                {ELEMENT_ICONS[info.element]}
+              <div className="flex justify-center mb-4">
+                <div className="text-6xl">
+                  {ELEMENT_ICONS[info.element]}
+                </div>
               </div>
               <h3 className="text-lg font-bold text-white text-center mb-2">
                 {info.name}
