@@ -1,26 +1,66 @@
 import { create } from 'zustand';
-import { BattleState, Card } from '../types/game';
+import { BattleState, Player, Card, DeckArchetype } from '../types/game';
 import { waitForHydration } from '../utils/clientUtils';
 
 // Import game modules
-import { createMinion, checkGameOver, updateBoardAfterCombat, handleMinionCombat, handleHeroAttack, enableMinionAttacks, incrementTurn } from '../game/gameLogic';
-import { createStartingDeck, drawCards, removeCardFromHand, addCardsToHand } from '../game/deckManager';
-import { processAbilities, processDeathrattles, processEndOfTurnEffects } from '../game/abilitySystem';
-import { getAIAction, executeAIPlayCard, executeAIAttacks, getAIDecisionDelay } from '../game/aiPlayer';
+import { 
+  createMinion, 
+  checkGameOver, 
+  updateBoardAfterCombat, 
+  handleMinionCombat, 
+  handleHeroAttack, 
+  enableMinionAttacks, 
+  incrementTurn 
+} from '../game/gameLogic';
+import { 
+  createArchetypeDeck, 
+  drawCards, 
+  removeCardFromHand, 
+  addCardsToHand 
+} from '../game/deckManager';
+import { 
+  processAbilities, 
+  processDeathrattles, 
+  processEndOfTurnEffects 
+} from '../game/abilitySystem';
+import { 
+  getAIAction, 
+  executeAIPlayCard, 
+  executeAIAttacks, 
+  getAIDecisionDelay 
+} from '../game/aiPlayer';
 
+// ═══════════════════════════════════════════════════════════════
+// STORE INTERFACE
+// ═══════════════════════════════════════════════════════════════
 
 interface BattleStore extends BattleState {
+  // State properties
+  initialized: boolean;
+  selectedMinion: string | null;
+  playerDeckArchetype: DeckArchetype | null;
+  aiDeckArchetype: DeckArchetype | null;
+
+  // Deck selection actions
+  selectPlayerDeck: (archetype: DeckArchetype) => void;
+  selectAIDeck: (archetype: DeckArchetype) => void;
+  startBattle: () => void;
+
+  // Battle actions
   playCard: (cardIndex: number, targetId?: string) => void;
   attack: (attackerId: string, targetId: string) => void;
   attackHero: (attackerId: string) => void;
   selectMinion: (minionId: string | null) => void;
   endTurn: () => void;
+
+  // Game management actions
   resetBattle: () => void;
   resetGame: () => void;
-  initialized: boolean;
-  selectedMinion: string | null;
-  initializeClientState: () => void;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
 
 // Add instanceId to cards for client-side tracking
 function initializeClientDeck(deck: Card[]): Card[] {
@@ -30,67 +70,125 @@ function initializeClientDeck(deck: Card[]): Card[] {
   }));
 }
 
-function createInitialState(): BattleState & { selectedMinion: string | null } {
-  const playerDeck = createStartingDeck();
-  const aiDeck = createStartingDeck();
-
-  const playerDraw = drawCards(playerDeck, 4);
-  const aiDraw = drawCards(aiDeck, 4);
-
+// Create initial empty state (before deck selection)
+function createInitialState(): BattleState & {
+  selectedMinion: string | null;
+  playerDeckArchetype: DeckArchetype | null;
+  aiDeckArchetype: DeckArchetype | null;
+  initialized: boolean;
+} {
   return {
     player: {
       health: 30,
       mana: 1,
       maxMana: 1,
-      hand: playerDraw.drawn,
+      hand: [],
       board: [],
-      deck: playerDraw.remaining,
+      deck: [],
     },
     ai: {
       health: 30,
       mana: 1,
       maxMana: 1,
-      hand: aiDraw.drawn,
+      hand: [],
       board: [],
-      deck: aiDraw.remaining,
+      deck: [],
     },
     currentTurn: 'player',
     turnNumber: 1,
     gameOver: false,
     winner: undefined,
-    combatLog: ["The sound of battle roars across the Five Realms!"],
+    combatLog: [],
     aiAction: undefined,
     selectedMinion: null,
+    playerDeckArchetype: null,
+    aiDeckArchetype: null,
+    initialized: false,
   };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// STORE IMPLEMENTATION
+// ═══════════════════════════════════════════════════════════════
+
 export const useBattleStore = create<BattleStore>((set, get) => ({
   ...createInitialState(),
-  initialized: false,
 
-  initializeClientState: async () => {
-    await waitForHydration();
+  // ─────────────────────────────────────────────────────────────
+  // DECK SELECTION ACTIONS
+  // ─────────────────────────────────────────────────────────────
 
+  selectPlayerDeck: (archetype: DeckArchetype) => {
+    set({ playerDeckArchetype: archetype });
+  },
+
+  selectAIDeck: (archetype: DeckArchetype) => {
+    set({ aiDeckArchetype: archetype });
+  },
+
+  startBattle: () => {
     const state = get();
-    if (state.initialized) return;
+    if (!state.playerDeckArchetype || !state.aiDeckArchetype) {
+      console.warn('Cannot start battle: Both decks must be selected');
+      return;
+    }
 
+    // Create decks based on selected archetypes
+    const playerDeck = createArchetypeDeck(state.playerDeckArchetype);
+    const aiDeck = createArchetypeDeck(state.aiDeckArchetype);
+
+    // Initialize client-side card tracking
+    const clientPlayerDeck = initializeClientDeck(playerDeck);
+    const clientAIDeck = initializeClientDeck(aiDeck);
+
+    // Draw starting hands (4 cards each)
+    const playerDraw = drawCards(clientPlayerDeck, 4);
+    const aiDraw = drawCards(clientAIDeck, 4);
+
+    // Set up battle state
     set({
-      player: { ...state.player, deck: initializeClientDeck(state.player.deck) },
-      ai: { ...state.ai, deck: initializeClientDeck(state.ai.deck) },
-      currentTurn: state.currentTurn,
-      turnNumber: state.turnNumber,
-      gameOver: state.gameOver,
-      winner: state.winner,
-      combatLog: state.combatLog,
-      aiAction: state.aiAction,
-      selectedMinion: state.selectedMinion,
-      initialized: true
+      player: {
+        health: 30,
+        mana: 1,
+        maxMana: 1,
+        hand: playerDraw.drawn,
+        board: [],
+        deck: playerDraw.remaining,
+      },
+      ai: {
+        health: 30,
+        mana: 1,
+        maxMana: 1,
+        hand: aiDraw.drawn,
+        board: [],
+        deck: aiDraw.remaining,
+      },
+      currentTurn: 'player',
+      turnNumber: 1,
+      gameOver: false,
+      winner: undefined,
+      combatLog: [
+        "The battle begins!",
+        `You chose: ${state.playerDeckArchetype.toUpperCase()}`,
+        `Enemy chose: ${state.aiDeckArchetype.toUpperCase()}`,
+      ],
+      aiAction: undefined,
+      selectedMinion: null,
+      initialized: true,
     });
   },
+
+  // ─────────────────────────────────────────────────────────────
+  // SELECTION ACTIONS
+  // ─────────────────────────────────────────────────────────────
 
   selectMinion: (minionId: string | null) => {
     set({ selectedMinion: minionId });
   },
+
+  // ─────────────────────────────────────────────────────────────
+  // CARD PLAY ACTION
+  // ─────────────────────────────────────────────────────────────
 
   playCard: (cardIndex: number, targetId?: string) => {
     const state = get();
@@ -120,12 +218,19 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     if (card.type === 'minion') {
       newState.player.board = [...newState.player.board, createMinion(card)];
       newState.combatLog.push(`You play ${card.name}`);
+    } else if (card.type === 'spell') {
+      newState.combatLog.push(`You cast ${card.name}`);
     }
 
-    // Process abilities
+    // Process abilities (battlecry for minions, immediate effects for spells)
     newState = processAbilities(card, 'battlecry', newState, true);
+    
     set({ ...newState, selectedMinion: null });
   },
+
+  // ─────────────────────────────────────────────────────────────
+  // ATTACK ACTIONS
+  // ─────────────────────────────────────────────────────────────
 
   attack: (attackerId: string, targetId: string) => {
     const state = get();
@@ -134,15 +239,15 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     const attacker = state.player.board.find(m => m.instanceId === attackerId);
     if (!attacker || !attacker.canAttack) return;
 
+    const target = state.ai.board.find(m => m.instanceId === targetId);
+    if (!target) return;
+
     let newState: BattleState = {
       ...state,
       combatLog: [...state.combatLog]
     };
 
-    // Attack enemy minion
-    const target = newState.ai.board.find(m => m.instanceId === targetId);
-    if (!target) return;
-
+    // Execute minion combat
     const combatResult = handleMinionCombat(attacker, target);
 
     // Update both boards
@@ -159,7 +264,10 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     );
 
     // Combat log
-    newState.combatLog.push(`${attacker.name} attacks ${target.name}`);
+    newState.combatLog.push(
+      `${attacker.name} (${attacker.attack}/${attacker.health}) attacks ${target.name} (${target.attack}/${target.health})`
+    );
+    
     if (combatResult.attackerDied) {
       newState.combatLog.push(`${attacker.name} dies!`);
     }
@@ -199,13 +307,20 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       heroAttack.updatedAttacker
     );
 
-    newState.combatLog.push(`${attacker.name} attacks the enemy hero for ${heroAttack.damage} damage!`);
+    newState.combatLog.push(
+      `${attacker.name} attacks the enemy hero for ${heroAttack.damage} damage!`
+    );
 
+    // Check for game over
     const gameResult = checkGameOver(newState.player.health, newState.ai.health);
     Object.assign(newState, gameResult);
 
     set({ ...newState, selectedMinion: null });
   },
+
+  // ─────────────────────────────────────────────────────────────
+  // END TURN ACTION (Player → AI → Player)
+  // ─────────────────────────────────────────────────────────────
 
   endTurn: async () => {
     const state = get();
@@ -220,11 +335,13 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
 
     let newState: BattleState = { ...state, currentTurn: 'ai' };
     let currentLog = [...newState.combatLog];
+    currentLog.push("Enemy Turn");
 
     // Process end of turn effects for player minions
     newState = processEndOfTurnEffects(newState.player.board, newState, true);
 
-    // AI Decision Making
+    // ═══ AI DECISION MAKING ═══
+
     const aiAction = getAIAction(newState.ai, newState);
 
     if (aiAction.type === 'play_card' && aiAction.cardIndex !== undefined) {
@@ -253,30 +370,44 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     // Process AI end of turn effects
     newState = processEndOfTurnEffects(newState.ai.board, newState, false);
 
-    // AI Attacks
+    // ═══ AI ATTACKS ═══
+
     const attackResult = executeAIAttacks(newState);
     newState = attackResult.newState;
     currentLog.push(...attackResult.logMessages);
 
     if (attackResult.totalDamage > 0) {
-      set({ ...newState, combatLog: currentLog, aiAction: 'Attacking...' });
+      set({ 
+        ...newState, 
+        combatLog: currentLog, 
+        aiAction: 'Attacking...' 
+      });
       await new Promise(resolve => setTimeout(resolve, 800));
     }
 
-    // End turn: draw cards, increment turn, reset mana
+    // ═══ END TURN CLEANUP ═══
+
+    // Increment turn counter
     const turnResult = incrementTurn(newState.turnNumber, newState.player.maxMana);
+    
+    // Draw cards for both players
     const playerDraw = drawCards(newState.player.deck, 1);
     const aiDraw = drawCards(newState.ai.deck, 1);
 
     if (playerDraw.drawn.length > 0) {
       currentLog.push(`You draw: ${playerDraw.drawn[0].name}`);
+    } else {
+      currentLog.push(`You draw nothing (deck empty)`);
     }
-    currentLog.push(`Your turn begins. (${turnResult.newMaxMana} mana available)`);
-
+    currentLog.push(`Turn ${turnResult.turnNumber} begins (${turnResult.newMaxMana} mana)`);
     // Check game over conditions
     const gameResult = checkGameOver(newState.player.health, newState.ai.health);
 
-    // Final state update
+    if (gameResult.gameOver) {
+      currentLog.push(gameResult.winner === 'player' ? 'VICTORY!' : 'DEFEAT!');
+    }
+
+    // Final state update - back to player's turn
     set({
       ...newState,
       currentTurn: 'player',
@@ -304,9 +435,26 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     });
   },
 
-  resetBattle: () => set({ ...createInitialState(), initialized: false }),
+  // ─────────────────────────────────────────────────────────────
+  // GAME RESET ACTIONS
+  // ─────────────────────────────────────────────────────────────
+
+  resetBattle: () => {
+    const state = get();
+    const playerDeck = state.playerDeckArchetype;
+    const aiDeck = state.aiDeckArchetype;
+
+    // Reset to initial state but keep deck selections
+    set({ 
+      ...createInitialState(), 
+      playerDeckArchetype: playerDeck,
+      aiDeckArchetype: aiDeck,
+      initialized: false 
+    });
+  },
 
   resetGame: () => {
+    // Complete reset - back to deck selection
     set({ ...createInitialState(), initialized: false });
   },
 }));

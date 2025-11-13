@@ -1,6 +1,6 @@
 import { isClient } from '../utils/clientUtils';
-import { Card } from '../types/game';
-import { CARDS } from '../data/cards';
+import { Card, DeckArchetype, DeckInfo } from '../types/game';
+import { CARDS, getArchetypeCards } from '../data/cards';
 
 export function shuffleDeck<T>(array: T[]): T[] {
   const shuffledDeck = [...array];
@@ -11,14 +11,20 @@ export function shuffleDeck<T>(array: T[]): T[] {
   return shuffledDeck;
 }
 
-export function createStartingDeck(): Card[] {
-  // Simple: 2 copies of each card
-  const baseDeck = CARDS.flatMap(card => [
-    { ...card, id: `${card.id}-copy1` },
-    { ...card, id: `${card.id}-copy2` }
+export function createArchetypeDeck(archetype: DeckArchetype): Card[] {
+  const archetypeCards = getArchetypeCards(
+    archetype === 'fire' ? 'aggressive' :
+    archetype === 'water' ? 'tempo' :
+    archetype === 'earth' ? 'defensive' :
+    'balanced'
+  );
+
+  // Create 2 copies of each card (standard deck building)
+  const baseDeck = archetypeCards.flatMap((card, index) => [
+    { ...card, id: `${card.id}-copy1-${index}` },
+    { ...card, id: `${card.id}-copy2-${index}` }
   ]);
 
-  // Only shuffle on client-side to prevent hydration issues
   return isClient ? shuffleDeck(baseDeck) : baseDeck;
 }
 
@@ -48,3 +54,34 @@ export function removeCardFromHand(hand: Card[], cardIndex: number): Card[] {
 export function addCardsToHand(hand: Card[], newCards: Card[]): Card[] {
   return [...hand, ...newCards];
 }
+
+export const DECK_INFO: Record<DeckArchetype, DeckInfo> = {
+  fire: {
+    archetype: 'fire',
+    name: 'Fire - Connacht Warriors',
+    description: 'Aggressive deck focused on direct damage and fast minions',
+    element: 'fire',
+    strategy: 'Deal damage quickly with burn spells and aggressive minions'
+  },
+  water: {
+    archetype: 'water',
+    name: 'Water - Leinster Wisdom',
+    description: 'Tempo deck with card draw and efficient minions',
+    element: 'water',
+    strategy: 'Control the board with smart trades and card advantage'
+  },
+  earth: {
+    archetype: 'earth',
+    name: 'Earth - Munster Endurance',
+    description: 'Defensive deck with healing and high-health minions',
+    element: 'earth',
+    strategy: 'Survive early aggression and win with late-game power'
+  },
+  air: {
+    archetype: 'air',
+    name: 'Air - Ulster Cunning',
+    description: 'Balanced deck with flexible answers and disruption',
+    element: 'air',
+    strategy: 'Adapt to your opponent with versatile spells and minions'
+  }
+};

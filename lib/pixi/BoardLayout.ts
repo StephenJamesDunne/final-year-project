@@ -116,10 +116,10 @@ export class BoardLayout {
     zone.addChild(pattern);
 
     // Zone label
-    const label = this.createZoneLabel(type);
+    /* const label = this.createZoneLabel(type);
     label.x = marginLeft + 10;
     label.y = 5;
-    zone.addChild(label);
+    zone.addChild(label); */
 
     return zone;
   }
@@ -146,7 +146,7 @@ export class BoardLayout {
     return pattern;
   }
 
-  private createZoneLabel(type: 'player' | 'enemy'): PIXI.Text {
+  /* private createZoneLabel(type: 'player' | 'enemy'): PIXI.Text {
     const label = new PIXI.Text({
       text: type === 'enemy' ? ' Enemy Territory' : ' Your Territory',
       style: {
@@ -158,7 +158,7 @@ export class BoardLayout {
     });
     label.alpha = 0.7;
     return label;
-  }
+  } */
 
   private drawBattleLine(bg: PIXI.Graphics): void {
     const boardWidth = this.width * 0.65;

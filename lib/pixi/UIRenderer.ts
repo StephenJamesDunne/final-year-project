@@ -201,10 +201,14 @@ export class UIRenderer {
   createCombatLog(combatLog: string[], aiAction?: string): PIXI.Container {
     const container = new PIXI.Container();
 
+    // Expanded background for better readability
+    const width = 320;
+    const height = 450;
+
     // Compact background
     const bg = new PIXI.Graphics();
-    bg.roundRect(0, 0, 250, 300, 8);
-    bg.fill({ color: 0x1e293b, alpha: 0.7 });
+    bg.roundRect(0, 0, width, height, 8);
+    bg.fill({ color: 0x1e293b, alpha: 0.85 });
     bg.stroke({ width: 2, color: 0x475569 });
     container.addChild(bg);
 
@@ -212,32 +216,71 @@ export class UIRenderer {
     const title = new PIXI.Text({
       text: 'Combat Log',
       style: {
-        fontSize: 14,
+        fontSize: 22,
         fontWeight: 'bold',
         fill: 0xfbbf24,
       },
     });
-    title.x = 125;
-    title.y = 8;
+    title.x = width / 2;
+    title.y = 12;
     title.anchor.set(0.5, 0);
     container.addChild(title);
 
-    // Recent logs (last 8)
-    const recentLogs = combatLog.slice(-8).reverse();
+    // Divider line under title
+    const divider = new PIXI.Graphics();
+    divider.moveTo(10, 45);
+    divider.lineTo(width - 10, 45);
+    divider.stroke({ width: 1, color: 0x475569 });
+    container.addChild(divider);
+
+    // Recent logs (last 12 entries for longer log)
+    const recentLogs = combatLog.slice(-12).reverse();
+    const startY = 55;
+    const lineHeight = 32;
+    const padding = 15;
+
     recentLogs.forEach((log, i) => {
+      // Clean bullet point style
       const logText = new PIXI.Text({
-        text: `• ${log}`,
+        text: log.startsWith('═') || log.startsWith('─') ? log : `• ${log}`,
         style: {
-          fontSize: 10,
-          fill: 0xe2e8f0,
+          fontSize: 14,
+          fill: log.includes('VICTORY') || log.includes('DEFEAT') ? 0xfbbf24 : 0xe2e8f0,
+          fontWeight: log.startsWith('═') || log.startsWith('─') ? 'bold' : 'normal',
           wordWrap: true,
-          wordWrapWidth: 230,
+          wordWrapWidth: width - (padding * 2),
+          lineHeight: 18,
         },
       });
-      logText.x = 10;
-      logText.y = 30 + i * 32;
+      logText.x = padding;
+      logText.y = startY + (i * lineHeight);
       container.addChild(logText);
     });
+
+    // AI Action indicator at bottom (if present)
+    if (aiAction) {
+      const aiActionBg = new PIXI.Graphics();
+      aiActionBg.roundRect(10, height - 45, width - 20, 35, 5);
+      aiActionBg.fill({ color: 0xef4444, alpha: 0.3 });
+      aiActionBg.stroke({ width: 2, color: 0xef4444 });
+      container.addChild(aiActionBg);
+
+      const aiActionText = new PIXI.Text({
+        text: aiAction,
+        style: {
+          fontSize: 13,
+          fontWeight: 'bold',
+          fill: 0xfecaca,
+          align: 'center',
+          wordWrap: true,
+          wordWrapWidth: width - 30,
+        },
+      });
+      aiActionText.x = width / 2;
+      aiActionText.y = height - 27;
+      aiActionText.anchor.set(0.5);
+      container.addChild(aiActionText);
+    }
 
     return container;
   }
@@ -248,34 +291,41 @@ export class UIRenderer {
   createTurnIndicator(turnNumber: number, currentTurn: 'player' | 'ai'): PIXI.Container {
     const container = new PIXI.Container();
 
+    const width = 140;
+    const height = 60;
+
     const bg = new PIXI.Graphics();
-    bg.roundRect(0, 0, 120, 50, 8);
+    bg.roundRect(0, 0, width, height, 10);
     bg.fill({ color: 0x1e293b, alpha: 0.9 });
-    bg.stroke({ width: 2, color: currentTurn === 'player' ? 0x10b981 : 0xef4444 });
+    bg.stroke({ 
+      width: 3, 
+      color: currentTurn === 'player' ? 0x10b981 : 0xef4444 
+    });
     container.addChild(bg);
 
     const turnText = new PIXI.Text({
       text: `Turn ${turnNumber}`,
       style: {
-        fontSize: 14,
+        fontSize: 18,
         fontWeight: 'bold',
         fill: 0xfbbf24,
       },
     });
-    turnText.x = 60;
-    turnText.y = 12;
+    turnText.x = width / 2;
+    turnText.y = 10;
     turnText.anchor.set(0.5, 0);
     container.addChild(turnText);
 
     const playerText = new PIXI.Text({
       text: currentTurn === 'player' ? 'Your Turn' : 'AI Turn',
       style: {
-        fontSize: 11,
+        fontSize: 14,
+        fontWeight: 'bold',
         fill: currentTurn === 'player' ? 0x10b981 : 0xef4444,
       },
     });
-    playerText.x = 60;
-    playerText.y = 30;
+    playerText.x = width / 2;
+    playerText.y = 35;
     playerText.anchor.set(0.5, 0);
     container.addChild(playerText);
 

@@ -2,6 +2,7 @@
 
 import { useBattleStore } from '@/lib/store/battleStore';
 import { PixiGameBoard } from '@/components/game/PixiGameBoard';
+import { DeckSelector } from '@/components/DeckSelector';
 
 export default function BattlePage() {
   const {
@@ -17,6 +18,12 @@ export default function BattlePage() {
     combatLog,
     turnNumber,
     aiAction,
+    playerDeckArchetype,
+    aiDeckArchetype,
+    initialized,
+    selectPlayerDeck,
+    selectAIDeck,
+    startBattle,
 
     // Actions
     playCard,
@@ -26,6 +33,43 @@ export default function BattlePage() {
     endTurn,
     resetGame,
   } = useBattleStore();
+
+  // Show deck selection screen if battle not started
+  if (!initialized) {
+    const canStartBattle = playerDeckArchetype !== null && aiDeckArchetype !== null;
+
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-8 space-y-8">
+        <h1 className="text-4xl font-bold text-white mb-8">Choose Your Decks</h1>
+
+        <DeckSelector
+          selectedDeck={playerDeckArchetype}
+          onSelectDeck={selectPlayerDeck}
+          label="Your Deck"
+        />
+
+        <DeckSelector
+          selectedDeck={aiDeckArchetype}
+          onSelectDeck={selectAIDeck}
+          label="Opponent's Deck"
+        />
+
+        <button
+          onClick={startBattle}
+          disabled={!canStartBattle}
+          className={`
+            px-8 py-4 rounded-lg text-2xl font-bold transition-all
+            ${canStartBattle
+              ? 'bg-blue-600 hover:bg-blue-500 text-white cursor-pointer'
+              : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+            }
+          `}
+        >
+          {canStartBattle ? 'Start Battle!' : 'Select Both Decks'}
+        </button>
+      </div>
+    );
+  }
 
   const handleCardPlay = (cardIndex: number) => {
     playCard(cardIndex);

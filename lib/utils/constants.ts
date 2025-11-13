@@ -17,13 +17,13 @@ export const ELEMENT_COLORS = {
   neutral: 'from-gray-600 to-slate-600',
 } as const;
 
-export const ELEMENT_BORDERS = {
-  fire: 'border-red-500',
-  water: 'border-blue-500',
-  earth: 'border-green-500',
-  air: 'border-purple-500',
-  spirit: 'border-indigo-500',
-  neutral: 'border-gray-500',
+export const ELEMENT_BORDERS: Record<Element, string> = {
+  fire: 'border-red-600',
+  water: 'border-blue-600',
+  earth: 'border-green-600',
+  air: 'border-purple-600',
+  spirit: 'border-indigo-600',
+  neutral: 'border-gray-600',
 } as const;
 
 export const ELEMENT_ICONS: Record<Element, string> = {

@@ -186,3 +186,28 @@ graph TD
 | **Linting** | ESLint | 9.x | Code quality |
 
 ---
+
+## Immediate Todo (This Week)
+- [ ] Add error boundary to PixiGameBoard
+- [ ] Refactor battle/page.tsx to use selective subscriptions
+
+## Short-term Todo (This Month)
+- [ ] Create `lib/store/slices/` directory
+- [ ] Split battleStore into 4 slices
+- [ ] Move cards.ts → cards.json
+- [ ] Add try-catch to all store actions
+
+## Medium-term Todo (Next Semester)
+- [ ] Implement SpritePool class
+- [ ] Create memoized Zustand selectors
+- [ ] Split PixiBoard into InputManager, LayoutManager, UIManager
+- [ ] Add keyboard shortcuts
+- [ ] Create `tests/game/gameLogic.test.ts`
+
+## Long-term Todo (When adding multiplayer)
+- [ ] Set up database for cards
+- [ ] Add WebSocket support
+- [ ] Implement deck builder UI
+- [ ] Mobile touch controls (if time allows)
+
+---

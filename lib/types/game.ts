@@ -73,3 +73,13 @@ export interface BattleState {
   aiAction?: string; // Current AI action being shown
   initialized?: boolean;
 }
+
+export type DeckArchetype = 'fire' | 'water' | 'earth' | 'air';
+
+export interface DeckInfo {
+  archetype: DeckArchetype;
+  name: string;
+  description: string;
+  element: Element;
+  strategy: string;
+}
