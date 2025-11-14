@@ -8,7 +8,7 @@ export class CardRenderer {
   private loadingPromises: Map<string, Promise<PIXI.Texture>> = new Map();
 
   /**
-   * Load card assets - now with actual image loading
+   * Load card assets
    */
   async loadAssets(): Promise<void> {
     console.log('CardRenderer: Loading assets...');
@@ -25,15 +25,13 @@ export class CardRenderer {
     }
   }
 
-  /**
-   * Load a texture with caching
-   */
+  // This needs to return a Promise to handle async loading, otherwise, it might return before loading the texture
   private async loadTexture(key: string, path: string): Promise<PIXI.Texture> {
     if (this.textures.has(key)) {
       return this.textures.get(key)!;
     }
 
-    // Check if we're already loading this texture
+    // Check if we're already loading this texture. If so, return the existing promise
     if (this.loadingPromises.has(key)) {
       return this.loadingPromises.get(key)!;
     }
@@ -70,15 +68,6 @@ export class CardRenderer {
     // Card background with gradient
     const bg = this.createCardBackground(card);
     container.addChild(bg);
-
-    // Card art (load asynchronously)
-    if (card.imageUrl) {
-      this.loadCardArt(card.imageUrl, container, showName ? card.name : undefined);
-    } else {
-      // Fallback placeholder
-      const placeholder = this.createArtPlaceholder(card, showName ? card.name : undefined);
-      container.addChild(placeholder);
-    }
 
     // Decorative frame overlay
     const frame = this.createCardFrame(card);
@@ -123,10 +112,6 @@ export class CardRenderer {
     const shadow = this.createCardShadow();
     container.addChild(shadow);
 
-    /* // Background with team color tint
-    const bg = this.createCardBackground(minion, isPlayer);
-    container.addChild(bg); */
-
     // Card art - no name on board cards
     if (minion.imageUrl) {
       this.loadCardArt(minion.imageUrl, container);
@@ -151,12 +136,6 @@ export class CardRenderer {
     healthBadge.x = this.CARD_WIDTH - 20;
     healthBadge.y = this.CARD_HEIGHT - 20;
     container.addChild(healthBadge);
-
-    // "Can Attack" glow effect
-    /* if (minion.canAttack) {
-      const glow = this.createAttackGlow();
-      container.addChildAt(glow, 0); // Behind everything
-    } */
 
     return container;
   }
@@ -265,9 +244,7 @@ export class CardRenderer {
     bg.fill({ color: 0x1e293b, alpha: 0.8 });
     placeholder.addChild(bg);
 
-    // Element icon as placeholder
     const icon = new PIXI.Text({
-      text: this.getElementEmoji(card.element),
       style: { fontSize: 40 }
     });
     icon.x = (this.CARD_WIDTH - 16) / 2;
@@ -411,27 +388,6 @@ export class CardRenderer {
     return badge;
   }
 
-  private createElementGem(element: string): PIXI.Container {
-    const gem = new PIXI.Container();
-
-    const bg = new PIXI.Graphics();
-    bg.circle(16, 16, 16);
-    bg.fill({ color: this.getElementColor(element), alpha: 0.95 });
-    bg.stroke({ width: 2, color: 0xfbbf24 });
-    gem.addChild(bg);
-
-    const icon = new PIXI.Text({
-      text: this.getElementEmoji(element),
-      style: { fontSize: 16 }
-    });
-    icon.x = 16;
-    icon.y = 16;
-    icon.anchor.set(0.5);
-    gem.addChild(icon);
-
-    return gem;
-  }
-
   private createCelticPattern(): PIXI.Graphics {
     const pattern = new PIXI.Graphics();
 
@@ -460,7 +416,7 @@ export class CardRenderer {
     glow.roundRect(-5, -5, this.CARD_WIDTH + 10, this.CARD_HEIGHT + 10, 10);
     glow.fill({ color: 0x22c55e, alpha: 0.3 });
 
-    // Pulsing effect can be added via animation
+    // Pulsing effect needs to added externally
     return glow;
   }
 
@@ -494,17 +450,5 @@ export class CardRenderer {
       neutral: 0x9ca3af,
     };
     return colors[element] || 0x9ca3af;
-  }
-
-  private getElementEmoji(element: string): string {
-    const emojis: Record<string, string> = {
-      fire: '🔥',
-      water: '💧',
-      earth: '🌿',
-      air: '💨',
-      spirit: '👻',
-      neutral: '⚪',
-    };
-    return emojis[element] || '⚪';
   }
 }

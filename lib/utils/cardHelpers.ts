@@ -1,7 +1,7 @@
 // For card related helper functions
 
 import { Card as CardType, Minion, Element } from '@/lib/types/game';
-import { ELEMENT_ICONS, CARD_SIZES, ELEMENT_COLORS, ELEMENT_BORDERS } from './constants';
+import { CARD_SIZES, ELEMENT_COLORS, ELEMENT_BORDERS } from './constants';
 
 // Card ID generation functions
 export function generateUniqueCardId(card: CardType | Minion, location?: string, cardIndex?: number): string {
@@ -13,11 +13,6 @@ export function generateUniqueCardId(card: CardType | Minion, location?: string,
 
 export function generateCardId(): string {
   return `card_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-// Card display/styling functions
-export function getElementIcon(element: Element): string {
-  return ELEMENT_ICONS[element];
 }
 
 export function getCardClassNames(

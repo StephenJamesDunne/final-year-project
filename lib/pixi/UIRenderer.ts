@@ -8,12 +8,11 @@ export class UIRenderer {
     health: number,
     mana: number,
     maxMana: number,
-    name: string,
     isAI: boolean
   ): PIXI.Container {
     const container = new PIXI.Container();
 
-    // Portrait frame (circular, like Hearthstone)
+    // Portrait frame
     const portraitSize = 120;
     const frame = new PIXI.Graphics();
     
@@ -24,14 +23,7 @@ export class UIRenderer {
     
     container.addChild(frame);
 
-    // Name banner (top)
-    const nameBg = new PIXI.Graphics();
-    nameBg.roundRect(10, 5, portraitSize - 20, 25, 5);
-    nameBg.fill({ color: 0x1e293b, alpha: 0.9 });
-    container.addChild(nameBg);
-
     const nameText = new PIXI.Text({
-      text: name,
       style: {
         fontSize: 14,
         fontWeight: 'bold',
@@ -45,14 +37,14 @@ export class UIRenderer {
     container.addChild(nameText);
 
     // Health gem (bottom center - Hearthstone style)
-    const healthGem = this.createStatGem(health, 0xef4444, '❤️');
+    const healthGem = this.drawStats(health, 0xef4444);
     healthGem.x = portraitSize / 2 - 30;
     healthGem.y = portraitSize - 20;
     container.addChild(healthGem);
 
     // Mana gem (bottom right)
     const manaText = `${mana}/${maxMana}`;
-    const manaGem = this.createStatGem(manaText, 0x3b82f6, '💎');
+    const manaGem = this.drawStats(manaText, 0x3b82f6);
     manaGem.x = portraitSize / 2 + 10;
     manaGem.y = portraitSize - 20;
     container.addChild(manaGem);
@@ -61,9 +53,9 @@ export class UIRenderer {
   }
 
   /**
-   * Create stat gem (health/mana display)
+   * Create stat circles for health/mana
    */
-  private createStatGem(value: number | string, color: number, icon: string): PIXI.Container {
+  private drawStats(value: number | string, color: number): PIXI.Container {
     const gem = new PIXI.Container();
 
     // Gem background
@@ -103,16 +95,6 @@ export class UIRenderer {
     deckBg.fill({ color: 0x334155, alpha: 0.9 });
     deckBg.stroke({ width: 2, color: 0x64748b });
     container.addChild(deckBg);
-
-    // Celtic pattern placeholder
-    const pattern = new PIXI.Text({
-      text: '🍀',
-      style: { fontSize: 30 },
-    });
-    pattern.x = 40;
-    pattern.y = 40;
-    pattern.anchor.set(0.5);
-    container.addChild(pattern);
 
     // Card count badge
     const countBadge = new PIXI.Graphics();
@@ -201,7 +183,6 @@ export class UIRenderer {
   createCombatLog(combatLog: string[], aiAction?: string): PIXI.Container {
     const container = new PIXI.Container();
 
-    // Expanded background for better readability
     const width = 320;
     const height = 450;
 
@@ -257,36 +238,11 @@ export class UIRenderer {
       container.addChild(logText);
     });
 
-    // AI Action indicator at bottom (if present)
-    if (aiAction) {
-      const aiActionBg = new PIXI.Graphics();
-      aiActionBg.roundRect(10, height - 45, width - 20, 35, 5);
-      aiActionBg.fill({ color: 0xef4444, alpha: 0.3 });
-      aiActionBg.stroke({ width: 2, color: 0xef4444 });
-      container.addChild(aiActionBg);
-
-      const aiActionText = new PIXI.Text({
-        text: aiAction,
-        style: {
-          fontSize: 13,
-          fontWeight: 'bold',
-          fill: 0xfecaca,
-          align: 'center',
-          wordWrap: true,
-          wordWrapWidth: width - 30,
-        },
-      });
-      aiActionText.x = width / 2;
-      aiActionText.y = height - 27;
-      aiActionText.anchor.set(0.5);
-      container.addChild(aiActionText);
-    }
-
     return container;
   }
 
   /**
-   * Create turn indicator (simple corner badge)
+   * Create turn indicator
    */
   createTurnIndicator(turnNumber: number, currentTurn: 'player' | 'ai'): PIXI.Container {
     const container = new PIXI.Container();
@@ -332,16 +288,12 @@ export class UIRenderer {
     return container;
   }
 
-  /**
-   * Legacy method - now redirects to createHeroPortrait
-   */
   createHealthDisplay(
     health: number,
     mana: number,
     maxMana: number,
-    name: string,
     isAI: boolean
   ): PIXI.Container {
-    return this.createHeroPortrait(health, mana, maxMana, name, isAI);
+    return this.createHeroPortrait(health, mana, maxMana, isAI);
   }
 }

@@ -1,7 +1,12 @@
-import { isClient } from '../utils/clientUtils';
 import { Card, DeckArchetype, DeckInfo } from '../types/game';
-import { CARDS, getArchetypeCards } from '../data/cards';
+import { getArchetypeCards } from '../data/cards';
 
+// Check if running in client environment
+// this is important for shuffling decks only on the client side
+const isClient = typeof window !== 'undefined';
+
+// Shuffle an array using Fisher-Yates algorithm: 
+// most reliable method I've found for unbiased shuffling of a deck
 export function shuffleDeck<T>(array: T[]): T[] {
   const shuffledDeck = [...array];
   for (let i = shuffledDeck.length - 1; i > 0; i--) {
@@ -11,6 +16,7 @@ export function shuffleDeck<T>(array: T[]): T[] {
   return shuffledDeck;
 }
 
+// Create a deck based on chosen archetype
 export function createArchetypeDeck(archetype: DeckArchetype): Card[] {
   const archetypeCards = getArchetypeCards(
     archetype === 'fire' ? 'aggressive' :
@@ -26,11 +32,6 @@ export function createArchetypeDeck(archetype: DeckArchetype): Card[] {
   ]);
 
   return isClient ? shuffleDeck(baseDeck) : baseDeck;
-}
-
-// Add new function for client-side deck initialization
-export function initializeClientDeck(serverDeck: Card[]): Card[] {
-  return isClient ? shuffleDeck([...serverDeck]) : serverDeck;
 }
 
 export function drawCards(deck: Card[], count: number): { drawn: Card[], remaining: Card[] } {
@@ -54,7 +55,9 @@ export function removeCardFromHand(hand: Card[], cardIndex: number): Card[] {
 export function addCardsToHand(hand: Card[], newCards: Card[]): Card[] {
   return [...hand, ...newCards];
 }
-
+    
+// Record uses DeckArchetype as key and DeckInfo as value. 
+// This is done so that deck info can be easily accessed based on archetype.
 export const DECK_INFO: Record<DeckArchetype, DeckInfo> = {
   fire: {
     archetype: 'fire',

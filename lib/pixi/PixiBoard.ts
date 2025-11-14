@@ -103,7 +103,7 @@ export class PixiBoard {
   private setupContainers(): void {
     if (!this.app) return;
 
-    // Create containers in rendering order (back to front)
+    // Create containers in rendering order : Z-index ordering
     this.containers.background = new PIXI.Container();
     this.containers.aiHand = new PIXI.Container();
     this.containers.aiBoard = new PIXI.Container();
@@ -132,20 +132,20 @@ export class PixiBoard {
   }
 
   /**
-   * Create persistent UI elements (Hearthstone-style layout)
+   * Create persistent UI elements
    */
   private createUIElements(): void {
     if (!this.containers.ui) return;
 
     // AI Portrait (top center)
-    this.aiHealthDisplay = this.uiRenderer.createHeroPortrait(30, 1, 1, 'AI Opponent', true);
+    this.aiHealthDisplay = this.uiRenderer.createHeroPortrait(30, 1, 1, true);
     const aiPortraitPos = this.boardLayout.getAIPortraitPosition();
     this.aiHealthDisplay.x = aiPortraitPos.x;
     this.aiHealthDisplay.y = aiPortraitPos.y;
     this.containers.ui.addChild(this.aiHealthDisplay);
 
     // Player Portrait (bottom center)
-    this.playerHealthDisplay = this.uiRenderer.createHeroPortrait(30, 1, 1, 'You', false);
+    this.playerHealthDisplay = this.uiRenderer.createHeroPortrait(30, 1, 1, false);
     const playerPortraitPos = this.boardLayout.getPlayerPortraitPosition();
     this.playerHealthDisplay.x = playerPortraitPos.x;
     this.playerHealthDisplay.y = playerPortraitPos.y;
@@ -158,7 +158,7 @@ export class PixiBoard {
     this.aiDeckIndicator.y = aiDeckPos.y;
     this.containers.ui.addChild(this.aiDeckIndicator);
 
-    // Player Deck (bottom left)
+    // Player Deck (bottom right)
     this.playerDeckIndicator = this.uiRenderer.createDeckIndicator(30, false);
     const playerDeckPos = this.boardLayout.getPlayerDeckPosition();
     this.playerDeckIndicator.x = playerDeckPos.x;
@@ -378,7 +378,6 @@ export class PixiBoard {
       state.aiHealth,
       state.aiMana,
       state.aiMaxMana,
-      'AI Opponent',
       true
     );
     const aiPortraitPos = this.boardLayout.getAIPortraitPosition();
@@ -414,7 +413,6 @@ export class PixiBoard {
       state.playerHealth,
       state.playerMana,
       state.playerMaxMana,
-      'You',
       false
     );
     const playerPortraitPos = this.boardLayout.getPlayerPortraitPosition();

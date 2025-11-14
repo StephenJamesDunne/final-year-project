@@ -2,7 +2,7 @@
 
 import { DeckArchetype } from '@/lib/types/game';
 import { DECK_INFO } from '@/lib/game/deckManager';
-import { ELEMENT_COLORS, ELEMENT_BORDERS, ELEMENT_ICONS } from '@/lib/utils/constants';
+import { ELEMENT_COLORS, ELEMENT_BORDERS } from '@/lib/utils/constants';
 
 interface DeckSelectorProps {
   selectedDeck: DeckArchetype | null;
@@ -35,7 +35,7 @@ export function DeckSelector({ selectedDeck, onSelectDeck, label }: DeckSelector
             >
               <div className="flex justify-center mb-4">
                 <div className="text-6xl">
-                  {ELEMENT_ICONS[info.element]}
+                  
                 </div>
               </div>
               <h3 className="text-lg font-bold text-white text-center mb-2">

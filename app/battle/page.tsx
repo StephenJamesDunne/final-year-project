@@ -31,7 +31,6 @@ export default function BattlePage() {
     attack,
     attackHero,
     endTurn,
-    resetGame,
   } = useBattleStore();
 
   // Show deck selection screen if battle not started

@@ -1,6 +1,6 @@
 // For game constants
 
-import { Element, CardType, Rarity} from '@/lib/types/game';
+import { Element } from '@/lib/types/game';
 
 export const BOARD_DIMENSIONS = {
   width: 1400,
@@ -24,15 +24,6 @@ export const ELEMENT_BORDERS: Record<Element, string> = {
   air: 'border-purple-600',
   spirit: 'border-indigo-600',
   neutral: 'border-gray-600',
-} as const;
-
-export const ELEMENT_ICONS: Record<Element, string> = {
-  fire: '🔥',
-  water: '💧',
-  earth: '🌿',
-  air: '💨',
-  spirit: '👻',
-  neutral: '⚪',
 } as const;
 
 // Rarity styling constants

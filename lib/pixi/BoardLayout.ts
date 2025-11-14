@@ -26,15 +26,7 @@ export class BoardLayout {
     bg.rect(0, 0, this.width, this.height);
     bg.fill(0x0a0e1a);
 
-    // Add subtle gradient overlay
-    const gradient = this.createGradientOverlay();
-    bg.addChild(gradient);
-
-    // Board zones styling
-    const centerX = this.width / 2;
-    const centerY = this.height / 2;
-
-    // Enemy territory (top) - darker, more ominous
+    // Enemy territory (top)
     const enemyZone = this.createBoardZone(
       'enemy',
       this.height * 0.20,
@@ -42,7 +34,7 @@ export class BoardLayout {
     );
     bg.addChild(enemyZone);
 
-    // Player territory (bottom) - warmer, more inviting
+    // Player territory (bottom)
     const playerZone = this.createBoardZone(
       'player',
       this.height * 0.50,
@@ -53,29 +45,7 @@ export class BoardLayout {
     // Center battlefield line
     this.drawBattleLine(bg);
 
-    // Decorative Celtic corners
-    this.addCelticCorners(bg);
-
-    // Ambient particles (optional visual flair)
-    this.addAmbientEffects(bg);
-
     return bg;
-  }
-
-  private createGradientOverlay(): PIXI.Graphics {
-    const overlay = new PIXI.Graphics();
-
-    // Vignette effect
-    const gradient = overlay.beginPath();
-
-    // Dark edges
-    overlay.circle(this.width / 2, this.height / 2, this.width * 0.6);
-    overlay.fill({ color: 0x000000, alpha: 0 });
-
-    overlay.rect(0, 0, this.width, this.height);
-    overlay.fill({ color: 0x000000, alpha: 0.3 });
-
-    return overlay;
   }
 
   private createBoardZone(type: 'player' | 'enemy', y: number, height: number): PIXI.Container {
@@ -90,7 +60,7 @@ export class BoardLayout {
     bg.roundRect(marginLeft, 0, boardWidth, height, 12);
 
     if (type === 'enemy') {
-      // Enemy zone - crimson/dark theme
+      // Enemy zone - dark theme
       bg.fill({ color: 0x2d1810, alpha: 0.5 });
       bg.stroke({ width: 3, color: 0x8b4513 });
 
@@ -98,7 +68,7 @@ export class BoardLayout {
       bg.roundRect(marginLeft + 4, 4, boardWidth - 8, height - 8, 10);
       bg.stroke({ width: 2, color: 0xdc2626, alpha: 0.3 });
     } else {
-      // Player zone - emerald/forest theme
+      // Player zone - forest theme
       bg.fill({ color: 0x1a3a1a, alpha: 0.5 });
       bg.stroke({ width: 3, color: 0x2d5a2d });
 
@@ -115,12 +85,6 @@ export class BoardLayout {
     pattern.alpha = 0.1;
     zone.addChild(pattern);
 
-    // Zone label
-    /* const label = this.createZoneLabel(type);
-    label.x = marginLeft + 10;
-    label.y = 5;
-    zone.addChild(label); */
-
     return zone;
   }
 
@@ -129,6 +93,7 @@ export class BoardLayout {
 
     // Celtic knot-inspired pattern
     const spacing = 40;
+    // color is red for enemy, green for player
     const color = type === 'enemy' ? 0xff0000 : 0x00ff00;
 
     for (let x = 0; x < width; x += spacing) {
@@ -145,20 +110,6 @@ export class BoardLayout {
 
     return pattern;
   }
-
-  /* private createZoneLabel(type: 'player' | 'enemy'): PIXI.Text {
-    const label = new PIXI.Text({
-      text: type === 'enemy' ? ' Enemy Territory' : ' Your Territory',
-      style: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        fill: type === 'enemy' ? 0xef4444 : 0x22c55e,
-        stroke: { color: 0x000000, width: 3 },
-      }
-    });
-    label.alpha = 0.7;
-    return label;
-  } */
 
   private drawBattleLine(bg: PIXI.Graphics): void {
     const boardWidth = this.width * 0.65;
@@ -177,67 +128,6 @@ export class BoardLayout {
     }
   }
 
-  private addCelticCorners(bg: PIXI.Graphics): void {
-    const cornerSize = 60;
-    const positions = [
-      { x: 20, y: 20 },                                  // Top-left
-      { x: this.width - 20 - cornerSize, y: 20 },        // Top-right
-      { x: 20, y: this.height - 20 - cornerSize },       // Bottom-left
-      { x: this.width - 20 - cornerSize, y: this.height - 20 - cornerSize }, // Bottom-right
-    ];
-
-    positions.forEach(pos => {
-      const corner = this.createCelticCorner(cornerSize);
-      corner.x = pos.x;
-      corner.y = pos.y;
-      corner.alpha = 0.4;
-      bg.addChild(corner);
-    });
-  }
-
-  private createCelticCorner(size: number): PIXI.Graphics {
-    const corner = new PIXI.Graphics();
-
-    // Interlaced Celtic pattern
-    const center = size / 2;
-
-    // Outer circle
-    corner.circle(center, center, center - 5);
-    corner.stroke({ width: 3, color: 0xd4af37 });
-
-    // Inner circles
-    corner.circle(center, center, center - 15);
-    corner.stroke({ width: 2, color: 0xfbbf24 });
-
-    // Interwoven knots
-    for (let i = 0; i < 4; i++) {
-      const angle = (Math.PI / 2) * i;
-      const x = center + (center - 20) * Math.cos(angle);
-      const y = center + (center - 20) * Math.sin(angle);
-
-      corner.circle(x, y, 8);
-      corner.fill({ color: 0x1e293b, alpha: 0.8 });
-      corner.stroke({ width: 2, color: 0xd4af37 });
-    }
-
-    return corner;
-  }
-
-  private addAmbientEffects(bg: PIXI.Graphics): void {
-    // Subtle light rays from top
-    for (let i = 0; i < 5; i++) {
-      const x = (this.width / 6) * (i + 1);
-      const ray = new PIXI.Graphics();
-
-      ray.moveTo(x, 0);
-      ray.lineTo(x - 50, this.height);
-      ray.stroke({ width: 40, color: 0xffffff, alpha: 0.02 });
-
-      bg.addChild(ray);
-    }
-  }
-
-  // All existing position methods remain the same
   getAIHandPositions(count: number): Position[] {
     if (count === 0) return [];
     const y = this.height * 0.0001;
@@ -253,7 +143,9 @@ export class BoardLayout {
 
   getAIBoardPositions(count: number): Position[] {
     if (count === 0) return [];
-    const y = this.height * 0.26;
+
+    // y = height 
+    const y = this.height * 0.22;
     const spacing = 130;
     const centerX = this.width / 2;
     const totalWidth = (count - 1) * spacing;

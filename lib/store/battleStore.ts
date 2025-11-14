@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { BattleState, Player, Card, DeckArchetype } from '../types/game';
-import { waitForHydration } from '../utils/clientUtils';
+import { BattleState, Card, DeckArchetype } from '../types/game';
 
 // Import game modules
 import { 

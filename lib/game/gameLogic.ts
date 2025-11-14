@@ -1,4 +1,4 @@
-import { BattleState, Card, Minion } from '../types/game';
+import { Card, Minion } from '../types/game';
 
 // Minion Creation and Management
 export function createMinion(card: Card): Minion {
