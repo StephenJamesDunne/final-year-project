@@ -191,18 +191,6 @@ function processDestroyAbility(ability: any, state: BattleState, opponent: Playe
   return state;
 }
 
-export function processDeathrattles(minions: any[], state: BattleState, isPlayer: boolean): BattleState {
-  let newState = { ...state };
-  
-  minions.forEach(minion => {
-    if (minion.abilities) {
-      newState = processAbilities(minion, 'deathrattle', newState, isPlayer);
-    }
-  });
-
-  return newState;
-}
-
 export function processEndOfTurnEffects(minions: any[], state: BattleState, isPlayer: boolean): BattleState {
   let newState = { ...state };
   

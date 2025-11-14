@@ -32,7 +32,6 @@ fiverealms/
 │
 ├── components/game/            # React UI Components
 │   ├── PixiGameBoard.tsx      # PixiJS canvas wrapper
-│   ├── BattleCanvas.tsx       # Legacy Framer Motion UI (deprecated)
 │   └── Card.tsx               # Individual card component
 │
 ├── lib/
@@ -52,7 +51,7 @@ fiverealms/
 │   │   └── battleStore.ts     # Zustand state management
 │   │
 │   ├── data/
-│   │   └── cards.ts           # Card database (28+ cards)
+│   │   └── cards.ts           # Temporary card database
 │   │
 │   ├── types/
 │   │   └── game.ts            # TypeScript interfaces
