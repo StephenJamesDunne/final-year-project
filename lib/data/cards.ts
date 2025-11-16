@@ -2,7 +2,7 @@ import { Card } from '../types/game';
 
 export const CARDS: Card[] = [
   // ═════════════════════════════════════════════════════════════
-  // 🔥 FIRE CARDS - AGGRESSIVE ARCHETYPE
+  // FIRE CARDS - AGGRESSIVE ARCHETYPE
   // Theme: Connacht warriors, burning magic, direct damage
   // Strategy: Fast minions, burn spells, face damage
   // ═════════════════════════════════════════════════════════════
@@ -367,7 +367,7 @@ export const CARDS: Card[] = [
   },
 
   // ═════════════════════════════════════════════════════════════
-  // 💧 WATER CARDS - TEMPO ARCHETYPE
+  // WATER CARDS - TEMPO ARCHETYPE
   // Theme: Leinster wisdom, flowing tactics, card advantage
   // Strategy: Efficient minions, card draw, board control
   // ═════════════════════════════════════════════════════════════
@@ -749,7 +749,7 @@ export const CARDS: Card[] = [
   },
 
   // ═════════════════════════════════════════════════════════════
-  // 🌿 EARTH CARDS - DEFENSIVE ARCHETYPE
+  // EARTH CARDS - DEFENSIVE ARCHETYPE
   // Theme: Munster endurance, druidic healing, survival
   // Strategy: Taunts, healing, late-game value
   // ═════════════════════════════════════════════════════════════
@@ -1136,7 +1136,7 @@ export const CARDS: Card[] = [
   },
 
   // ═════════════════════════════════════════════════════════════
-  // 💨 AIR CARDS - BALANCED ARCHETYPE
+  // AIR CARDS - BALANCED ARCHETYPE
   // Theme: Ulster cunning, fairy tricks, flexibility
   // Strategy: Adaptive answers, disruption, value trades
   // ═════════════════════════════════════════════════════════════
@@ -1501,7 +1501,7 @@ export const CARDS: Card[] = [
   },
 
   // ═════════════════════════════════════════════════════════════
-  // 👻 SPIRIT CARDS - WILD CARD ARCHETYPE
+  // SPIRIT CARDS - WILD CARD ARCHETYPE
   // Theme: Death, resurrection, chaos, high-risk plays
   // Strategy: Flexible tools for any deck archetype
   // ═════════════════════════════════════════════════════════════
@@ -1669,7 +1669,7 @@ export const CARDS: Card[] = [
   },
 
   // ═════════════════════════════════════════════════════════════
-  // ⚪ NEUTRAL CARDS - UNIVERSAL TOOLS
+  // NEUTRAL CARDS - UNIVERSAL TOOLS
   // Theme: Historical Irish figures, flexible effects
   // Strategy: Fill gaps in any deck archetype
   // ═════════════════════════════════════════════════════════════
@@ -1775,23 +1775,8 @@ export const CARDS: Card[] = [
 // HELPER FUNCTIONS
 // ═════════════════════════════════════════════════════════════
 
-/**
- * Get all cards for a specific element
- */
-export function getCardsByElement(element: string): Card[] {
-  return CARDS.filter(card => card.element === element);
-}
 
-/**
- * Get all cards of a specific rarity
- */
-export function getCardsByRarity(rarity: string): Card[] {
-  return CARDS.filter(card => card.rarity === rarity);
-}
-
-/**
- * Get all cards for an archetype deck (element + neutral)
- */
+// Get all cards for an archetype deck (element + neutral)
 export function getArchetypeCards(archetype: 'aggressive' | 'tempo' | 'defensive' | 'balanced'): Card[] {
   const elementMap = {
     aggressive: 'fire',
@@ -1799,14 +1784,12 @@ export function getArchetypeCards(archetype: 'aggressive' | 'tempo' | 'defensive
     defensive: 'earth',
     balanced: 'air'
   };
-  
+
   const element = elementMap[archetype];
   return CARDS.filter(card => card.element === element || card.element === 'neutral');
 }
 
-/**
- * Card count statistics
- */
+// Return statistics about the card collection
 export const CARD_STATS = {
   total: CARDS.length,
   byElement: {
@@ -1817,25 +1800,4 @@ export const CARD_STATS = {
     spirit: CARDS.filter(c => c.element === 'spirit').length,
     neutral: CARDS.filter(c => c.element === 'neutral').length,
   },
-  byType: {
-    minion: CARDS.filter(c => c.type === 'minion').length,
-    spell: CARDS.filter(c => c.type === 'spell').length,
-  },
-  byRarity: {
-    legendary: CARDS.filter(c => c.rarity === 'legendary').length,
-    epic: CARDS.filter(c => c.rarity === 'epic').length,
-    rare: CARDS.filter(c => c.rarity === 'rare').length,
-    common: CARDS.filter(c => c.rarity === 'common').length,
-  }
 };
-
-// Log card distribution in development
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  console.log('📊 Five Realms Card Database:', CARD_STATS);
-  console.log('🔥 Fire cards:', CARD_STATS.byElement.fire);
-  console.log('💧 Water cards:', CARD_STATS.byElement.water);
-  console.log('🌿 Earth cards:', CARD_STATS.byElement.earth);
-  console.log('💨 Air cards:', CARD_STATS.byElement.air);
-  console.log('👻 Spirit cards:', CARD_STATS.byElement.spirit);
-  console.log('⚪ Neutral cards:', CARD_STATS.byElement.neutral);
-}

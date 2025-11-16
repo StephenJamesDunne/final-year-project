@@ -4,6 +4,9 @@ import { createArchetypeDeck, drawCards } from '../../game/deckManager';
 import { DeckSlice } from './deckSlice';
 import { BattleSlice } from './battleSlice';
 
+// Assign unique instance IDs to each card in the deck for client-side tracking
+// This helps differentiate between multiple copies of the same card in the deck
+// Will be even more useful when database integration is added later on
 function initializeClientDeck(deck: Card[]): Card[] {
   return deck.map((card, index) => ({
     ...card,
@@ -13,124 +16,75 @@ function initializeClientDeck(deck: Card[]): Card[] {
 
 export interface InitializationSlice {
   startBattle: () => void;
-  resetBattle: () => void;
-  resetGame: () => void;
 }
 
+// Both deck and battle slices are needed to initialize the battle state
+// all deck params and battle params will be set/reset when starting a new battle
+type CombinedSlices = InitializationSlice & DeckSlice & BattleSlice;
+
+// Create this function as a Zustand slice
+// for initializing the battle state
+// the emmpty arrays are for middleware, which I don't plan on using,
+// but are required by the StateCreator type when it's called with multiple slices
 export const createInitializationSlice: StateCreator<
-  InitializationSlice & DeckSlice & BattleSlice,
+  CombinedSlices,
   [],
   [],
   InitializationSlice
-> = (set, get) => ({
-  startBattle: () => {
-    const state = get();
-    if (!state.playerDeckArchetype || !state.aiDeckArchetype) {
-      console.warn('Cannot start battle: Both decks must be selected');
-      return;
-    }
+> = function (set, get) {
+  return {
+    startBattle: function () {
 
-    const playerDeck = createArchetypeDeck(state.playerDeckArchetype);
-    const aiDeck = createArchetypeDeck(state.aiDeckArchetype);
+      // get the current game state to access selected deck archetypes
+      const currentState = get();
 
-    const clientPlayerDeck = initializeClientDeck(playerDeck);
-    const clientAIDeck = initializeClientDeck(aiDeck);
+      if (!currentState.playerDeckArchetype || !currentState.aiDeckArchetype) {
+        console.warn('Cannot start battle: Both decks must be selected');
+        return;
+      }
 
-    const playerDraw = drawCards(clientPlayerDeck, 4);
-    const aiDraw = drawCards(clientAIDeck, 4);
+      const playerDeck = createArchetypeDeck(currentState.playerDeckArchetype);
+      const aiDeck = createArchetypeDeck(currentState.aiDeckArchetype);
 
-    set({
-      player: {
-        health: 30,
-        mana: 1,
-        maxMana: 1,
-        hand: playerDraw.drawn,
-        board: [],
-        deck: playerDraw.remaining,
-      },
-      ai: {
-        health: 30,
-        mana: 1,
-        maxMana: 1,
-        hand: aiDraw.drawn,
-        board: [],
-        deck: aiDraw.remaining,
-      },
-      currentTurn: 'player',
-      turnNumber: 1,
-      gameOver: false,
-      winner: undefined,
-      combatLog: [
-        "The battle begins!",
-        `You chose: ${state.playerDeckArchetype.toUpperCase()}`,
-        `Enemy chose: ${state.aiDeckArchetype.toUpperCase()}`,
-      ],
-      aiAction: undefined,
-      selectedMinion: null,
-      initialized: true,
-    });
-  },
+      const clientPlayerDeck = initializeClientDeck(playerDeck);
+      const clientAIDeck = initializeClientDeck(aiDeck);
 
-  resetBattle: () => {
-    const state = get();
-    set({ 
-      player: {
-        health: 30,
-        mana: 1,
-        maxMana: 1,
-        hand: [],
-        board: [],
-        deck: [],
-      },
-      ai: {
-        health: 30,
-        mana: 1,
-        maxMana: 1,
-        hand: [],
-        board: [],
-        deck: [],
-      },
-      currentTurn: 'player',
-      turnNumber: 1,
-      gameOver: false,
-      winner: undefined,
-      combatLog: [],
-      aiAction: undefined,
-      selectedMinion: null,
-      playerDeckArchetype: state.playerDeckArchetype,
-      aiDeckArchetype: state.aiDeckArchetype,
-      initialized: false 
-    });
-  },
+      const playerDraw = drawCards(clientPlayerDeck, 4);
+      const aiDraw = drawCards(clientAIDeck, 4);
 
-  resetGame: () => {
-    set({
-      player: {
-        health: 30,
-        mana: 1,
-        maxMana: 1,
-        hand: [],
-        board: [],
-        deck: [],
-      },
-      ai: {
-        health: 30,
-        mana: 1,
-        maxMana: 1,
-        hand: [],
-        board: [],
-        deck: [],
-      },
-      currentTurn: 'player',
-      turnNumber: 1,
-      gameOver: false,
-      winner: undefined,
-      combatLog: [],
-      aiAction: undefined,
-      selectedMinion: null,
-      playerDeckArchetype: null,
-      aiDeckArchetype: null,
-      initialized: false,
-    });
-  },
-});
+      // update the game state to initialize the battle
+      set({
+        player: {
+          health: 30,
+          mana: 1,
+          maxMana: 1,
+          hand: playerDraw.drawn,
+          board: [],
+          deck: playerDraw.remaining,
+        },
+        ai: {
+          health: 30,
+          mana: 1,
+          maxMana: 1,
+          hand: aiDraw.drawn,
+          board: [],
+          deck: aiDraw.remaining,
+        },
+        currentTurn: 'player',
+        turnNumber: 1,
+        gameOver: false,
+        winner: undefined,
+        combatLog: [
+          "The battle begins!",
+          `You chose: ${currentState.playerDeckArchetype.toUpperCase()}`,
+          `Enemy chose: ${currentState.aiDeckArchetype.toUpperCase()}`,
+        ],
+
+
+        aiAction: undefined,
+        selectedMinion: null,
+        initialized: true,
+      });
+    },
+  };
+};

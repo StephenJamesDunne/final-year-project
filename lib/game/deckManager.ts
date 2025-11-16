@@ -2,11 +2,17 @@ import { Card, DeckArchetype, DeckInfo } from '../types/game';
 import { getArchetypeCards } from '../data/cards';
 
 // Check if running in client environment
-// this is important for shuffling decks only on the client side
+// this is important for shuffling decks only on the client side.
+// If we shuffle on the server, it can lead to inconsistent game states,
+// because server and client would have different deck orders
 const isClient = typeof window !== 'undefined';
 
 // Shuffle an array using Fisher-Yates algorithm: 
 // most reliable method I've found for unbiased shuffling of a deck
+// How it works: iterate backwards through the deck array.
+// For each position, pick a random index from 0 to current position.
+// Swap the elements at the current position and the random index.
+// This ensures each permutation of the array is equally likely.
 export function shuffleDeck<T>(array: T[]): T[] {
   const shuffledDeck = [...array];
   for (let i = shuffledDeck.length - 1; i > 0; i--) {
@@ -17,6 +23,7 @@ export function shuffleDeck<T>(array: T[]): T[] {
 }
 
 // Create a deck based on chosen archetype
+// Basically just a fancy if else that gets the right set of cards
 export function createArchetypeDeck(archetype: DeckArchetype): Card[] {
   const archetypeCards = getArchetypeCards(
     archetype === 'fire' ? 'aggressive' :
@@ -34,30 +41,39 @@ export function createArchetypeDeck(archetype: DeckArchetype): Card[] {
   return isClient ? shuffleDeck(baseDeck) : baseDeck;
 }
 
+// Take the deck (array of type Card) and draw 'count' number of cards from the top
+// Returns an array of drawn cards, and remaining deck array.
 export function drawCards(deck: Card[], count: number): { drawn: Card[], remaining: Card[] } {
   const drawn = deck.slice(0, count);
   const remaining = deck.slice(count);
   return { drawn, remaining };
 }
 
+// Boolean function to check if a card can be played based on available mana
 export function canPlayCard(card: Card, availableMana: number): boolean {
   return card.manaCost <= availableMana;
 }
 
+// For basic AI: Find the index of the first playable card in hand based on available mana
 export function findPlayableCard(hand: Card[], availableMana: number): number {
   return hand.findIndex(card => canPlayCard(card, availableMana));
 }
 
+// Remove a card from hand by index and return the new hand array
 export function removeCardFromHand(hand: Card[], cardIndex: number): Card[] {
   return hand.filter((_, index) => index !== cardIndex);
 }
 
+// Add new cards to hand and return the updated hand array
+// This is different to drawing cards from the deck,
+// because certain abilities/spells may add cards to hand directly.
 export function addCardsToHand(hand: Card[], newCards: Card[]): Card[] {
   return [...hand, ...newCards];
 }
     
 // Record uses DeckArchetype as key and DeckInfo as value. 
 // This is done so that deck info can be easily accessed based on archetype.
+// Calling DECK_INFO['fire'] will return all info related to the Fire deck archetype.
 export const DECK_INFO: Record<DeckArchetype, DeckInfo> = {
   fire: {
     archetype: 'fire',
