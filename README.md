@@ -117,27 +117,46 @@ fiverealms/
 ### **1. Game Initialization Flow**
 
 ```mermaid
-User visits /battle → battle/page.tsx → useBattleStore
-  → createInitializationSlice → startBattle()
-  → createArchetypeDeck() → shuffleDeck() → drawCards()
-  → Initialize player & AI state → Render with PixiBoard
+graph LR
+    A[User visits /battle] --> B[battle/page.tsx]
+    B --> C[useBattleStore]
+    C --> D[createInitializationSlice]
+    D --> E[startBattle]
+    E --> F[createArchetypeDeck]
+    F --> G[shuffleDeck]
+    G --> H[drawCards]
+    H --> I[Initialize player & AI state]
+    I --> J[Render with PixiBoard]
 ```
 
 ### **2. Player Action Flow**
 
 ```mermaid
-User clicks card → PixiBoard event handler → battle/page.tsx callback
-  → battleStore.playCard() → createMinion() → processAbilities()
-  → Update board state → Re-render PixiBoard
+graph LR
+    A[User clicks card] --> B[PixiBoard event handler]
+    B --> C[battle/page.tsx callback]
+    C --> D[battleStore.playCard]
+    D --> E[createMinion]
+    E --> F[processAbilities]
+    F --> G[Update board state]
+    G --> H[Re-render PixiBoard]
 ```
 
 ### **3. AI Turn Flow**
 
 ```mermaid
-Player ends turn → battleStore.endTurn() → aiPlayer.getAIAction()
-  → executeAIPlayCard() / executeAIAttacks()
-  → Process abilities → Update state → Increment turn
-  → Draw cards → Re-render PixiBoard
+graph LR
+    A[Player ends turn] --> B[battleStore.endTurn]
+    B --> C[aiPlayer.getAIAction]
+    C --> D{Action Type}
+    D -->|Play Card| E[executeAIPlayCard]
+    D -->|Attack| F[executeAIAttacks]
+    E --> G[Process abilities]
+    F --> G
+    G --> H[Update state]
+    H --> I[Increment turn]
+    I --> J[Draw cards]
+    J --> K[Re-render PixiBoard]
 ```
 
 ---
