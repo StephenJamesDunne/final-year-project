@@ -4,8 +4,6 @@ interface CardProps {
   card: CardType | Minion;
   onClick?: () => void;
   disabled?: boolean;
-  isMinion?: boolean;
-  showHealth?: boolean;
   compact?: boolean;
   location?: 'hand' | 'board' | 'deck';
 }

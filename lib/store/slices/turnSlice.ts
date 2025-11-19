@@ -1,3 +1,107 @@
+/**
+ * Turn Slice
+ * 
+ * Purpose:
+ * Carries out the complete turn cycle from player ending their turn through
+ * AI execution and back to the player's next turn. This is the most complex
+ * slice, coordinating multiple game systems with async timing for UI/UX.
+ * 
+ * Actions:
+ * - endTurn(): Async function that executes the complete turn cycle
+ * 
+ * Turn Cycle Phases:
+ * 
+ * PHASE 1: Player Turn End
+ * - Validate it's player's turn and game isn't over
+ * - Clear selected minion
+ * - Switch turn to 'ai'
+ * - Wait 1000ms for visual transition
+ * - Process player's end-of-turn effects
+ * 
+ * PHASE 2: AI Decision Making
+ * - Call getAIAction() to decide: play card, attack, or pass
+ * - Priority: Play card > Attack > Pass
+ * 
+ * PHASE 3: AI Card Play (if applicable)
+ * - Execute executeAIPlayCard()
+ * - Update state to show "Playing [CardName]..."
+ * - Wait 500-1200ms (random delay for UX)
+ * - Process battlecry abilities
+ * 
+ * PHASE 4: AI End-of-Turn Effects
+ * - Process AI minions' end-of-turn abilities
+ * 
+ * PHASE 5: AI Attacks
+ * - Execute executeAIAttacks() with all available minions
+ * - Update state to show "Attacking..."
+ * - Wait 800ms for dramatic effect
+ * 
+ * PHASE 6: New Turn Setup
+ * - Increment turn number
+ * - Increase max mana (capped at 10)
+ * - Draw 1 card for each player
+ * - Refresh mana to max mana
+ * - Enable all minions to attack (set canAttack=true)
+ * - Check for game over (health <= 0)
+ * - Switch turn back to 'player'
+ * 
+ * PHASE 7: Final State Update
+ * - Single large set() call with all turn changes
+ * - Triggers React re-render showing new turn
+ * 
+ * Async Pattern:
+ * Uses await + setTimeout for visual pauses between game phases:
+ * - Player sees each AI action separately
+ * - Dramatic timing enhances game feel
+ * - Total AI turn: ~2-3 seconds
+ * 
+ * State Building Pattern:
+ * Builds state changes locally in `newState` variable, then calls set()
+ * once at end. More efficient than multiple set() calls. Strategic UI
+ * updates (showing AI actions) use intermediate set() calls for feedback.
+ * 
+ * Dependencies:
+ * - gameLogic.ts: Turn increment, game over check, enable attacks
+ * - deckManager.ts: Draw cards, add to hand
+ * - abilitySystem.ts: Process end-of-turn effects
+ * - aiPlayer.ts: AI decision making and action execution
+ * 
+ * Example Timeline:
+ * [Player clicks "End Turn"]
+ *     ↓
+ * [Instant] "Enemy Turn" indicator
+ *     ↓
+ * [1 second pause]
+ *     ↓
+ * [If AI plays card] "Playing Cu Chulainn..."
+ *     ↓
+ * [0.5-1.2 second pause]
+ *     ↓
+ * [If AI attacks] "Attacking..."
+ *     ↓
+ * [0.8 second pause]
+ *     ↓
+ * [Instant] "Turn 6 begins (6 mana)"
+ * 
+ * Usage Example:
+ * const endTurn = useBattleStore(state => state.endTurn);
+ * 
+ * // Can await if needed
+ * await endTurn();
+ * 
+ * // Or fire and forget
+ * endTurn();
+ * 
+ * Performance Note:
+ * This is an async function that makes multiple state updates. Components
+ * subscribing to frequently-changing state (like combatLog or aiAction)
+ * will re-render multiple times during the AI turn.
+ * 
+ * @see lib/game/aiPlayer.ts - AI decision making and execution
+ * @see lib/game/abilitySystem.ts - End-of-turn ability processing
+ * @see gameActionsSlice.ts - Player action handlers for comparison
+ */
+
 import { StateCreator } from 'zustand';
 import { BattleState } from '../../types/game';
 import {
@@ -22,9 +126,12 @@ export interface TurnSlice {
 
 export const createTurnSlice: StateCreator<TurnSlice & BattleSlice & DeckSlice, [], [], TurnSlice> = (set, get) => ({
     endTurn: async () => {
+
+        // get the current state of the game and check it hasn't ended
         const state = get();
         if (state.currentTurn !== 'player' || state.gameOver) return;
 
+        // swap to ai's turn
         set({ selectedMinion: null, currentTurn: 'ai' });
         await new Promise(resolve => setTimeout(resolve, 1000));
 

@@ -43,6 +43,9 @@ export function PixiGameBoard(props: PixiGameBoardProps) {
       }
 
       try {
+        // Define callbacks to pass to PixiBoard
+        // These will call the props functions
+        // to communicate user actions back to the battle page
         const callbacks: BoardCallbacks = {
           onCardPlay: props.onCardPlay,
           onMinionClick: props.onMinionClick,

@@ -10,61 +10,79 @@ npm install
 
 # Run development server
 npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to play
+## File Documentation
+All files I've personally added to the project (not ones installed by the framework/libraries) will have their own documentation commented in headers at the top of 
+the corresponding file. I am currently updating and adding to these where necessary.
 
 ## Project Structure
 
 ```
 fiverealms/
-├── app/                        # Next.js App Router
-│   ├── layout.tsx             # Root layout with fonts & metadata
-│   ├── page.tsx               # Home page with navigation
+├── app/                          # Next.js App Router
+│   ├── layout.tsx               # Root layout with fonts & metadata
+│   ├── page.tsx                 # Home page with navigation
 │   └── battle/
-│       └── page.tsx           # Main battle UI (React wrapper)
+│       └── page.tsx             # Battle page (React wrapper)
 │
-├── components/game/            # React UI Components
-│   ├── PixiGameBoard.tsx      # PixiJS canvas wrapper
-│   └── Card.tsx               # Individual card component
+├── components/
+│   ├── game/
+│   │   ├── PixiGameBoard.tsx    # PixiJS canvas wrapper component
+│   │   └── Card.tsx             # Card component (legacy)
+│   └── DeckSelector.tsx         # Deck selection UI
 │
 ├── lib/
-│   ├── pixi/                  # PixiJS Rendering Engine (NEW)
-│   │   ├── PixiBoard.ts       # Main board orchestrator
-│   │   ├── CardRenderer.ts    # Card visual creation
-│   │   ├── BoardLayout.ts     # Hearthstone-style positioning
-│   │   └── UIRenderer.ts      # UI elements (portraits, buttons, etc.)
+│   ├── pixi/                    # PixiJS Rendering Engine
+│   │   ├── PixiBoard.ts         # Main board orchestrator
+│   │   ├── index.ts             # Public exports
+│   │   ├── layout/
+│   │   │   └── BoardLayout.ts   # Hearthstone-style positioning
+│   │   ├── rendering/
+│   │   │   ├── CardRenderer.ts      # Card visual creation
+│   │   │   ├── HandRenderer.ts      # Hand rendering
+│   │   │   ├── MinionRenderer.ts    # Board minion rendering
+│   │   │   └── BoardRenderer.ts     # Background rendering
+│   │   ├── ui/
+│   │   │   ├── UIManager.ts         # UI orchestration
+│   │   │   ├── PortraitRenderer.ts  # Hero portraits
+│   │   │   ├── CombatLogRenderer.ts # Combat log
+│   │   │   ├── EndTurnButton.ts     # Turn button
+│   │   │   ├── DeckIndicator.ts     # Deck counters
+│   │   │   └── TurnIndicator.ts     # Turn display
+│   │   └── utils/
+│   │       ├── TextureLoader.ts     # Asset loading
+│   │       ├── GraphicsHelpers.ts   # Reusable graphics components
+│   │       └── StyleConstants.ts    # Visual constants & colors
 │   │
-│   ├── game/                  # Pure Game Logic (No UI)
-│   │   ├── gameLogic.ts       # Core combat & minion logic
-│   │   ├── deckManager.ts     # Deck building & card drawing
-│   │   ├── abilitySystem.ts   # Card ability processing
-│   │   └── aiPlayer.ts        # AI decision-making
+│   ├── game/                    # Pure Game Logic
+│   │   ├── gameLogic.ts         # Core combat & minion logic
+│   │   ├── deckManager.ts       # Deck building & card drawing
+│   │   ├── abilitySystem.ts     # Card ability processing
+│   │   └── aiPlayer.ts          # AI decision-making
 │   │
 │   ├── store/
-│   │   └── battleStore.ts     # Zustand state management
+│   │   ├── battleStore.ts       # Main Zustand store
+│   │   └── slices/              # Modular state slices
+│   │       ├── battleSlice.ts        # Core battle state
+│   │       ├── deckSlice.ts          # Deck selection
+│   │       ├── gameActionsSlice.ts   # Play/attack actions
+│   │       ├── turnSlice.ts          # Turn management & AI
+│   │       └── initializationSlice.ts # Game initialization
 │   │
 │   ├── data/
-│   │   └── cards.ts           # Temporary card database
+│   │   └── cards.ts             # Temporary card database
 │   │
 │   ├── types/
-│   │   └── game.ts            # TypeScript interfaces
+│   │   └── game.ts              # TypeScript interfaces
 │   │
-│   └── utils/                 # Helper Functions
-│       ├── cardHelpers.ts     # Card utilities
-│       ├── constants.ts       # Game constants
-│       ├── pixiUtils.ts       # PixiJS helpers
-│       └── clientUtils.ts     # Client-side only utilities
+│   └── utils/
+│       ├── cardHelpers.ts       # Card utility functions
+│       └── constants.ts         # Game constants & styling
 │
-└── public/images/             # Game Assets
-    ├── cards/                 # Card artwork (PNG)
-    └── default/               # Placeholder images
+└── public/images/               # Game Assets
+    ├── cards/                   # Card artwork (PNG)
+    └── default/                 # Placeholder images
 ```
 
 ## Architecture Overview
@@ -72,19 +90,19 @@ fiverealms/
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    React UI Layer                           │
-│  (battle/page.tsx → PixiGameBoard.tsx → PixiBoard.ts)      │
+│  (battle/page.tsx → PixiGameBoard.tsx → PixiBoard.ts)       │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
 │              State Management Layer                         │
-│              (battleStore.ts - Zustand)                     │
+│       (battleStore.ts - Zustand with Slices)                │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
 │              Pure Game Logic Layer                          │
-│  (gameLogic.ts, deckManager.ts, abilitySystem.ts, etc.)    │
+│  (gameLogic.ts, deckManager.ts, abilitySystem.ts, etc.)     │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
@@ -94,119 +112,60 @@ fiverealms/
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Rendering Pipeline (PixiJS)
-
-**New Hearthstone-Style Visual System**
-
-```mermaid
-graph LR
-    A[battleStore.ts] -->|Game State| B[battle/page.tsx]
-    B -->|Props| C[PixiGameBoard.tsx]
-    C -->|Canvas Init| D[PixiBoard.ts]
-    D -->|Render Cards| E[CardRenderer.ts]
-    D -->|Render UI| F[UIRenderer.ts]
-    D -->|Position Calc| G[BoardLayout.ts]
-    
-    H[pixiUtils.ts] -.->|Helpers| D
-    I[constants.ts] -.->|Config| E
-```
-
-## Updated Data Flow Diagrams
+## Example Data Flow Diagrams
 
 ### **1. Game Initialization Flow**
 
 ```mermaid
-graph TD
-    A[User visits /battle] --> B[battle/page.tsx loads]
-    B --> C[useBattleStore hook]
-    C --> D[battleStore.ts - createInitialState]
-    D --> E[deckManager.ts - createStartingDeck]
-    E --> F[cards.ts - CARDS array]
-    F --> G[Shuffle & deal initial hands]
-    G --> H[Render with PixiBoard.ts]
+User visits /battle → battle/page.tsx → useBattleStore
+  → createInitializationSlice → startBattle()
+  → createArchetypeDeck() → shuffleDeck() → drawCards()
+  → Initialize player & AI state → Render with PixiBoard
 ```
 
 ### **2. Player Action Flow**
 
 ```mermaid
-graph TD
-    A[User clicks card/minion] --> B[PixiBoard.ts event handler]
-    B --> C[Callback to battle/page.tsx]
-    C --> D[battleStore.ts action]
-    D --> E{Action Type}
-    
-    E -->|Play Card| F[gameLogic.ts - createMinion]
-    E -->|Attack| G[gameLogic.ts - handleMinionCombat]
-    E -->|End Turn| H[AI Turn Logic]
-    
-    F --> I[abilitySystem.ts - process battlecry]
-    G --> J[Update board state]
-    H --> K[aiPlayer.ts - getAIAction]
-    
-    I --> L[Re-render PixiBoard]
-    J --> L
-    K --> L
+User clicks card → PixiBoard event handler → battle/page.tsx callback
+  → battleStore.playCard() → createMinion() → processAbilities()
+  → Update board state → Re-render PixiBoard
 ```
 
 ### **3. AI Turn Flow**
 
 ```mermaid
-graph TD
-    A[Player ends turn] --> B[battleStore.ts - endTurn]
-    B --> C[aiPlayer.ts - getAIAction]
-    C --> D{AI Decision}
-    
-    D -->|Play Card| E[executeAIPlayCard]
-    D -->|Attack| F[executeAIAttacks]
-    
-    E --> G[gameLogic.ts - createMinion]
-    F --> H[gameLogic.ts - handleMinionCombat]
-    
-    G --> I[abilitySystem.ts - process abilities]
-    H --> I
-    I --> J[Update combat log]
-    J --> K[End AI turn - switch to player]
-    K --> L[Re-render PixiBoard]
+Player ends turn → battleStore.endTurn() → aiPlayer.getAIAction()
+  → executeAIPlayCard() / executeAIAttacks()
+  → Process abilities → Update state → Increment turn
+  → Draw cards → Re-render PixiBoard
 ```
 
 ---
 
 ## Current Technology Stack
 
-| Category | Technology | Version | Purpose |
-|----------|-----------|---------|---------|
-| **Framework** | Next.js | 15.5.4 | React framework with App Router |
-| **UI Library** | React | 19.1.0 | Component-based UI |
-| **Language** | TypeScript | 5.x | Type safety |
-| **Rendering** | PixiJS | 8.6.6 | WebGL canvas rendering |
-| **State** | Zustand | 5.0.8 | Lightweight state management |
-| **Styling** | Tailwind CSS | 4.x | Inlining CSS styles for ease of use |
-| **Animation** | Framer Motion | 12.x | UI transitions (legacy, to be removed) |
-| **Linting** | ESLint | 9.x | Code quality |
+| Category          | Technology | Purpose |
+|-------------------|------------|-------------------------------------|
+| **Framework**     | Next.js    | React framework with App Router     |
+| **UI Library**    | React      | Component-based UI                  |
+| **Language**      | TypeScript | Type safety                         |
+| **Rendering**     | PixiJS     | WebGL canvas rendering              |
+| **State**         | Zustand    | Lightweight state management        |
+| **Stylings**      | Tailwind   | Inlining CSS styles for ease of use |
 
 ---
 
 ## Immediate Todo (This Week)
-- [ ] Add error boundary to PixiGameBoard
-- [ ] Refactor battle/page.tsx to use selective subscriptions
+- [ ] Refactor multiple files and remove unused/legacy code and functions
+- [ ] Researching AI Training model and how this might be implemented using my states and/or Battlestore
 
-## Short-term Todo (This Month)
-- [ ] Create `lib/store/slices/` directory
-- [ ] Split battleStore into 4 slices
-- [ ] Move cards.ts → cards.json
-- [ ] Add try-catch to all store actions
+## Medium-term Todo (End of November and all of December)
+- [ ] Implement sprite pooling to better improve PixiJS performance
+- [ ] Fully implement AI machine learning in some shape or form
 
-## Medium-term Todo (Next Semester)
-- [ ] Implement SpritePool class
-- [ ] Create memoized Zustand selectors
-- [ ] Split PixiBoard into InputManager, LayoutManager, UIManager
-- [ ] Add keyboard shortcuts
-- [ ] Create `tests/game/gameLogic.test.ts`
-
-## Long-term Todo (When adding multiplayer)
-- [ ] Set up database for cards
-- [ ] Add WebSocket support
-- [ ] Implement deck builder UI
-- [ ] Mobile touch controls (if time allows)
+## Long-term Todo (Next Semester)
+- [ ] Set up database for cards, accounts + logins for multiple players
+- [ ] Add WebSocket support for multiplayer
+- [ ] Implement deck builder UI, glossary for all cards and lore information
 
 ---

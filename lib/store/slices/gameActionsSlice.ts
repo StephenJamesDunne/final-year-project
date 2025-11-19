@@ -1,3 +1,75 @@
+/**
+ * Game Actions Slice
+ * 
+ * Purpose:
+ * Handles all player-initiated actions during their turn including playing cards,
+ * attacking with minions, and attacking the enemy hero. Coordinates game logic
+ * functions with state updates.
+ * 
+ * Actions:
+ * - playCard(cardIndex, targetId?): Play a card from hand
+ * - attack(attackerId, targetId): Attack enemy minion with your minion
+ * - attackHero(attackerId): Attack enemy hero directly
+ * 
+ * Validation:
+ * All actions validate:
+ * - Current turn is 'player'
+ * - Game is not over
+ * - Action-specific requirements (mana cost, can attack, etc.)
+ * 
+ * Action Flow (playCard):
+ * 1. Validate turn, game status, mana cost, and board space
+ * 2. Remove card from hand
+ * 3. Deduct mana cost
+ * 4. If minion: Create minion and add to board with canAttack=false
+ * 5. If spell: Execute spell effect (future implementation)
+ * 6. Process battlecry abilities
+ * 7. Update combat log
+ * 8. Clear selected minion
+ * 9. Update state with set()
+ * 
+ * Action Flow (attack):
+ * 1. Validate attacker exists and can attack
+ * 2. Validate target exists on enemy board
+ * 3. Resolve combat using handleMinionCombat()
+ * 4. Update both boards (remove dead minions)
+ * 5. Process deathrattle abilities for casualties
+ * 6. Update combat log
+ * 7. Clear selected minion
+ * 8. Update state with set()
+ * 
+ * Action Flow (attackHero):
+ * 1. Validate attacker exists and can attack
+ * 2. Deal damage to enemy hero
+ * 3. Set attacker canAttack=false
+ * 4. Check for game over
+ * 5. Update combat log
+ * 6. Clear selected minion
+ * 7. Update state with set()
+ * 
+ * State Update Pattern:
+ * All actions follow immutable update pattern:
+ * - Create new BattleState object
+ * - Build up changes locally
+ * - Call set() once at the end with complete new state
+ * 
+ * Dependencies:
+ * - gameLogic.ts: Pure functions for combat resolution
+ * - abilitySystem.ts: Process card abilities (battlecry, deathrattle)
+ * - deckManager.ts: Hand manipulation utilities
+ * 
+ * Usage Example:
+ * const playCard = useBattleStore(state => state.playCard);
+ * const attack = useBattleStore(state => state.attack);
+ * 
+ * playCard(2);  // Play card at index 2
+ * attack('attacker-id', 'target-id');  // Attack enemy minion
+ * 
+ * @see lib/game/gameLogic.ts - Combat resolution functions
+ * @see lib/game/abilitySystem.ts - Ability processing
+ * @see battleSlice.ts - Core state structure
+ */
+
 import { StateCreator } from 'zustand';
 import { BattleState } from '../../types/game';
 import { 
