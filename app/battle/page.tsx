@@ -6,7 +6,7 @@ import { DeckSelector } from '@/components/DeckSelector';
 
 export default function BattlePage() {
   const {
-    // Nested state (using player.* and ai.*)
+    // Nested states for player and ai
     player,
     ai,
     selectedMinion,
@@ -15,6 +15,7 @@ export default function BattlePage() {
     currentTurn,
     gameOver,
     winner,
+
     combatLog,
     turnNumber,
     aiAction,
@@ -31,7 +32,7 @@ export default function BattlePage() {
     attack,
     attackHero,
     endTurn,
-  } = useBattleStore();
+  } = useBattleStore(); // <-- Zustand store hook to access battle state and actions
 
   // Show deck selection screen if battle not started
   if (!initialized) {
@@ -126,6 +127,7 @@ export default function BattlePage() {
     }
   };
 
+  // Render the PixiGameBoard with all necessary props that reflect the current battle state
   return (
     <PixiGameBoard
       // Board (from player.* and ai.*)

@@ -39,6 +39,7 @@ export function calculateCombatDamage(attacker: Minion, target: Minion) {
   };
 }
 
+// handleMinionCombat takes in attacker and target minions, and returns 
 export function handleMinionCombat(
   attacker: Minion,
   target: Minion

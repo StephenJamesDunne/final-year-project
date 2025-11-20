@@ -6,41 +6,10 @@
  * selecting deck archetypes. Creates decks, deals initial hands, and sets
  * up the initial game state.
  * 
- * Actions:
- * - startBattle(): Initialize battle state and begin the game
- * 
- * Initialization Flow:
- * 1. Validate both player and AI have selected deck archetypes
- * 2. Create decks using createArchetypeDeck() for each archetype
- * 3. Assign unique instanceIds to each card for client-side tracking
- * 4. Shuffle decks (client-side only to avoid SSR hydration issues)
- * 5. Draw initial hands (4 cards each)
- * 6. Set initial game state:
- *    - Both players: 30 health, 1/1 mana
- *    - Turn 1, player goes first
- *    - Empty boards
- *    - Combat log with initial messages
- * 7. Set initialized=true to show game board
- * 
- * Instance ID System:
- * Each card receives a unique instanceId: `${cardId}-deck-${index}-${timestamp}-${random}`
- * This is critical for:
- * - Tracking individual card copies (deck has 2 of each card)
- * - Identifying specific minions on the board for targeting
- * - Future database integration for match history
- * 
- * Client-Side Considerations:
- * Deck shuffling only happens on client (typeof window !== 'undefined')
- * to prevent server/client state mismatch during Next.js SSR.
- * 
  * State Dependencies:
  * Requires access to:
  * - deckSlice: playerDeckArchetype and aiDeckArchetype
- * - battleSlice: Sets all initial battle state
- * 
- * Usage Example:
- * const startBattle = useBattleStore(state => state.startBattle);
- * const canStart = playerDeck !== null && aiDeck !== null;
+ * - battleSlice: Sets all initial battle state parameters
  * 
  * <button onClick={startBattle} disabled={!canStart}>
  *   Start Battle

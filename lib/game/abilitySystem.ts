@@ -1,4 +1,6 @@
 import { BattleState, Card, Player } from '../types/game';
+import { createMinion } from './gameLogic';
+import { CARDS } from '../data/cards';
 import { drawCards } from './deckManager';
 
 export function processAbilities(
@@ -31,7 +33,7 @@ function processAbility(ability: any, state: BattleState, isPlayer: boolean): Ba
     case 'damage':
       return processDamageAbility(ability, state, currentPlayer, opponent);
     case 'summon':
-      return processSummonAbility(ability, state, currentPlayer);
+      return processSummonAbility(ability, state, currentPlayer, isPlayer);
     case 'buff':
       return processBuffAbility(ability, state, currentPlayer);
     case 'destroy':
@@ -163,10 +165,51 @@ function processDamageAbility(ability: any, state: BattleState, currentPlayer: P
   return newState;
 }
 
-function processSummonAbility(ability: any, state: BattleState, player: Player): BattleState {
-  // Basic implementation - would need card definitions for specific summons
-  // For now, just placeholder
-  return state;
+function processSummonAbility(
+  ability: any,
+  state: BattleState,
+  player: Player,
+  isPlayer: boolean
+): BattleState {
+  if (player.board.length >= 7) {
+    return state; // Board full
+  }
+
+  // choose what cards need to be summoned
+  let summonedCards: Card[] = [];
+
+  if (ability.decription?.includes('Connacht Warriors')) {
+    const warriorCard: Card = {
+      id: 'token_warrior',
+      name: 'Connacht Warrior',
+      element: 'fire',
+      type: 'minion',
+      rarity: 'common',
+      manaCost: 1,
+      attack: 2,
+      health: 2,
+      description: 'Token minion summoned by Queen Maedhbh.'
+    };
+
+    for (let i = 0; i < ability.value; i++) {
+      summonedCards.push({ ...warriorCard });
+    }
+  }
+
+  const newMinions = summonedCards.map(card => createMinion(card));
+  const newBoard = [...player.board];
+
+  for (const minion of newMinions) {
+    if (newBoard.length < 7) {
+      newBoard.push(minion);
+    }
+  }
+
+  return {
+    ...state,
+    player: isPlayer ? { ...player, board: newBoard } : state.player,
+    ai: !isPlayer ? { ...player, board: newBoard } : state.ai,
+  };
 }
 
 function processBuffAbility(ability: any, state: BattleState, player: Player): BattleState {
@@ -193,7 +236,7 @@ function processDestroyAbility(ability: any, state: BattleState, opponent: Playe
 
 export function processEndOfTurnEffects(minions: any[], state: BattleState, isPlayer: boolean): BattleState {
   let newState = { ...state };
-  
+
   minions.forEach(minion => {
     newState = processAbilities(minion, 'end_of_turn', newState, isPlayer);
   });
