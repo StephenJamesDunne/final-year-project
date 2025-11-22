@@ -180,7 +180,7 @@ export const CARDS: Card[] = [
     manaCost: 2,
     attack: 3,
     health: 1,
-    description: 'Charge. Blazing speed.',
+    description: 'Charge',
     imageUrl: '',
     abilities: [
       {
@@ -188,7 +188,7 @@ export const CARDS: Card[] = [
         type: 'buff',
         value: 0,
         target: 'self',
-        description: 'Charge'
+        description: 'Can attack immediately (Charge)'
       }
     ]
   },

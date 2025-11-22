@@ -2,14 +2,23 @@ import { Card, Minion } from '../types/game';
 
 // Minion Creation and Management
 export function createMinion(card: Card): Minion {
+
+  // check if Minion summoned has Charge among its abilities
+  const hasCharge = card.abilities?.some(
+    ability =>
+      ability.trigger === 'passive' &&
+      ability.description?.toLowerCase().includes('charge')
+  );
+
   return {
     ...card,
     type: 'minion',
     attack: card.attack!,
     health: card.health!,
     currentHealth: card.health!,
-    canAttack: false,
+    canAttack: hasCharge!, // <-- summoning sickness controlled by whether charge exists in card's text
     instanceId: `${card.id}-${Date.now()}`,
+    keywords: hasCharge ? ['charge'] : [],
   };
 }
 
