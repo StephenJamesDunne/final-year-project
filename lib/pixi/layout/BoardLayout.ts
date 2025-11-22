@@ -88,7 +88,15 @@ export class BoardLayout {
     const pattern = this.createZonePattern(boardWidth, height, type);
     pattern.x = marginLeft;
     pattern.alpha = 0.1;
+
+    // PixiJS Masking: restrict zone pattern to the bounds of the board zones
+    const mask = new PIXI.Graphics();
+    mask.roundRect(marginLeft, 0, boardWidth, height, 12);
+    mask.fill(0xffffff);
+
+    zone.addChild(mask);
     zone.addChild(pattern);
+    pattern.mask = mask;
 
     return zone;
   }
@@ -97,12 +105,12 @@ export class BoardLayout {
     const pattern = new PIXI.Graphics();
 
     // Celtic knot-inspired pattern
-    const spacing = 40;
+    const spacing = 36;
     // color is red for enemy, green for player
     const color = type === 'enemy' ? COLORS.UI.red : COLORS.UI.green;
 
-    for (let x = 0; x < width; x += spacing) {
-      for (let y = 0; y < height; y += spacing) {
+    for (let x = 0; x < width - spacing + 20; x += spacing) {
+      for (let y = 0; y < height - spacing; y += spacing) {
         // Small decorative diamonds
         pattern.moveTo(x + spacing / 2, y);
         pattern.lineTo(x + spacing, y + spacing / 2);
@@ -177,7 +185,7 @@ export class BoardLayout {
   getPlayerHandPositions(count: number): Position[] {
     if (count === 0) return [];
     const baseY = this.height * 0.85;
-    const centerX = this.width / 2;
+    const centerX = this.width / 2.125;
     const spacing = count <= 7 ? 115 : Math.min(115, (this.width * 0.6) / count);
     const totalWidth = (count - 1) * spacing;
     const startX = centerX - totalWidth / 2;
@@ -192,11 +200,11 @@ export class BoardLayout {
   }
 
   getAIPortraitPosition(): Position {
-    return { x: this.width / 2 - 75, y: this.height * 0.05 };
+    return { x: this.width / 2 - 75, y: this.height * 0.06 };
   }
 
   getPlayerPortraitPosition(): Position {
-    return { x: this.width / 2 - 75, y: this.height * 0.68 };
+    return { x: this.width / 2 - 75, y: this.height * 0.685 };
   }
 
   getAIDeckPosition(): Position {
@@ -216,7 +224,7 @@ export class BoardLayout {
   }
 
   getCombatLogPosition(): Position {
-    return { x: this.width * 0.02, y: this.height * 0.40 };
+    return { x: this.width * 0.02, y: this.height * 0.25 };
   }
 
   getAIHealthPosition(): Position {

@@ -23,14 +23,14 @@ export class PortraitRenderer {
 
     // Health gem
     const healthGem = GraphicsHelpers.createCircleBadge(health, COLORS.UI.red, 20);
-    healthGem.x = this.PORTRAIT_SIZE / 2 - 30;
+    healthGem.x = this.PORTRAIT_SIZE / 2 - 35;
     healthGem.y = this.PORTRAIT_SIZE - 20;
     container.addChild(healthGem);
 
     // Mana gem
     const manaText = `${mana}/${maxMana}`;
     const manaGem = GraphicsHelpers.createCircleBadge(manaText, COLORS.UI.blue, 20);
-    manaGem.x = this.PORTRAIT_SIZE / 2 + 10;
+    manaGem.x = this.PORTRAIT_SIZE / 2 + 5;
     manaGem.y = this.PORTRAIT_SIZE - 20;
     container.addChild(manaGem);
 
