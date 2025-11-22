@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { COLORS, FONTS } from '../utils/StyleConstants';
 
 export class CombatLogRenderer {
   private readonly WIDTH = 320;
@@ -31,8 +32,8 @@ export class CombatLogRenderer {
   private createBackground(): PIXI.Graphics {
     const bg = new PIXI.Graphics();
     bg.roundRect(0, 0, this.WIDTH, this.HEIGHT, 8);
-    bg.fill({ color: 0x1e293b, alpha: 0.85 });
-    bg.stroke({ width: 2, color: 0x475569 });
+    bg.fill({ color: COLORS.UI.darkBg, alpha: 0.85 });
+    bg.stroke({ width: 2, color: COLORS.UI.grayStroke });
     return bg;
   }
 
@@ -42,7 +43,7 @@ export class CombatLogRenderer {
       style: {
         fontSize: 22,
         fontWeight: 'bold',
-        fill: 0xfbbf24,
+        fill: COLORS.UI.victory,
       },
     });
     title.x = this.WIDTH / 2;
@@ -55,7 +56,7 @@ export class CombatLogRenderer {
     const divider = new PIXI.Graphics();
     divider.moveTo(10, 45);
     divider.lineTo(this.WIDTH - 10, 45);
-    divider.stroke({ width: 1, color: 0x475569 });
+    divider.stroke({ width: 1, color: COLORS.UI.grayStroke });
     return divider;
   }
 
@@ -68,7 +69,7 @@ export class CombatLogRenderer {
         text: log.startsWith('═') || log.startsWith('─') ? log : `• ${log}`,
         style: {
           fontSize: 14,
-          fill: log.includes('VICTORY') || log.includes('DEFEAT') ? 0xfbbf24 : 0xe2e8f0,
+          fill: log.includes('VICTORY') || log.includes('DEFEAT') ? COLORS.UI.victory : COLORS.UI.logText,
           fontWeight: log.startsWith('═') || log.startsWith('─') ? 'bold' : 'normal',
           wordWrap: true,
           wordWrapWidth: this.WIDTH - padding * 2,

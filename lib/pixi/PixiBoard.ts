@@ -6,6 +6,7 @@ import { UIManager } from './ui/UIManager';
 import { HandRenderer } from './rendering/HandRenderer';
 import { MinionRenderer } from './rendering/MinionRenderer';
 import { BoardRenderer } from './rendering/BoardRenderer';
+import { COLORS } from './utils/StyleConstants';
 
 export interface BoardCallbacks {
   onCardPlay: (cardIndex: number) => void;
@@ -71,7 +72,7 @@ export class PixiBoard {
       canvas,
       width: window.innerWidth,
       height: window.innerHeight,
-      backgroundColor: 0x0f172a,
+      backgroundColor: COLORS.BOARD.background,
       antialias: true,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,

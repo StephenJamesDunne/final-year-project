@@ -6,6 +6,7 @@ import { CombatLogRenderer } from './CombatLogRenderer';
 import { EndTurnButton } from './EndTurnButton';
 import { DeckIndicator } from './DeckIndicator';
 import { TurnIndicator } from './TurnIndicator';
+import { COLORS } from '../utils/StyleConstants';
 
 export class UIManager {
   private portraitRenderer: PortraitRenderer;
@@ -70,7 +71,7 @@ export class UIManager {
 
     // Make AI targetable if needed
     if (state.selectedMinion && state.currentTurn === 'player') {
-      this.aiHealthDisplay.tint = 0xff6666;
+      this.aiHealthDisplay.tint = COLORS.UI.aiTint2;
       this.aiHealthDisplay.eventMode = 'static';
       this.aiHealthDisplay.cursor = 'pointer';
       this.aiHealthDisplay.on('pointerdown', callbacks.onAIFaceClick);

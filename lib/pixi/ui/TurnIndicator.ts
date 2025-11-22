@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { COLORS } from '../utils/StyleConstants';
 
 export class TurnIndicator {
   createIndicator(turnNumber: number, currentTurn: 'player' | 'ai'): PIXI.Container {
@@ -6,8 +7,8 @@ export class TurnIndicator {
 
     const bg = new PIXI.Graphics();
     bg.roundRect(0, 0, 180, 60, 8);
-    bg.fill({ color: 0x1e293b, alpha: 0.9 });
-    bg.stroke({ width: 2, color: currentTurn === 'player' ? 0x3b82f6 : 0xef4444 });
+    bg.fill({ color: COLORS.UI.darkBg, alpha: 0.9 });
+    bg.stroke({ width: 2, color: currentTurn === 'player' ? COLORS.UI.blue : COLORS.UI.red });
     container.addChild(bg);
 
     const turnText = new PIXI.Text({
@@ -15,7 +16,7 @@ export class TurnIndicator {
       style: {
         fontSize: 18,
         fontWeight: 'bold',
-        fill: 0xfbbf24,
+        fill: COLORS.UI.victory,
       },
     });
     turnText.x = 90;
@@ -27,7 +28,7 @@ export class TurnIndicator {
       text: currentTurn === 'player' ? 'Your Turn' : 'Enemy Turn',
       style: {
         fontSize: 14,
-        fill: currentTurn === 'player' ? 0x3b82f6 : 0xef4444,
+        fill: currentTurn === 'player' ? COLORS.UI.blue : COLORS.UI.red,
       },
     });
     playerText.x = 90;

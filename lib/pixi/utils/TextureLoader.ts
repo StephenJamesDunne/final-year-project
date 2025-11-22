@@ -1,4 +1,14 @@
 import * as PIXI from 'pixi.js';
+import { COLORS } from './StyleConstants';
+
+/**
+ * Texture Loader (Singleton Pattern)
+ * 
+ * Manages loading and caching PixiJS textures for the entire game.
+ * Using the singleton pattern so that only one instance of the TextureLoader
+ * exists, preventing duplicate texture loading and allowing texture access from anywhere
+ * in the project. 
+ */
 
 export class TextureLoader {
   private static instance: TextureLoader;
@@ -50,7 +60,7 @@ export class TextureLoader {
   private createPlaceholderTexture(): PIXI.Texture {
     const graphics = new PIXI.Graphics();
     graphics.rect(0, 0, 100, 100);
-    graphics.fill(0x333333);
+    graphics.fill(COLORS.UI.placeholder);
     return PIXI.RenderTexture.create({ width: 100, height: 100 });
   }
 }

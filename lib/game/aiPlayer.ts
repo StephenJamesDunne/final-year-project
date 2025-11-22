@@ -111,35 +111,3 @@ export function getAIDecisionDelay(): number {
   // Random delay between 500-1200ms to simulate thinking
   return Math.random() * 700 + 500;
 }
-
-export function shouldAIPlayAggressively(gameState: BattleState): boolean {
-  // Simple heuristic: play aggressively if player has low health
-  return gameState.player.health <= 10;
-}
-
-export function evaluateBoardState(gameState: BattleState): {
-  playerAdvantage: number;
-  aiAdvantage: number;
-  recommendation: 'aggressive' | 'defensive' | 'neutral';
-} {
-  const playerBoardValue = gameState.player.board.reduce((total, minion) => 
-    total + minion.attack + minion.currentHealth, 0
-  );
-  
-  const aiBoardValue = gameState.ai.board.reduce((total, minion) => 
-    total + minion.attack + minion.currentHealth, 0
-  );
-
-  const playerAdvantage = playerBoardValue + gameState.player.health;
-  const aiAdvantage = aiBoardValue + gameState.ai.health;
-
-  let recommendation: 'aggressive' | 'defensive' | 'neutral' = 'neutral';
-  
-  if (aiAdvantage > playerAdvantage * 1.2) {
-    recommendation = 'aggressive';
-  } else if (playerAdvantage > aiAdvantage * 1.2) {
-    recommendation = 'defensive';
-  }
-
-  return { playerAdvantage, aiAdvantage, recommendation };
-}

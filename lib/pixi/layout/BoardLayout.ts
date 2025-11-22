@@ -1,4 +1,9 @@
 import * as PIXI from 'pixi.js';
+import { COLORS } from '../utils/StyleConstants';
+
+// BoardLayout provides all the math logic for positioning of my PIXI elements on the screen. This is where
+// all elements on the canvas are anchored to their positions on the page.
+
 
 interface Position {
   x: number;
@@ -24,7 +29,7 @@ export class BoardLayout {
 
     // Base background - dark fantasy theme
     bg.rect(0, 0, this.width, this.height);
-    bg.fill(0x0a0e1a);
+    bg.fill(COLORS.UI.baseBG);
 
     // Enemy territory (top)
     const enemyZone = this.createBoardZone(
@@ -61,20 +66,20 @@ export class BoardLayout {
 
     if (type === 'enemy') {
       // Enemy zone - dark theme
-      bg.fill({ color: 0x2d1810, alpha: 0.5 });
-      bg.stroke({ width: 3, color: 0x8b4513 });
+      bg.fill({ color: COLORS.UI.deckBg, alpha: 0.5 });
+      bg.stroke({ width: 3, color: COLORS.UI.brown });
 
       // Inner glow
       bg.roundRect(marginLeft + 4, 4, boardWidth - 8, height - 8, 10);
-      bg.stroke({ width: 2, color: 0xdc2626, alpha: 0.3 });
+      bg.stroke({ width: 2, color: COLORS.ELEMENTS.fire, alpha: 0.3 });
     } else {
       // Player zone - forest theme
-      bg.fill({ color: 0x1a3a1a, alpha: 0.5 });
-      bg.stroke({ width: 3, color: 0x2d5a2d });
+      bg.fill({ color: COLORS.TEAMS.player, alpha: 0.5 });
+      bg.stroke({ width: 3, color: COLORS.UI.forest });
 
       // Inner glow
       bg.roundRect(marginLeft + 4, 4, boardWidth - 8, height - 8, 10);
-      bg.stroke({ width: 2, color: 0x22c55e, alpha: 0.3 });
+      bg.stroke({ width: 2, color: COLORS.UI.forestGlow, alpha: 0.3 });
     }
 
     zone.addChild(bg);
@@ -94,7 +99,7 @@ export class BoardLayout {
     // Celtic knot-inspired pattern
     const spacing = 40;
     // color is red for enemy, green for player
-    const color = type === 'enemy' ? 0xff0000 : 0x00ff00;
+    const color = type === 'enemy' ? COLORS.UI.red : COLORS.UI.green;
 
     for (let x = 0; x < width; x += spacing) {
       for (let y = 0; y < height; y += spacing) {
@@ -119,12 +124,12 @@ export class BoardLayout {
     // Main battle line
     bg.moveTo(marginLeft, dividerY);
     bg.lineTo(marginLeft + boardWidth, dividerY);
-    bg.stroke({ width: 3, color: 0xfbbf24, alpha: 0.6 });
+    bg.stroke({ width: 3, color: COLORS.UI.victory, alpha: 0.6 });
 
     // Decorative dots along the line
     for (let x = marginLeft + 50; x < marginLeft + boardWidth; x += 50) {
       bg.circle(x, dividerY, 4);
-      bg.fill({ color: 0xfbbf24, alpha: 0.8 });
+      bg.fill({ color: COLORS.UI.victory, alpha: 0.8 });
     }
   }
 

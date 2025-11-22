@@ -1,10 +1,15 @@
 import * as PIXI from 'pixi.js';
+import { COLORS } from './StyleConstants';
+
+/* TODO: Extract more helper functions from the lib/pixi/layout, lib/pixi/rendering and lib/pixi/ui into this file
+to unify all repeated functions into one place. Currently too many functions and repeated logic in many files related 
+to Pixi functionality. */
 
 export class GraphicsHelpers {
     static createShadow(width: number, height: number, radius: number): PIXI.Graphics {
         const shadow = new PIXI.Graphics();
         shadow.roundRect(2, 2, width, height, radius);
-        shadow.fill({ color: 0x000000, alpha: 0.4 });
+        shadow.fill({ color: COLORS.UI.black, alpha: 0.4 });
         return shadow;
     }
 
@@ -18,7 +23,7 @@ export class GraphicsHelpers {
         const bg = new PIXI.Graphics();
         bg.circle(radius, radius, radius);
         bg.fill({ color, alpha: 0.95 });
-        bg.stroke({ width: 2, color: 0xfbbf24 });
+        bg.stroke({ width: 2, color: COLORS.UI.victory });
         badge.addChild(bg);
 
         const text = new PIXI.Text({
@@ -26,8 +31,8 @@ export class GraphicsHelpers {
             style: {
                 fontSize: 16,
                 fontWeight: 'bold',
-                fill: 0xffffff,
-                stroke: { color: 0x000000, width: 3 },
+                fill: COLORS.UI.white,
+                stroke: { color: COLORS.UI.black, width: 3 },
             },
         });
         text.x = radius;
@@ -49,7 +54,7 @@ export class GraphicsHelpers {
         }
         hexagon.poly(points);
         hexagon.fill({ color, alpha: 0.95 });
-        hexagon.stroke({ width: 2, color: 0x1e40af });
+        hexagon.stroke({ width: 2, color: COLORS.UI.blue });
         container.addChild(hexagon);
 
         // Add text if provided
@@ -59,8 +64,8 @@ export class GraphicsHelpers {
                 style: {
                     fontSize: 16,
                     fontWeight: 'bold',
-                    fill: 0xffffff,
-                    stroke: { color: 0x000000, width: 3 },
+                    fill: COLORS.UI.white,
+                    stroke: { color: COLORS.UI.black, width: 3 },
                 },
             });
             label.x = size;

@@ -109,8 +109,8 @@ export class CardRenderer {
 
         const bg = new PIXI.Graphics();
         bg.roundRect(0, 0, this.CARD_WIDTH, this.CARD_HEIGHT, CARD_DIMENSIONS.BORDER_RADIUS);
-        bg.fill({ color: 0x2d1810, alpha: 0.95 });
-        bg.stroke({ width: 3, color: 0x8b4513 });
+        bg.fill({ color: COLORS.UI.deckBg, alpha: 0.95 });
+        bg.stroke({ width: 3, color: COLORS.UI.brown });
         container.addChild(bg);
 
         const cardBackKey = 'card-back';
@@ -145,7 +145,7 @@ export class CardRenderer {
             color = isPlayer ? COLORS.TEAMS.player : COLORS.TEAMS.ai;
         }
 
-        bg.fill({ color, alpha: 0.9 });
+        bg.fill({ color, alpha: 1.0 });
         bg.stroke({ width: 3, color: this.getElementBorderColor(card.element) });
 
         return bg;
@@ -161,7 +161,7 @@ export class CardRenderer {
 
             const mask = new PIXI.Graphics();
             mask.roundRect(0, 0, this.CARD_WIDTH - 16, 70, 4);
-            mask.fill(0xffffff);
+            mask.fill(COLORS.UI.cardFill);
 
             const sprite = new PIXI.Sprite(texture);
             sprite.width = this.CARD_WIDTH - 16;
@@ -184,7 +184,7 @@ export class CardRenderer {
 
         const bg = new PIXI.Graphics();
         bg.roundRect(0, 0, this.CARD_WIDTH - 16, 70, 4);
-        bg.fill({ color: 0x1e293b, alpha: 0.8 });
+        bg.fill({ color: COLORS.UI.darkBg, alpha: 1 });
         placeholder.addChild(bg);
 
         const icon = new PIXI.Text({
@@ -224,7 +224,7 @@ export class CardRenderer {
                 fontSize: compact ? 9 : FONTS.CARD_NAME.fontSize,
                 fontWeight: FONTS.CARD_NAME.fontWeight as any,
                 fill: FONTS.CARD_NAME.fill,
-                stroke: { color: 0x000000, width: 2 },
+                stroke: { color: COLORS.UI.black, width: 2 },
                 align: 'center',
             }
         });
@@ -237,17 +237,17 @@ export class CardRenderer {
     }
 
     private createManaCrystal(cost: number): PIXI.Container {
-        return GraphicsHelpers.createHexagon(16, 0x3b82f6, cost);
+        return GraphicsHelpers.createHexagon(16, COLORS.UI.blue, cost);
     }
 
     private createAttackBadge(attack: number): PIXI.Container {
-        return GraphicsHelpers.createCircleBadge(attack, 0xdc2626, 16);
+        return GraphicsHelpers.createCircleBadge(attack, COLORS.ELEMENTS.fire, 16);
     }
 
     private createHealthBadge(health: number, isDamaged: boolean = false): PIXI.Container {
         return GraphicsHelpers.createCircleBadge(
             health,
-            isDamaged ? 0xdc2626 : 0x16a34a,
+            isDamaged ? COLORS.ELEMENTS.fire : COLORS.ELEMENTS.earth,
             16
         );
     }
@@ -256,7 +256,7 @@ export class CardRenderer {
         const pattern = new PIXI.Graphics();
 
         pattern.circle(0, 0, 30);
-        pattern.stroke({ width: 3, color: 0x8b4513 });
+        pattern.stroke({ width: 3, color: COLORS.UI.brown });
 
         pattern.circle(0, 0, 20);
         pattern.stroke({ width: 2, color: COLORS.UI.gold });
@@ -266,7 +266,7 @@ export class CardRenderer {
             const x = 15 * Math.cos(angle);
             const y = 15 * Math.sin(angle);
             pattern.circle(x, y, 8);
-            pattern.fill({ color: 0x2d1810, alpha: 0.8 });
+            pattern.fill({ color: COLORS.UI.deckBg, alpha: 0.8 });
             pattern.stroke({ width: 2, color: COLORS.UI.gold });
         }
 
@@ -276,14 +276,14 @@ export class CardRenderer {
     createAttackGlow(): PIXI.Graphics {
         const glow = new PIXI.Graphics();
         glow.roundRect(-5, -5, this.CARD_WIDTH + 10, this.CARD_HEIGHT + 10, 10);
-        glow.fill({ color: 0x22c55e, alpha: 0.3 });
+        glow.fill({ color: COLORS.UI.forestGlow, alpha: 0.3 });
         return glow;
     }
 
     createTargetGlow(): PIXI.Graphics {
         const glow = new PIXI.Graphics();
         glow.roundRect(-5, -5, this.CARD_WIDTH + 10, this.CARD_HEIGHT + 10, 10);
-        glow.fill({ color: 0xef4444, alpha: 0.3 });
+        glow.fill({ color: COLORS.UI.red, alpha: 0.3 });
         return glow;
     }
 

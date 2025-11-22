@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { GraphicsHelpers } from '../utils/GraphicsHelpers';
+import { COLORS } from '../utils/StyleConstants';
 
 export class PortraitRenderer {
   private readonly PORTRAIT_SIZE = 120;
@@ -21,14 +22,14 @@ export class PortraitRenderer {
     container.addChild(nameText);
 
     // Health gem
-    const healthGem = GraphicsHelpers.createCircleBadge(health, 0xef4444, 20);
+    const healthGem = GraphicsHelpers.createCircleBadge(health, COLORS.UI.red, 20);
     healthGem.x = this.PORTRAIT_SIZE / 2 - 30;
     healthGem.y = this.PORTRAIT_SIZE - 20;
     container.addChild(healthGem);
 
     // Mana gem
     const manaText = `${mana}/${maxMana}`;
-    const manaGem = GraphicsHelpers.createCircleBadge(manaText, 0x3b82f6, 20);
+    const manaGem = GraphicsHelpers.createCircleBadge(manaText, COLORS.UI.blue, 20);
     manaGem.x = this.PORTRAIT_SIZE / 2 + 10;
     manaGem.y = this.PORTRAIT_SIZE - 20;
     container.addChild(manaGem);
@@ -39,8 +40,8 @@ export class PortraitRenderer {
   private createFrame(isAI: boolean): PIXI.Graphics {
     const frame = new PIXI.Graphics();
     frame.circle(this.PORTRAIT_SIZE / 2, this.PORTRAIT_SIZE / 2, this.PORTRAIT_SIZE / 2);
-    frame.fill({ color: isAI ? 0xcc3333 : 0x3366cc, alpha: 0.3 });
-    frame.stroke({ width: 4, color: 0xd4af37 });
+    frame.fill({ color: isAI ? COLORS.UI.red : COLORS.UI.blue, alpha: 0.3 });
+    frame.stroke({ width: 4, color: COLORS.UI.gold });
     return frame;
   }
 
@@ -49,7 +50,7 @@ export class PortraitRenderer {
       style: {
         fontSize: 14,
         fontWeight: 'bold',
-        fill: isAI ? 0xef4444 : 0x3b82f6,
+        fill: isAI ? COLORS.UI.red : COLORS.UI.blue,
         align: 'center',
       },
     });

@@ -17,13 +17,7 @@
  * 
  * State Building Pattern:
  * Builds state changes locally in `newState` variable, then calls set()
- * once at end. More efficient than multiple set() calls. Strategic UI
- * updates (showing AI actions) use intermediate set() calls for feedback.
- * 
- * Performance Note:
- * This is an async function that makes multiple state updates. Components
- * subscribing to frequently-changing state (like combatLog or aiAction)
- * will re-render multiple times during the AI turn.
+ * once at end. More efficient than multiple set() calls.
  * 
  * @see lib/game/aiPlayer.ts - AI decision making and execution
  * @see lib/game/abilitySystem.ts - End-of-turn ability processing

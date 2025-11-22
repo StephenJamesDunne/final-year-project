@@ -3,6 +3,10 @@ import { Minion } from '@/lib/types/game';
 import { CardRenderer } from './CardRenderer';
 import { BoardLayout } from '../layout/BoardLayout';
 
+/* TODO: Refactor this page so that minions drawn on the board are designed closer to cards in the hand.
+Need to consolidate these designs for better cohesion and UX. */
+
+
 export class MinionRenderer {
     constructor(
         private cardRenderer: CardRenderer,

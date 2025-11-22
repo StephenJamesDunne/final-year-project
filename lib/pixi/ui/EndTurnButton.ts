@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { COLORS } from '../utils/StyleConstants'
 
 export class EndTurnButton {
   private readonly RADIUS = 60;
@@ -13,7 +14,7 @@ export class EndTurnButton {
     button.addChild(text);
 
     if (enabled) {
-      this.setupInteractivity(button, bg, onClick);
+      this.reactToPlayer(button, bg, onClick);
     }
 
     return button;
@@ -24,11 +25,11 @@ export class EndTurnButton {
     bg.circle(this.RADIUS, this.RADIUS, this.RADIUS);
 
     if (enabled) {
-      bg.fill({ color: 0x10b981, alpha: 0.9 });
-      bg.stroke({ width: 4, color: 0xfbbf24 });
+      bg.fill({ color: COLORS.UI.green, alpha: 0.9 });
+      bg.stroke({ width: 4, color: COLORS.UI.gold });
     } else {
-      bg.fill({ color: 0x64748b, alpha: 0.5 });
-      bg.stroke({ width: 4, color: 0x475569 });
+      bg.fill({ color: COLORS.UI.gray, alpha: 0.5 });
+      bg.stroke({ width: 4, color: COLORS.UI.grayStroke });
     }
 
     return bg;
@@ -40,7 +41,7 @@ export class EndTurnButton {
       style: {
         fontSize: 16,
         fontWeight: 'bold',
-        fill: enabled ? 0xffffff : 0x94a3b8,
+        fill: enabled ? COLORS.UI.white : COLORS.UI.gray,
         align: 'center',
         lineHeight: 20,
       },
@@ -51,7 +52,7 @@ export class EndTurnButton {
     return text;
   }
 
-  private setupInteractivity(
+  private reactToPlayer(
     button: PIXI.Container,
     bg: PIXI.Graphics,
     onClick: () => void
@@ -64,15 +65,15 @@ export class EndTurnButton {
     button.on('pointerover', () => {
       bg.clear();
       bg.circle(this.RADIUS, this.RADIUS, this.RADIUS);
-      bg.fill({ color: 0x059669, alpha: 1 });
-      bg.stroke({ width: 5, color: 0xfde047 });
+      bg.fill({ color: COLORS.UI.greenHover, alpha: 1 });
+      bg.stroke({ width: 5, color: COLORS.UI.lightGold });
     });
 
     button.on('pointerout', () => {
       bg.clear();
       bg.circle(this.RADIUS, this.RADIUS, this.RADIUS);
-      bg.fill({ color: 0x10b981, alpha: 0.9 });
-      bg.stroke({ width: 4, color: 0xfbbf24 });
+      bg.fill({ color: COLORS.UI.green, alpha: 0.9 });
+      bg.stroke({ width: 4, color: COLORS.UI.victory });
     });
   }
 }
