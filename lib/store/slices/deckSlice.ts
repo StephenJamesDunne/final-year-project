@@ -5,12 +5,6 @@
  * Manages deck archetype selection before a battle begins.
  * Handles both player and AI deck choices from the deck selection screen.
  * 
- * Deck Archetypes:
- * - fire: Aggressive (Connacht Warriors) - Fast damage and burn spells
- * - water: Tempo (Leinster Wisdom) - Card draw and efficient minions
- * - earth: Defensive (Munster Endurance) - Healing and high-health minions
- * - air: Balanced (Ulster Cunning) - Flexible answers and disruption
- * 
  * Usage Example:
  * const playerDeck = useBattleStore(state => state.playerDeckArchetype);
  * const selectPlayerDeck = useBattleStore(state => state.selectPlayerDeck);

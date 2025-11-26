@@ -12,13 +12,6 @@ export default function Home() {
         >
           Start Battle
         </Link>
-        <div className="my-4">or</div>
-        <Link
-          href="/card-editor"
-          className="bg-amber-600 hover:bg-amber-500 px-8 py-4 rounded font-bold inline-block"
-        >
-          Card Editor
-        </Link>
       </div>
     </main>
   );

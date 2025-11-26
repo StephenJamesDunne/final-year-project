@@ -43,6 +43,8 @@ type BattleStore = DeckSlice &
   TurnSlice & 
   InitializationSlice;
 
+  // exportable Zustand hook;
+  // components using this hook will automatically re-render when the state changes
 export const useBattleStore = create<BattleStore>()((...args) => ({
   ...createDeckSlice(...args),
   ...createBattleSlice(...args),

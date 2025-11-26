@@ -6,27 +6,34 @@ import { DeckSelector } from '@/components/DeckSelector';
 
 export default function BattlePage() {
   const {
-    // Nested states for player and ai
+    // State variables taken from slices
+    // from battleSlice:
     player,
     ai,
-    selectedMinion,
-
-    // Game state
-    currentTurn,
+    currentTurn, 
+    turnNumber,
     gameOver,
     winner,
-
     combatLog,
-    turnNumber,
     aiAction,
+    selectedMinion,
+    initialized,
+
+    // from deckSlice:
     playerDeckArchetype,
     aiDeckArchetype,
-    initialized,
+
+
+    // Actions to modify state
+
+    // from deckSlice:
     selectPlayerDeck,
     selectAIDeck,
+
+    // from initializationSlice:
     startBattle,
 
-    // Actions
+    // from gameActionsSlice:
     playCard,
     selectMinion,
     attack,
@@ -71,6 +78,7 @@ export default function BattlePage() {
     );
   }
 
+  // callbacks for various player actions on the game board
   const handleCardPlay = (cardIndex: number) => {
     playCard(cardIndex);
   };
@@ -136,7 +144,8 @@ export default function BattlePage() {
       playerHand={player.hand}
       aiHandCount={ai.hand.length}
 
-      // Callbacks
+      // Callbacks used to pass user actions back to the store
+      // after being triggered here, they call the zustand actions
       onCardPlay={handleCardPlay}
       onMinionClick={handleMinionClick}
       onTargetClick={handleTargetClick}

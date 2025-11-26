@@ -85,6 +85,8 @@ export function PixiGameBoard(props: PixiGameBoardProps) {
   }, []); // Only run once on mount
 
   // Update board state whenever props change
+  // This keeps the PixiJS rendering in sync with React state
+  // any time any of the props in here change, useEffect will run to update the PixiBoard
   useEffect(() => {
     if (!isInitialized || !pixiBoardRef.current) return;
 
