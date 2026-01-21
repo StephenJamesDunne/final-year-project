@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import { Minion } from '@/lib/types/game';
 import { CardRenderer } from './CardRenderer';
 import { BoardLayout } from '../layout/BoardLayout';
+import { boardHasTaunt, hasTaunt } from '@/lib/game/gameLogic';
 
 /* TODO: Refactor this page so that minions drawn on the board are designed closer to cards in the hand.
 Need to consolidate these designs for better cohesion and UX. */
@@ -21,6 +22,8 @@ export class MinionRenderer {
         onTargetClick: (targetId: string) => void
     ): void {
         const positions = this.layout.getAIBoardPositions(aiBoard.length);
+
+        const hasTauntOnBoard = boardHasTaunt(aiBoard);
 
         aiBoard.forEach((minion, i) => {
             const minionCard = this.cardRenderer.createMinionCard(minion, false);

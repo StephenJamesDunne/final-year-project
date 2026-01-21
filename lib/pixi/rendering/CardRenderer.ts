@@ -71,6 +71,11 @@ export class CardRenderer {
     createMinionCard(minion: Minion, isPlayer: boolean): PIXI.Container {
         const container = new PIXI.Container();
 
+        if (this.hasTauntAbility(minion)) {
+            const tauntIndicator = this.createTauntIndicator();
+            container.addChild(tauntIndicator);
+        }
+
         const shadow = GraphicsHelpers.createShadow(this.CARD_WIDTH, this.CARD_HEIGHT, CARD_DIMENSIONS.BORDER_RADIUS);
         container.addChild(shadow);
 
@@ -96,6 +101,31 @@ export class CardRenderer {
         container.addChild(healthBadge);
 
         return container;
+    }
+
+    /**
+     * Create a Taunt shield overlay
+     */
+    createTauntIndicator(): PIXI.Graphics {
+        const shield = new PIXI.Graphics();
+
+        // Shield shape around the card
+        shield.roundRect(-4, -4, this.CARD_WIDTH + 8, this.CARD_HEIGHT + 8, 10);
+        shield.stroke({
+            width: 4,
+            color: COLORS.UI.gray,  // Stone gray for Taunt
+            alpha: 0.9
+        });
+
+        // Inner glow
+        shield.roundRect(-2, -2, this.CARD_WIDTH + 4, this.CARD_HEIGHT + 4, 9);
+        shield.stroke({
+            width: 2,
+            color: COLORS.UI.white,
+            alpha: 0.4
+        });
+
+        return shield;
     }
 
     /**
@@ -175,6 +205,13 @@ export class CardRenderer {
         } catch (error) {
             console.warn('Failed to load card art:', imageUrl);
         }
+    }
+
+    private hasTauntAbility(minion: Minion): boolean {
+        return minion.abilities?.some(ability =>
+            ability.trigger === 'passive' &&
+            ability.description?.toLowerCase().includes('taunt')
+        ) ?? false;
     }
 
     private createArtPlaceholder(card: CardType | Minion): PIXI.Container {

@@ -32,7 +32,10 @@ import {
   checkGameOver, 
   updateBoardAfterCombat, 
   handleMinionCombat, 
-  handleHeroAttack 
+  handleHeroAttack,
+  boardHasTaunt,
+  hasTaunt,
+  isValidAttackTarget,
 } from '../../game/gameLogic';
 import { removeCardFromHand } from '../../game/deckManager';
 import { processAbilities } from '../../game/abilitySystem';
@@ -115,6 +118,22 @@ export const createGameActionsSlice: StateCreator<
     const target = state.ai.board.find((m) => m.instanceId === targetId);
     if (!target) return;
 
+    // validate if the target is a valid attack target considering Taunt mechanics
+    if (!isValidAttackTarget(targetId, state.ai.board)) {
+      const tauntMinion = state.ai.board.find((m) => hasTaunt(m));
+      const tauntName = tauntMinion?.name || ' a minion with Taunt';
+
+      set({
+        ...state,
+        combatLog: [
+          ...state.combatLog,
+          `Cannot attack ${target.name} - must attack${tauntName} first!`
+        ]
+      });
+
+      return;
+    }
+
     // update the combat log and board states immutably
     let newState: BattleState = {
       ...state,
@@ -158,12 +177,28 @@ export const createGameActionsSlice: StateCreator<
     set({ ...newState, selectedMinion: null });
   },
 
+  // attackHero function processes minion attacking the enemy hero directly
   attackHero: (attackerId) => {
     const state = get();
     if (state.currentTurn !== 'player' || state.gameOver) return;
 
     const attacker = state.player.board.find((m) => m.instanceId === attackerId);
     if (!attacker || !attacker.canAttack) return;
+
+    if (boardHasTaunt(state.ai.board)) {
+      const tauntMinion = state.ai.board.find((m) => hasTaunt(m));
+      const tauntName = tauntMinion?.name || ' a minion with Taunt';
+
+      set({
+        ...state,
+        combatLog: [
+          ...state.combatLog,
+          `Cannot attack the enemy hero - must attack${tauntName} first!`
+        ]
+      });
+
+      return;
+    }
 
     let newState: BattleState = {
       ...state,
