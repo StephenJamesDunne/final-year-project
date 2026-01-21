@@ -41,13 +41,6 @@ export const RARITY_BORDERS = {
   legendary: 'border-yellow-400',
 } as const;
 
-// Animation constants
-export const CARD_ANIMATIONS = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 },
-} as const;
-
 // General Game constants
 export const GAME_CONSTANTS = {
   MAX_HAND_SIZE: 10,
@@ -56,28 +49,6 @@ export const GAME_CONSTANTS = {
   MAX_MANA: 10,
   CARDS_DRAWN_PER_TURN: 1,
   INITIAL_HAND_SIZE: 4,
-} as const;
-
-// Card sizing constants
-export const CARD_SIZES = {
-  compact: {
-    width: 'w-24',
-    height: 'h-32',
-    manaSize: 'w-6 h-6',
-    statSize: 'w-5 h-5',
-    textSize: 'text-xs',
-    artHeight: 'h-16',
-    artPosition: 'top-4 left-1 right-1',
-  },
-  normal: {
-    width: 'w-40',
-    height: 'h-56',
-    manaSize: 'w-10 h-10',
-    statSize: 'w-10 h-10',
-    textSize: 'text-xl',
-    artHeight: 'h-32',
-    artPosition: 'top-8 left-2 right-2',
-  },
 } as const;
 
 // Keywords for card descriptions

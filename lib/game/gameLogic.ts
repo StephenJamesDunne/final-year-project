@@ -71,6 +71,56 @@ export function handleMinionCombat(
   };
 }
 
+// Parse minion text for Taunt effect.
+// Note: have to check for passive triggers here, because some cards might interact with Taunt
+// without having it themselves
+export function hasTaunt(minion: Minion): boolean {
+  if (!minion.abilities) return false;
+
+  return minion.abilities.some(ability => 
+    ability.trigger === 'passive' && 
+    ability.description?.toLowerCase().includes('taunt')
+  );
+}
+
+// get all minions with Taunt on the board
+export function getTauntMinions(board: Minion[]): Minion[] {
+  return board.filter(minion => hasTaunt(minion));
+}
+
+// check if there are alive Taunt minions in play
+export function boardHasTaunt(board: Minion[]): boolean {
+  return board.some(minion => hasTaunt(minion));
+}
+
+/**
+ * Check if a target is valid considering Taunt rules
+ * Returns true if the attack is allowed, false if blocked by Taunt
+ */
+export function isValidAttackTarget(
+  targetId: string | 'face',
+  enemyBoard: Minion[]
+): boolean {
+  // If no Taunt minions, any target is valid
+  if (!boardHasTaunt(enemyBoard)) {
+    return true;
+  }
+  
+  // If attacking face while Taunt exists, invalid
+  if (targetId === 'face') {
+    return false;
+  }
+  
+  // If attacking a minion, check if it has Taunt
+  const targetMinion = enemyBoard.find(m => m.instanceId === targetId);
+  if (!targetMinion) {
+    return false;
+  }
+  
+  // Only valid if the target itself has Taunt
+  return hasTaunt(targetMinion);
+}
+
 export function handleHeroAttack(
   attacker: Minion,
   currentHealth: number

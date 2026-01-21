@@ -29,7 +29,6 @@ fiverealms/
 ├── components/
 │   ├── game/
 │   │   ├── PixiGameBoard.tsx    # PixiJS canvas wrapper component
-│   │   └── Card.tsx             # Card component (legacy)
 │   └── DeckSelector.tsx         # Deck selection UI
 │
 ├── lib/
