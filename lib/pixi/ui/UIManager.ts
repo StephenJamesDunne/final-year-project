@@ -7,6 +7,7 @@ import { EndTurnButton } from './EndTurnButton';
 import { DeckIndicator } from './DeckIndicator';
 import { TurnIndicator } from './TurnIndicator';
 import { COLORS } from '../utils/StyleConstants';
+import { boardHasTaunt } from '@/lib/game/gameLogic';
 
 export class UIManager {
   private portraitRenderer: PortraitRenderer;
@@ -71,10 +72,17 @@ export class UIManager {
 
     // Make AI targetable if needed
     if (state.selectedMinion && state.currentTurn === 'player') {
-      this.aiHealthDisplay.tint = COLORS.UI.aiTint2;
-      this.aiHealthDisplay.eventMode = 'static';
-      this.aiHealthDisplay.cursor = 'pointer';
-      this.aiHealthDisplay.on('pointerdown', callbacks.onAIFaceClick);
+      const canTargetFace = !boardHasTaunt(state.aiBoard);
+
+      if (canTargetFace) {
+        this.aiHealthDisplay.tint = COLORS.UI.aiTint2;
+        this.aiHealthDisplay.eventMode = 'static';
+        this.aiHealthDisplay.cursor = 'pointer';
+        this.aiHealthDisplay.on('pointerdown', callbacks.onAIFaceClick);
+      } else {
+        // Dim the portrait to show it can't be targeted
+        this.aiHealthDisplay.alpha = 0.5;
+      }
     }
 
     this.playerHealthDisplay = this.portraitRenderer.createHeroPortrait(
@@ -93,8 +101,7 @@ export class UIManager {
     this.aiDeckIndicator = this.deckIndicator.createIndicator(aiCardsRemaining, true);
     this.playerDeckIndicator = this.deckIndicator.createIndicator(playerCardsRemaining, false);
     this.combatLogDisplay = this.combatLogRenderer.createCombatLog(
-      state.combatLog,
-      state.aiAction
+      state.combatLog
     );
     this.turnIndicatorDisplay = this.turnIndicator.createIndicator(
       state.turnNumber,

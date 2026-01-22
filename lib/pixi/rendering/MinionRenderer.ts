@@ -31,12 +31,19 @@ export class MinionRenderer {
             minionCard.y = positions[i].y;
 
             if (selectedMinion && currentTurn === 'player') {
-                const targetGlow = this.cardRenderer.createTargetGlow();
-                minionCard.addChildAt(targetGlow, 0);
+                const isValidTarget = !hasTauntOnBoard || hasTaunt(minion);
 
-                minionCard.eventMode = 'static';
-                minionCard.cursor = 'crosshair';
-                minionCard.on('pointerdown', () => onTargetClick(minion.instanceId));
+                if (isValidTarget) {
+                    const targetGlow = this.cardRenderer.createTargetGlow();
+                    minionCard.addChildAt(targetGlow, 0);
+
+                    minionCard.eventMode = 'static';
+                    minionCard.cursor = 'crosshair';
+                    minionCard.on('pointerdown', () => onTargetClick(minion.instanceId));
+                } else {
+                    // Dim non-Taunt minions when Taunt exists
+                    minionCard.alpha = 0.5;
+                }
             }
 
             container.addChild(minionCard);

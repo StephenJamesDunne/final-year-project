@@ -1,6 +1,5 @@
 import { BattleState, Card, Player } from '../types/game';
 import { createMinion } from './gameLogic';
-import { CARDS } from '../data/cards';
 import { drawCards } from './deckManager';
 
 export function processAbilities(

@@ -7,7 +7,7 @@ export class CombatLogRenderer {
   private readonly LINE_HEIGHT = 32;
   private readonly MAX_ENTRIES = 12;
 
-  createCombatLog(combatLog: string[], aiAction?: string): PIXI.Container {
+  createCombatLog(combatLog: string[]): PIXI.Container {
     const container = new PIXI.Container();
 
     // Background

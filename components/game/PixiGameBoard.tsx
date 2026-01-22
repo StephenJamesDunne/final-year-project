@@ -133,34 +133,17 @@ export function PixiGameBoard(props: PixiGameBoardProps) {
   ]);
 
   return (
-    <div style={{ width: '100vw', height: '100vh', backgroundColor: '#0f172a' }}>
+    <div className="relative w-screen h-screen bg-slate-900">
       <canvas
         ref={canvasRef}
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'block',
-        }}
+        className="w-full h-full block"
       />
 
       {!isInitialized && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '24px',
-            fontWeight: 'bold',
-          }}
-        >
-          {initError ? `Error: ${initError}` : 'Loading Five Realms...'}
+        <div className="absolute inset-0 bg-slate-900/90 flex items-center justify-center">
+          <span className="text-white text-2xl font-bold">
+            {initError ? `Error: ${initError}` : 'Loading Five Realms...'}
+          </span>
         </div>
       )}
     </div>

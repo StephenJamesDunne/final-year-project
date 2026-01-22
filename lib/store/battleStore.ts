@@ -13,10 +13,7 @@
  * - turnSlice: Turn management and AI execution
  * - initializationSlice: Battle setup and initialization
  * 
- * Key Features:
  * - Each slice can access full store state via get()
- * - Each slice manages its own functionality independently
- * - Type-safe composition ensures all slices work together
  * 
  * Usage:
  * import { useBattleStore } from '@/lib/store/battleStore';
@@ -27,7 +24,6 @@
  * // Extract actions
  * const playCard = useBattleStore(state => state.playCard);
  * 
- * @see lib/store/slices/ - Individual slice implementations
  */
 
 import { create } from 'zustand';

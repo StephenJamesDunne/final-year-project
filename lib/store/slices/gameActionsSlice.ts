@@ -3,8 +3,7 @@
  * 
  * Purpose:
  * Handles all player-initiated actions during their turn including playing cards,
- * attacking with minions, and attacking the enemy hero. Coordinates game logic
- * functions with state updates.
+ * attacking with minions, and attacking the enemy hero.
  * 
  * State Update Pattern:
  * All actions follow immutable update pattern:
@@ -20,9 +19,6 @@
  * playCard(2);  // Play card at index 2
  * attack('attacker-id', 'target-id');  // Attack enemy minion
  * 
- * @see lib/game/gameLogic.ts - Combat resolution functions
- * @see lib/game/abilitySystem.ts - Ability processing
- * @see battleSlice.ts - Core state structure
  */
 
 import { StateCreator } from 'zustand';

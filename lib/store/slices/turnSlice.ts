@@ -3,8 +3,7 @@
  * 
  * Purpose:
  * Carries out the complete turn cycle from player ending their turn through
- * AI execution and back to the player's next turn. This is the most complex
- * slice, coordinating multiple game systems with async timing for UI/UX.
+ * AI execution and back to the player's next turn.
  * 
  * Actions:
  * - endTurn(): Async function that executes the complete turn cycle
@@ -19,9 +18,6 @@
  * Builds state changes locally in `newState` variable, then calls set()
  * once at end. More efficient than multiple set() calls.
  * 
- * @see lib/game/aiPlayer.ts - AI decision making and execution
- * @see lib/game/abilitySystem.ts - End-of-turn ability processing
- * @see gameActionsSlice.ts - Player action handlers for comparison
  */
 
 import { StateCreator } from 'zustand';

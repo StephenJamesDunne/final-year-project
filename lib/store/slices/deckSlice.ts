@@ -11,9 +11,6 @@
  * 
  * selectPlayerDeck('fire'); // Choose fire deck for player
  * 
- * @see initializationSlice.ts - Uses these selections to create decks
- * @see components/DeckSelector.tsx - UI for deck selection
- * @see lib/game/deckManager.ts - createArchetypeDeck() function
  */
 
 import { StateCreator } from 'zustand';

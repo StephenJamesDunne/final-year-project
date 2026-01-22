@@ -24,20 +24,8 @@
  * This slice primarily holds state that is updated by other slices:
  * - gameActionsSlice: Updates player/ai state during combat
  * - turnSlice: Updates turn-related state and manages turn flow
- * - initializationSlice: Sets initial state when battle starts
+ * - initializationSlice: Sets initial state when battle starts 
  * 
- * Design Pattern:
- * This is a "core state" slice - it defines the shape of game state
- * but delegates most mutations to action-specific slices. This keeps
- * the state structure centralized while distributing action logic.
- * 
- * Usage Example:
- * const player = useBattleStore(state => state.player);
- * const currentTurn = useBattleStore(state => state.currentTurn);
- * const selectMinion = useBattleStore(state => state.selectMinion);
- * 
- * @see gameActionsSlice.ts - For player action handlers
- * @see turnSlice.ts - For turn management
  */
 
 import { StateCreator } from 'zustand';

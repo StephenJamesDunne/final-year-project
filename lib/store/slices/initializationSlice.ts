@@ -15,9 +15,6 @@
  *   Start Battle
  * </button>
  * 
- * @see lib/game/deckManager.ts - createArchetypeDeck() and drawCards()
- * @see deckSlice.ts - Deck archetype selection
- * @see battleSlice.ts - Initial state structure
  */
 
 import { StateCreator } from 'zustand';
