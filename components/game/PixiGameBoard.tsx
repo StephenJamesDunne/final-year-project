@@ -1,136 +1,78 @@
 import { useEffect, useRef, useState } from 'react';
 import { PixiBoard, BoardCallbacks, BoardState } from '@/lib/pixi/PixiBoard';
 
-interface PixiGameBoardProps {
-  playerBoard: any[];
-  aiBoard: any[];
-  playerHand: any[];
-  aiHandCount: number;
-  onCardPlay: (cardIndex: number) => void;
-  onMinionClick: (minionId: string, isPlayer: boolean) => void;
-  onTargetClick: (targetId: string) => void;
-  onAIFaceClick: () => void;
-  onEndTurn: () => void;
-  selectedMinion: string | null;
-  currentTurn: 'player' | 'ai';
-  playerMana: number;
-  playerMaxMana: number;
-  playerHealth: number;
-  aiMana: number;
-  aiMaxMana: number;
-  aiHealth: number;
-  gameOver: boolean;
-  winner?: 'player' | 'ai';
-  combatLog: string[];
-  turnNumber: number;
-  aiAction?: string;
+// Props for the PixiGameBoard component, need to pass in game state and callbacks
+// Saves having to re-instantiate PixiBoard on every render
+interface BoardProps {
+  state: BoardState;
+  callbacks: BoardCallbacks;
 }
 
-export function PixiGameBoard(props: PixiGameBoardProps) {
+export function PixiGameBoard({ state, callbacks }: BoardProps) {
+
+  // using refs for PixiBoard instance and canvas element so they persist across renders (init and errors use state):
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixiBoardRef = useRef<PixiBoard | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
 
-  // Initialize PixiJS once
+  // Keep callbacks ref updated to latest props
+  // without this, PixiBoard would have stale references to callback functions from the initial render
+  const callbacksRef = useRef<BoardCallbacks>(callbacks);
+
+  // This ensures PixiBoard always calls the most recent functions:
   useEffect(() => {
-    let isMounted = true;
+    callbacksRef.current = callbacks;
+  }, [callbacks]);
+
+  // Initialize PixiBoard on mount, only once
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      setInitError('Canvas not available');
+      return;
+    }
+
+    let board: PixiBoard | null = null;
 
     const init = async () => {
-      if (!canvasRef.current) {
-        setInitError('Canvas not available');
-        return;
-      }
-
       try {
-        // Define callbacks to pass to PixiBoard
-        // These will call the props functions
-        // to communicate user actions back to the battle page
-        const callbacks: BoardCallbacks = {
-          onCardPlay: props.onCardPlay,
-          onMinionClick: props.onMinionClick,
-          onTargetClick: props.onTargetClick,
-          onAIFaceClick: props.onAIFaceClick,
-          onEndTurn: props.onEndTurn,
+        // Wrap callbacks to always use the latest from callbacksRef
+        const wrappedCallbacks: BoardCallbacks = {
+          onCardPlay: (index) => callbacksRef.current.onCardPlay(index),
+          onMinionClick: (id, isPlayer) => callbacksRef.current.onMinionClick(id, isPlayer),
+          onTargetClick: (id) => callbacksRef.current.onTargetClick(id),
+          onAIFaceClick: () => callbacksRef.current.onAIFaceClick(),
+          onEndTurn: () => callbacksRef.current.onEndTurn(),
         };
 
-        const board = new PixiBoard(callbacks);
-        await board.init(canvasRef.current);
-
-        if (!isMounted) {
-          board.destroy();
-          return;
-        }
+        // Create and initialize PixiBoard. This is async; loads assets and sets up Pixi canvas
+        board = new PixiBoard(wrappedCallbacks);
+        await board.init(canvas);
 
         pixiBoardRef.current = board;
         setIsInitialized(true);
       } catch (error) {
-        console.error('Failed to initialize PixiJS:', error);
-        setInitError(error instanceof Error ? error.message : 'Unknown error');
+        setInitError(`Failed to initialize PixiBoard: ${error}`);
       }
     };
 
-    // Small delay to ensure canvas is ready
-    const timeoutId = setTimeout(init, 100);
+    init();
 
+    // Cleanup on unmount
+    // Dependency array is empty, so effect runs only once
     return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-      if (pixiBoardRef.current) {
-        pixiBoardRef.current.destroy();
-        pixiBoardRef.current = null;
-      }
+      board?.destroy();
+      pixiBoardRef.current = null;
       setIsInitialized(false);
     };
-  }, []); // Only run once on mount
+  }, []);
 
-  // Update board state whenever props change
-  // This keeps the PixiJS rendering in sync with React state
-  // any time any of the props in here change, useEffect will run to update the PixiBoard
+  // Sync state to PixiBoard on state prop changes
   useEffect(() => {
     if (!isInitialized || !pixiBoardRef.current) return;
-
-    const boardState: BoardState = {
-      playerBoard: props.playerBoard,
-      aiBoard: props.aiBoard,
-      playerHand: props.playerHand,
-      aiHandCount: props.aiHandCount,
-      selectedMinion: props.selectedMinion,
-      currentTurn: props.currentTurn,
-      playerMana: props.playerMana,
-      playerMaxMana: props.playerMaxMana,
-      playerHealth: props.playerHealth,
-      aiMana: props.aiMana,
-      aiMaxMana: props.aiMaxMana,
-      aiHealth: props.aiHealth,
-      gameOver: props.gameOver,
-      winner: props.winner,
-      combatLog: props.combatLog,
-      turnNumber: props.turnNumber,
-      aiAction: props.aiAction,
-    };
-
-    pixiBoardRef.current.update(boardState);
-  }, [
-    props.playerBoard,
-    props.aiBoard,
-    props.playerHand,
-    props.aiHandCount,
-    props.selectedMinion,
-    props.currentTurn,
-    props.playerMana,
-    props.playerMaxMana,
-    props.playerHealth,
-    props.aiMana,
-    props.aiMaxMana,
-    props.aiHealth,
-    props.gameOver,
-    props.winner,
-    props.combatLog,
-    props.turnNumber,
-    props.aiAction,
-    isInitialized,
-  ]);
+    pixiBoardRef.current.update(state);
+  }, [isInitialized, state]);
 
   return (
     <div className="relative w-screen h-screen bg-slate-900">
