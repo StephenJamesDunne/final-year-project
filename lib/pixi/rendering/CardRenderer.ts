@@ -9,9 +9,7 @@ export class CardRenderer {
     private readonly CARD_WIDTH = CARD_DIMENSIONS.WIDTH;
     private readonly CARD_HEIGHT = CARD_DIMENSIONS.HEIGHT;
 
-    /**
-     * Load card assets
-     */
+    // Load card assets
     async loadAssets(): Promise<void> {
         console.log('CardRenderer: Loading assets...');
 
@@ -24,9 +22,7 @@ export class CardRenderer {
         }
     }
 
-    /**
-     * Create a card with actual artwork
-     */
+    // create a card with its artwork
     createCard(card: CardType, showName: boolean = true): PIXI.Container {
         const container = new PIXI.Container();
 
@@ -65,9 +61,7 @@ export class CardRenderer {
         return container;
     }
 
-    /**
-     * Create minion card for board
-     */
+    // create a minion card, larger sized element for the board
     createMinionCard(minion: Minion, isPlayer: boolean): PIXI.Container {
         const container = new PIXI.Container();
 
@@ -103,9 +97,7 @@ export class CardRenderer {
         return container;
     }
 
-    /**
-     * Create a Taunt shield overlay
-     */
+    // create Taunt shield overlay if card has Taunt
     createTauntIndicator(): PIXI.Graphics {
         const shield = new PIXI.Graphics();
 
@@ -113,7 +105,7 @@ export class CardRenderer {
         shield.roundRect(-4, -4, this.CARD_WIDTH + 8, this.CARD_HEIGHT + 8, 10);
         shield.stroke({
             width: 4,
-            color: COLORS.UI.gray,  // Stone gray for Taunt
+            color: COLORS.UI.gray,
             alpha: 0.9
         });
 
@@ -128,9 +120,7 @@ export class CardRenderer {
         return shield;
     }
 
-    /**
-     * Create card back for AI hand
-     */
+    // Create card back for AI cards in hand
     createCardBack(): PIXI.Container {
         const container = new PIXI.Container();
 

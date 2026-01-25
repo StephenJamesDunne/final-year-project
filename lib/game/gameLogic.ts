@@ -93,10 +93,8 @@ export function boardHasTaunt(board: Minion[]): boolean {
   return board.some(minion => hasTaunt(minion));
 }
 
-/**
- * Check if a target is valid considering Taunt rules
- * Returns true if the attack is allowed, false if blocked by Taunt
- */
+ // Check if a target is valid considering Taunt rules
+ // Returns true if the attack is allowed, false if blocked by Taunt
 export function isValidAttackTarget(
   targetId: string | 'face',
   enemyBoard: Minion[]

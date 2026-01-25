@@ -19,7 +19,7 @@ export interface AITurnResult {
 export function getAIAction(aiState: Player, gameState: BattleState): AIAction {
   // Priority 1: Try to play a card
   const playableCardIndex = findPlayableCard(aiState.hand, aiState.mana);
-  
+
   if (playableCardIndex !== -1) {
     return {
       type: 'play_card',
@@ -29,11 +29,11 @@ export function getAIAction(aiState: Player, gameState: BattleState): AIAction {
 
   // Priority 2: Try to attack with minions
   const attackingMinions = aiState.board.filter(m => m.canAttack);
-  
+
   if (attackingMinions.length > 0) {
-    // Check for Taunt minions on player's board
+
     const playerTauntMinions = getTauntMinions(gameState.player.board);
-    
+
     if (playerTauntMinions.length > 0) {
       // Must attack a Taunt minion
       return {
@@ -42,7 +42,7 @@ export function getAIAction(aiState: Player, gameState: BattleState): AIAction {
         targetId: playerTauntMinions[0].instanceId // Attack first Taunt minion
       };
     }
-    
+
     // No Taunt, go face
     return {
       type: 'attack',
@@ -61,7 +61,7 @@ export function executeAIPlayCard(
 ): { newState: BattleState; logMessage: string; actionMessage: string; playedCard: Card } {
   const playedCard = { ...gameState.ai.hand[cardIndex] };
   let newState = { ...gameState };
-  
+
   // Remove card from hand and reduce mana
   newState.ai = {
     ...newState.ai,
@@ -88,8 +88,8 @@ export function executeAIPlayCard(
   };
 }
 
-export function executeAIAttacks(gameState: BattleState): { 
-  newState: BattleState; 
+export function executeAIAttacks(gameState: BattleState): {
+  newState: BattleState;
   logMessages: string[];
   totalDamage: number;
 } {
@@ -98,46 +98,45 @@ export function executeAIAttacks(gameState: BattleState): {
   let totalDamage = 0;
   let logMessages: string[] = [];
 
-  if (attackingMinions.length > 0) {
-    const playerTauntMinions = getTauntMinions(newState.player.board);
-    const hasTauntBlocker = playerTauntMinions.length > 0;
+  if (attackingMinions.length === 0) {
+    return { newState, logMessages, totalDamage };
+  }
 
-    if (hasTauntBlocker) {
-      logMessages.push(`Enemy must attack Taunt minions`);
+  const playerTauntMinions = getTauntMinions(newState.player.board);
+  const hasTaunt = playerTauntMinions.length > 0;
 
-      for (const attacker of attackingMinions) {
-        const playerTauntMinions = getTauntMinions(newState.player.board);
+  if (hasTaunt) {
+    for (const attacker of attackingMinions) {
+      const currentTauntMinions = getTauntMinions(newState.player.board);
 
-        if (playerTauntMinions.length === 0) break;
+      if (currentTauntMinions.length === 0) break;
 
-        const target = playerTauntMinions[0];
-        const combatResult = handleMinionCombat(attacker, target);
+      const target = currentTauntMinions[0];
+      const combatResult = handleMinionCombat(attacker, target);
 
-        logMessages.push(`${attacker.name} attacks ${target.name}`);
+      logMessages.push(`${attacker.name} attacks ${target.name}`);
 
-        // Update boards
-        newState.ai.board = updateBoardAfterCombat(
-          newState.ai.board,
-          attacker.instanceId,
-          combatResult.updatedAttacker
-        );
-        
-        newState.player.board = updateBoardAfterCombat(
-          newState.player.board,
-          target.instanceId,
-          combatResult.updatedTarget
-        );
+      newState.ai.board = updateBoardAfterCombat(
+        newState.ai.board,
+        attacker.instanceId,
+        combatResult.updatedAttacker
+      );
 
-        if (combatResult.targetDied) {
-          logMessages.push(`${target.name} dies!`);
+      newState.player.board = updateBoardAfterCombat(
+        newState.player.board,
+        target.instanceId,
+        combatResult.updatedTarget
+      );
 
-        }
-        if (combatResult.attackerDied) {
-          logMessages.push(`${attacker.name} dies!`);
-        }
+      if (combatResult.targetDied) {
+        logMessages.push(`${target.name} dies!`);
+      }
+      if (combatResult.attackerDied) {
+        logMessages.push(`${attacker.name} dies!`);
       }
     }
-
+  } else {
+    // Only attack face when there's no Taunt
     logMessages.push(`Enemy attacks with ${attackingMinions.length} minion(s)`);
 
     attackingMinions.forEach(minion => {
@@ -150,14 +149,14 @@ export function executeAIAttacks(gameState: BattleState): {
     }
 
     // Mark minions as having attacked
-    newState.ai.board = newState.ai.board.map(m => 
+    newState.ai.board = newState.ai.board.map(m =>
       attackingMinions.some(attacker => attacker.instanceId === m.instanceId)
         ? { ...m, canAttack: false }
         : m
     );
   }
 
-  return { newState, logMessages, totalDamage };
+  return {newState, logMessages, totalDamage};
 }
 
 export function getAIDecisionDelay(): number {
