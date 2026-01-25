@@ -177,7 +177,7 @@ function processSummonAbility(
   // choose what cards need to be summoned
   let summonedCards: Card[] = [];
 
-  if (ability.decription?.includes('Connacht Warriors')) {
+  if (ability.description?.includes('Connacht Warriors')) {
     const warriorCard: Card = {
       id: 'token_warrior',
       name: 'Connacht Warrior',

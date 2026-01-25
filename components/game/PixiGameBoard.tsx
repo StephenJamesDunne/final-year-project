@@ -34,6 +34,7 @@ export function PixiGameBoard({ state, callbacks }: BoardProps) {
     }
 
     let board: PixiBoard | null = null;
+    let isMounted = true;
 
     const init = async () => {
       try {
@@ -50,10 +51,17 @@ export function PixiGameBoard({ state, callbacks }: BoardProps) {
         board = new PixiBoard(wrappedCallbacks);
         await board.init(canvas);
 
+        if (!isMounted) {
+          board.destroy();
+          return;
+        }
+
         pixiBoardRef.current = board;
         setIsInitialized(true);
       } catch (error) {
-        setInitError(`Failed to initialize PixiBoard: ${error}`);
+        if (isMounted) {
+          setInitError(`Failed to initialize PixiBoard: ${error}`);
+        }
       }
     };
 
@@ -62,6 +70,7 @@ export function PixiGameBoard({ state, callbacks }: BoardProps) {
     // Cleanup on unmount
     // Dependency array is empty, so effect runs only once
     return () => {
+      isMounted = false;
       board?.destroy();
       pixiBoardRef.current = null;
       setIsInitialized(false);
