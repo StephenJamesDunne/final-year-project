@@ -1,4 +1,4 @@
-import { BattleState, Card, CardAbility, Player } from '../types/game';
+import { BattleState, Card, CardAbility, Minion, Player } from '../types/game';
 import { createMinion } from './gameLogic';
 import { drawCards } from './deckManager';
 
@@ -76,7 +76,7 @@ function processHealAbility(ability: CardAbility, state: BattleState, player: Pl
   return state;
 }
 
-function processDamageAbility(ability: any, state: BattleState, currentPlayer: Player, opponent: Player): BattleState {
+function processDamageAbility(ability: CardAbility, state: BattleState, currentPlayer: Player, opponent: Player): BattleState {
   const damageValue = ability.value || 0;
   let newState = { ...state };
 
@@ -165,7 +165,7 @@ function processDamageAbility(ability: any, state: BattleState, currentPlayer: P
 }
 
 function processSummonAbility(
-  ability: any,
+  ability: CardAbility,
   state: BattleState,
   player: Player,
   isPlayer: boolean
@@ -189,6 +189,9 @@ function processSummonAbility(
       health: 2,
       description: 'Token minion summoned by Queen Maedhbh.'
     };
+
+    // early return for if there are no abilities to loop through
+    if (!ability.value) return state;
 
     for (let i = 0; i < ability.value; i++) {
       summonedCards.push({ ...warriorCard });
@@ -257,7 +260,7 @@ function processDestroyAbility(ability: CardAbility, state: BattleState, isPlaye
   };
 }
 
-export function processEndOfTurnEffects(minions: any[], state: BattleState, isPlayer: boolean): BattleState {
+export function processEndOfTurnEffects(minions: Minion[], state: BattleState, isPlayer: boolean): BattleState {
   let newState = { ...state };
 
   minions.forEach(minion => {
