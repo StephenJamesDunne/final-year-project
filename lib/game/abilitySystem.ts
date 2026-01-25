@@ -170,9 +170,9 @@ function processSummonAbility(
   player: Player,
   isPlayer: boolean
 ): BattleState {
-  if (player.board.length >= 7) {
-    return state; // Board full
-  }
+  if (player.board.length >= 7) return state; // Board full
+  
+  if (!ability.value) return state; // early return for if there are no abilities to loop through
 
   // choose what cards need to be summoned
   let summonedCards: Card[] = [];
@@ -190,8 +190,7 @@ function processSummonAbility(
       description: 'Token minion summoned by Queen Maedhbh.'
     };
 
-    // early return for if there are no abilities to loop through
-    if (!ability.value) return state;
+    
 
     for (let i = 0; i < ability.value; i++) {
       summonedCards.push({ ...warriorCard });
