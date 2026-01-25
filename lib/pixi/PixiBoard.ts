@@ -7,7 +7,7 @@
 // UIManager = player/AI portraits, buttons, combat log elements
 
 import * as PIXI from 'pixi.js';
-import { Card as CardType, Minion } from '@/lib/types/game';
+import { Card, Minion } from '@/lib/types/game';
 import { CardRenderer } from './rendering/CardRenderer';
 import { BoardLayout } from './layout/BoardLayout';
 import { UIManager } from './ui/UIManager';
@@ -15,6 +15,8 @@ import { HandRenderer } from './rendering/HandRenderer';
 import { MinionRenderer } from './rendering/MinionRenderer';
 import { BoardRenderer } from './rendering/BoardRenderer';
 import { COLORS } from './utils/StyleConstants';
+import { HoverCardDisplay } from './ui/HoverCardDisplay';
+import { hover } from 'framer-motion';
 
 
 // Callbacks passed from React to handle all user interactions are here.
@@ -33,7 +35,7 @@ export interface BoardCallbacks {
 export interface BoardState {
   playerBoard: Minion[];
   aiBoard: Minion[];
-  playerHand: CardType[];
+  playerHand: Card[];
   aiHandCount: number;
   selectedMinion: string | null;
   currentTurn: 'player' | 'ai';
@@ -62,6 +64,7 @@ export class PixiBoard {
   private handRenderer: HandRenderer;
   private minionRenderer: MinionRenderer;
   private boardRenderer: BoardRenderer;
+  private hoverCardDisplay: HoverCardDisplay;
 
   // Callbacks to communicate clicks/user interaction back to React
   private callbacks: BoardCallbacks;
@@ -84,13 +87,24 @@ export class PixiBoard {
 
   // Creates instances of each renderer before initializing PIXI instance
   constructor(callbacks: BoardCallbacks) {
+
+    // hover functionality for detailed view of cards highlighted
+    const hoverHandler = (card: Card | Minion | null, x: number, y:number) => {
+      if (card) {
+        this.showHoverCard(card, x, y);
+      } else {
+        this.hideHoverCard();
+      }
+    }
+
     this.callbacks = callbacks;
     this.boardLayout = new BoardLayout();
     this.cardRenderer = new CardRenderer();
     this.uiManager = new UIManager(this.boardLayout);
-    this.handRenderer = new HandRenderer(this.cardRenderer, this.boardLayout);
-    this.minionRenderer = new MinionRenderer(this.cardRenderer, this.boardLayout);
+    this.handRenderer = new HandRenderer(this.cardRenderer, this.boardLayout, hoverHandler);
+    this.minionRenderer = new MinionRenderer(this.cardRenderer, this.boardLayout, hoverHandler);
     this.boardRenderer = new BoardRenderer(this.boardLayout);
+    this.hoverCardDisplay = new HoverCardDisplay();
   }
 
   // Create the instance of PIXI and init
@@ -144,6 +158,10 @@ export class PixiBoard {
     this.app.stage.addChild(this.containers.playerBoard);
     this.app.stage.addChild(this.containers.playerHand);
     this.app.stage.addChild(this.containers.ui);
+    this.app.stage.addChild(this.hoverCardDisplay.getContainer());
+
+    // Need this to enable z-ordering
+    this.app.stage.sortableChildren = true;
   }
 
   private renderBackground(): void {
@@ -220,6 +238,16 @@ export class PixiBoard {
     this.renderBackground();
 
     this.uiManager.repositionOnResize();
+  }
+
+  // Functions to allow show/hide functionality for the tooltip
+  showHoverCard(card: Card | Minion, globalX: number, globalY: number): void {
+    if (!this.app) return;
+    this.hoverCardDisplay.show(card, globalX, globalY, this.app.screen.width, this.app.screen.height);
+  }
+
+  hideHoverCard(): void {
+    this.hoverCardDisplay.hide();
   }
 
   destroy(): void {

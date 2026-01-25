@@ -1,12 +1,13 @@
 import * as PIXI from 'pixi.js';
-import { Card as CardType } from '@/lib/types/game';
+import { Card } from '@/lib/types/game';
 import { CardRenderer } from './CardRenderer';
 import { BoardLayout } from '../layout/BoardLayout';
 
 export class HandRenderer {
     constructor(
         private cardRenderer: CardRenderer,
-        private layout: BoardLayout
+        private layout: BoardLayout,
+        private onHover?: (card: Card | null, x: number, y: number) => void
     ) { }
 
     renderAIHand(container: PIXI.Container, cardCount: number): void {
@@ -23,7 +24,7 @@ export class HandRenderer {
 
     renderPlayerHand(
         container: PIXI.Container,
-        hand: CardType[],
+        hand: Card[],
         playerMana: number,
         currentTurn: 'player' | 'ai',
         gameOver: boolean,
@@ -43,20 +44,21 @@ export class HandRenderer {
                 card.manaCost <= playerMana &&
                 (card.type !== 'minion' || boardSize < 7);
 
+            cardContainer.eventMode = 'static';
+            cardContainer.on('pointerover', (e: PIXI.FederatedPointerEvent) => {
+                cardContainer.scale.set(1.1);
+                cardContainer.y -= 20;
+                this.onHover?.(card, e.globalX, e.globalY);
+            });
+
+            cardContainer.on('pointerout', () => {
+                cardContainer.scale.set(1.0);
+                cardContainer.y = positions[i].y;
+                this.onHover?.(null, 0, 0);
+            });
+
             if (isPlayable) {
-                cardContainer.eventMode = 'static';
                 cardContainer.cursor = 'pointer';
-
-                cardContainer.on('pointerover', () => {
-                    cardContainer.scale.set(1.1);
-                    cardContainer.y -= 20;
-                });
-
-                cardContainer.on('pointerout', () => {
-                    cardContainer.scale.set(1.0);
-                    cardContainer.y = positions[i].y;
-                });
-
                 cardContainer.on('pointerdown', () => onCardPlay(i));
             } else {
                 cardContainer.alpha = 0.6;

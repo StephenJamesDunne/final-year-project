@@ -1,4 +1,4 @@
-import { BattleState, Card, Player } from '../types/game';
+import { BattleState, Card, CardAbility, Player } from '../types/game';
 import { createMinion } from './gameLogic';
 import { drawCards } from './deckManager';
 
@@ -20,7 +20,7 @@ export function processAbilities(
   return newState;
 }
 
-function processAbility(ability: any, state: BattleState, isPlayer: boolean): BattleState {
+function processAbility(ability: CardAbility, state: BattleState, isPlayer: boolean): BattleState {
   const currentPlayer = isPlayer ? state.player : state.ai;
   const opponent = isPlayer ? state.ai : state.player;
 
@@ -34,15 +34,15 @@ function processAbility(ability: any, state: BattleState, isPlayer: boolean): Ba
     case 'summon':
       return processSummonAbility(ability, state, currentPlayer, isPlayer);
     case 'buff':
-      return processBuffAbility(ability, state, currentPlayer);
+      return processBuffAbility(ability, state, isPlayer);
     case 'destroy':
-      return processDestroyAbility(ability, state, opponent);
+      return processDestroyAbility(ability, state, isPlayer);
     default:
       return state;
   }
 }
 
-function processDrawAbility(ability: any, state: BattleState, player: Player): BattleState {
+function processDrawAbility(ability: CardAbility, state: BattleState, player: Player): BattleState {
   const drawn = drawCards(player.deck, ability.value || 1);
   return {
     ...state,
@@ -59,7 +59,7 @@ function processDrawAbility(ability: any, state: BattleState, player: Player): B
   };
 }
 
-function processHealAbility(ability: any, state: BattleState, player: Player): BattleState {
+function processHealAbility(ability: CardAbility, state: BattleState, player: Player): BattleState {
   if (ability.target === 'self') {
     return {
       ...state,
@@ -211,26 +211,50 @@ function processSummonAbility(
   };
 }
 
-function processBuffAbility(ability: any, state: BattleState, player: Player): BattleState {
-  if (ability.target === 'all') {
-    // Buff all friendly minions
-    player.board = player.board.map(m => ({
-      ...m,
-      attack: m.attack + (ability.value || 1),
-      health: m.health + (ability.value || 1),
-      currentHealth: m.currentHealth + (ability.value || 1)
-    }));
+function processBuffAbility(ability: CardAbility, state: BattleState, isPlayer: boolean): BattleState {
+  if (ability.target !== 'all') return state;
+
+  const targetPlayer = isPlayer ? state.player : state.ai;
+
+  const updatedBoard = targetPlayer.board.map(m => ({
+    ...m,
+    attack: m.attack + (ability.value || 1),
+    health: m.health + (ability.value || 1),
+    currentHealth: m.currentHealth + (ability.value || 1)
+  }));
+
+  const updatedPlayer = {
+    ...targetPlayer,
+    board: updatedBoard
+  };
+
+  return {
+    ...state,
+    player: isPlayer ? updatedPlayer : state.player,
+    ai: isPlayer ? state.ai : updatedPlayer
   }
-  return state;
+
 }
 
-function processDestroyAbility(ability: any, state: BattleState, opponent: Player): BattleState {
-  // Basic destroy - remove random enemy minion
-  if (opponent.board.length > 0) {
-    const randomIndex = Math.floor(Math.random() * opponent.board.length);
-    opponent.board.splice(randomIndex, 1);
-  }
-  return state;
+function processDestroyAbility(ability: CardAbility, state: BattleState, isPlayer: boolean): BattleState {
+  const opponent = isPlayer ? state.ai : state.player;
+
+  if (opponent.board.length === 0) return state;
+
+  const randomIndex = Math.floor(Math.random() * opponent.board.length);
+
+  const updatedBoard = opponent.board.filter((_, index) => index !== randomIndex);
+
+  const updatedOpponent = {
+    ...opponent,
+    board: updatedBoard
+  };
+
+  return {
+    ...state,
+    player: isPlayer ? state.player : updatedOpponent,
+    ai: isPlayer ? updatedOpponent : state.ai
+  };
 }
 
 export function processEndOfTurnEffects(minions: any[], state: BattleState, isPlayer: boolean): BattleState {

@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { Card as CardType, Minion } from '@/lib/types/game';
+import { Card, Minion } from '@/lib/types/game';
 import { TextureLoader } from '../utils/TextureLoader';
 import { CARD_DIMENSIONS, COLORS, FONTS } from '../utils/StyleConstants';
 import { GraphicsHelpers } from '../utils/GraphicsHelpers';
@@ -23,7 +23,7 @@ export class CardRenderer {
     }
 
     // create a card with its artwork
-    createCard(card: CardType, showName: boolean = true): PIXI.Container {
+    createCard(card: Card, showName: boolean = true): PIXI.Container {
         const container = new PIXI.Container();
 
         const shadow = GraphicsHelpers.createShadow(this.CARD_WIDTH, this.CARD_HEIGHT, CARD_DIMENSIONS.BORDER_RADIUS);
@@ -155,7 +155,7 @@ export class CardRenderer {
     // HELPER METHODS FOR CARD ELEMENTS
     // ============================================
 
-    private createCardBackground(card: CardType | Minion, isPlayer?: boolean): PIXI.Graphics {
+    private createCardBackground(card: Card | Minion, isPlayer?: boolean): PIXI.Graphics {
         const bg = new PIXI.Graphics();
         bg.roundRect(0, 0, this.CARD_WIDTH, this.CARD_HEIGHT, CARD_DIMENSIONS.BORDER_RADIUS);
 
@@ -204,7 +204,7 @@ export class CardRenderer {
         ) ?? false;
     }
 
-    private createArtPlaceholder(card: CardType | Minion): PIXI.Container {
+    private createArtPlaceholder(card: Card | Minion): PIXI.Container {
         const placeholder = new PIXI.Container();
         placeholder.x = 8;
         placeholder.y = 30;
@@ -225,7 +225,7 @@ export class CardRenderer {
         return placeholder;
     }
 
-    private createCardFrame(card: CardType | Minion): PIXI.Graphics {
+    private createCardFrame(card: Card | Minion): PIXI.Graphics {
         const frame = new PIXI.Graphics();
         frame.roundRect(0, 0, this.CARD_WIDTH, this.CARD_HEIGHT, CARD_DIMENSIONS.BORDER_RADIUS);
         frame.stroke({ width: 2, color: COLORS.UI.gold, alpha: 0.6 });
