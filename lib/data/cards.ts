@@ -42,18 +42,18 @@ export const CARDS: Card[] = [
     element: 'fire',
     type: 'minion',
     rarity: 'legendary',
-    manaCost: 7,
-    attack: 6,
+    manaCost: 6,
+    attack: 7,
     health: 5,
-    description: 'End of Turn: Deal 2 damage to ALL characters.',
+    description: 'Charge',
     imageUrl: '/images/cards/balor.png',
     abilities: [
       {
-        trigger: 'end_of_turn',
-        type: 'damage',
-        value: 2,
-        target: 'all',
-        description: 'Deal 2 damage to all characters (including friendly)'
+        trigger: 'passive',
+        type: 'buff',
+        value: 0,
+        target: 'self',
+        description: 'Can attack immediately (Charge)'
       }
     ]
   },
@@ -68,15 +68,15 @@ export const CARDS: Card[] = [
     manaCost: 6,
     attack: 5,
     health: 4,
-    description: 'Battlecry: Give a friendly minion +3 Attack.',
+    description: 'Battlecry: Deal 2 damage to the enemy hero.',
     imageUrl: '/images/cards/scáthach.png',
     abilities: [
       {
         trigger: 'battlecry',
-        type: 'buff',
-        value: 3,
-        target: 'choose',
-        description: 'Give a friendly minion +3 Attack'
+        type: 'damage',
+        value: 2,
+        target: 'enemy',
+        description: 'Deal 2 damage to enemy hero'
       }
     ]
   },
@@ -86,18 +86,18 @@ export const CARDS: Card[] = [
     element: 'fire',
     type: 'minion',
     rarity: 'epic',
-    manaCost: 5,
-    attack: 4,
-    health: 4,
-    description: 'Whenever you deal damage to the enemy hero, draw a card.',
+    manaCost: 6,
+    attack: 5,
+    health: 5,
+    description: 'Battlecry: Give all friendly minions +1 Attack.',
     imageUrl: '',
     abilities: [
       {
-        trigger: 'passive',
-        type: 'draw',
+        trigger: 'battlecry',
+        type: 'buff',
         value: 1,
-        target: 'self',
-        description: 'Draw when damaging enemy hero'
+        target: 'all',
+        description: 'Give all friendly minions +1 Attack'
       }
     ]
   },
@@ -112,8 +112,17 @@ export const CARDS: Card[] = [
     manaCost: 4,
     attack: 4,
     health: 3,
-    description: 'Elite warrior of Ulster.',
-    imageUrl: '/images/cards/redbranchknight.png'
+    description: 'Charge',
+    imageUrl: '/images/cards/redbranchknight.png',
+    abilities: [
+      {
+        trigger: 'passive',
+        type: 'buff',
+        value: 0,
+        target: 'self',
+        description: 'Can attack immediately (Charge)'
+      }
+    ]
   },
   {
     id: 'f_rare_2',
@@ -123,8 +132,8 @@ export const CARDS: Card[] = [
     rarity: 'rare',
     manaCost: 5,
     attack: 6,
-    health: 3,
-    description: 'Charge. Deathrattle: Deal 3 damage to the enemy hero.',
+    health: 2,
+    description: 'Charge. Deathrattle: Deal 2 damage to the enemy hero.',
     imageUrl: '/images/cards/cuchulainnswrath.png',
     abilities: [
       {
@@ -139,35 +148,28 @@ export const CARDS: Card[] = [
         type: 'damage',
         value: 3,
         target: 'enemy',
-        description: 'Deal 3 damage to enemy hero'
+        description: 'Deal 2 damage to enemy hero'
       }
     ]
   },
   {
     id: 'f_rare_3',
-    name: 'Flame Imp of the Otherworld',
+    name: 'Flame Imp',
     element: 'fire',
     type: 'minion',
     rarity: 'rare',
-    manaCost: 4,
-    attack: 5,
-    health: 3,
-    description: 'Battlecry: Deal 2 damage to your hero and 2 damage to enemy hero.',
+    manaCost: 1,
+    attack: 3,
+    health: 2,
+    description: 'Battlecry: Deal 3 damage to your own hero.',
     imageUrl: '',
     abilities: [
       {
         trigger: 'battlecry',
         type: 'damage',
-        value: 2,
+        value: 3,
         target: 'self',
-        description: 'Deal 2 to your hero'
-      },
-      {
-        trigger: 'battlecry',
-        type: 'damage',
-        value: 2,
-        target: 'enemy',
-        description: 'Deal 2 to enemy hero'
+        description: 'Deal 3 damage to your own hero'
       }
     ]
   },
@@ -203,7 +205,7 @@ export const CARDS: Card[] = [
     manaCost: 1,
     attack: 2,
     health: 1,
-    description: 'Fast and fragile - strike first.',
+    description: 'Fast and fragile.',
     imageUrl: '/images/cards/fiannascout.png'
   },
   {
@@ -213,7 +215,7 @@ export const CARDS: Card[] = [
     type: 'minion',
     rarity: 'common',
     manaCost: 2,
-    attack: 2,
+    attack: 3,
     health: 2,
     description: 'Loyal soldier of Queen Maedhbh.',
     imageUrl: ''
@@ -225,19 +227,10 @@ export const CARDS: Card[] = [
     type: 'minion',
     rarity: 'common',
     manaCost: 3,
-    attack: 4,
+    attack: 5,
     health: 2,
     description: 'Battlecry: Deal 2 damage to your own hero.',
     imageUrl: '',
-    abilities: [
-      {
-        trigger: 'battlecry',
-        type: 'damage',
-        value: 2,
-        target: 'self',
-        description: 'Deal 2 damage to your own hero'
-      }
-    ]
   },
   {
     id: 'f_common_4',
@@ -248,15 +241,15 @@ export const CARDS: Card[] = [
     manaCost: 1,
     attack: 1,
     health: 2,
-    description: 'Deathrattle: Deal 1 damage to a random enemy.',
+    description: 'Deathrattle: Deal 2 damage to the enemy hero.',
     imageUrl: '',
     abilities: [
       {
         trigger: 'deathrattle',
         type: 'damage',
-        value: 1,
-        target: 'random',
-        description: 'Deal 1 damage to random enemy'
+        value: 2,
+        target: 'enemy',
+        description: 'Deal 2 damage to enemy hero'
       }
     ]
   },
@@ -267,10 +260,41 @@ export const CARDS: Card[] = [
     type: 'minion',
     rarity: 'common',
     manaCost: 3,
-    attack: 3,
-    health: 3,
-    description: 'Aggressive raider from the western province.',
+    attack: 4,
+    health: 2,
+    description: 'Aggressive raider from the west.',
     imageUrl: ''
+  },
+  {
+    id: 'f_common_6',
+    name: 'Furbolg Bruiser',
+    element: 'fire',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 4,
+    attack: 5,
+    health: 3,
+    description: 'A heavy hitter.'
+  },
+  {
+    id: 'f_common_7',
+    name: 'Burning Zealot',
+    element: 'fire',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 2,
+    attack: 2,
+    health: 2,
+    description: 'Battlecry: Deal 1 damage to the enemy hero.',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'damage',
+        value: 1,
+        target: 'enemy',
+        description: 'Deal 1 damage to enemy hero'
+      }
+    ]
   },
 
   // FIRE SPELLS
@@ -280,88 +304,58 @@ export const CARDS: Card[] = [
     element: 'fire',
     type: 'spell',
     rarity: 'common',
-    manaCost: 3,
-    description: 'Deal 3 damage to an enemy.',
+    manaCost: 2,
+    description: 'Deal 3 damage to the enemy hero.',
     abilities: [
       {
         trigger: 'battlecry',
         type: 'damage',
         value: 3,
-        target: 'choose',
-        description: 'Deal 3 damage to an enemy'
+        target: 'enemy',
+        description: 'Deal 3 damage to enemy hero'
       }
     ]
   },
   {
     id: 'f_spell_2',
-    name: 'Inferno',
+    name: 'Fireblast',
     element: 'fire',
     type: 'spell',
-    rarity: 'epic',
+    rarity: 'common',
     manaCost: 4,
-    description: 'Deal 2 damage to all enemies.',
+    description: 'Deal 5 damage to the enemy hero.',
     abilities: [
       {
         trigger: 'battlecry',
         type: 'damage',
-        value: 2,
-        target: 'all',
-        description: 'Deal 2 damage to all enemy minions and hero'
+        value: 5,
+        target: 'enemy',
+        description: 'Deal 5 damage to enemy hero'
       }
     ]
   },
   {
     id: 'f_spell_3',
-    name: 'Rage of the Táin',
+    name: 'Wildfire',
     element: 'fire',
     type: 'spell',
     rarity: 'rare',
-    manaCost: 5,
-    description: 'Deal 4 damage. If your hero has 15 or less Health, deal 6 instead.',
-    abilities: [
-      {
-        trigger: 'battlecry',
-        type: 'damage',
-        value: 4,
-        target: 'choose',
-        condition: 'enrage_bonus',
-        description: 'Deal 4 damage (6 if low health)'
-      }
-    ]
-  },
-  {
-    id: 'f_spell_4',
-    name: 'Molten Strike',
-    element: 'fire',
-    type: 'spell',
-    rarity: 'common',
-    manaCost: 2,
-    description: 'Deal 2 damage.',
+    manaCost: 3,
+    description: 'Deal 2 damage to a random enemy minion. Deal 2 damage to the enemy hero.',
     abilities: [
       {
         trigger: 'battlecry',
         type: 'damage',
         value: 2,
-        target: 'choose',
-        description: 'Deal 2 damage'
-      }
-    ]
-  },
-  {
-    id: 'f_spell_5',
-    name: 'Scorched Earth',
-    element: 'fire',
-    type: 'spell',
-    rarity: 'rare',
-    manaCost: 5,
-    description: 'Deal 3 damage to all minions.',
-    abilities: [
+        target: 'random',
+        description: 'Deal 2 damage to random enemy minion'
+      },
       {
         trigger: 'battlecry',
         type: 'damage',
-        value: 3,
-        target: 'all',
-        description: 'Deal 3 to all minions'
+        value: 2,
+        target: 'enemy',
+        description: 'Deal 2 damage to enemy hero'
       }
     ]
   },
@@ -382,21 +376,21 @@ export const CARDS: Card[] = [
     manaCost: 6,
     attack: 4,
     health: 7,
-    description: 'Battlecry: Restore 6 Health to your hero. Your healing effects are doubled.',
+    description: 'Taunt Battlecry: Restore 6 Health to your hero.',
     abilities: [
+      {
+        trigger: 'passive',
+        type: 'buff',
+        value: 0,
+        target: 'self',
+        description: 'Taunt'
+      },
       {
         trigger: 'battlecry',
         type: 'heal',
         value: 6,
         target: 'self',
         description: 'Restore 6 Health to your hero'
-      },
-      {
-        trigger: 'passive',
-        type: 'buff',
-        value: 2,
-        target: 'self',
-        description: 'Double all healing effects'
       }
     ]
   },
@@ -406,18 +400,32 @@ export const CARDS: Card[] = [
     element: 'earth',
     type: 'minion',
     rarity: 'legendary',
-    manaCost: 5,
-    attack: 4,
-    health: 5,
-    description: 'Battlecry: Gain +2 maximum mana this game.',
+    manaCost: 7,
+    attack: 5,
+    health: 8,
+    description: 'Taunt. Battlecry: Restore 4 Health to your hero. Draw a card.',
     imageUrl: '',
     abilities: [
       {
-        trigger: 'battlecry',
-        type: 'gain_mana',
-        value: 2,
+        trigger: 'passive',
+        type: 'buff',
+        value: 0,
         target: 'self',
-        description: 'Gain +2 maximum mana permanently'
+        description: 'Taunt'
+      },
+      {
+        trigger: 'battlecry',
+        type: 'heal',
+        value: 4,
+        target: 'self',
+        description: 'Restore 4 Health to your hero'
+      },
+      {
+        trigger: 'battlecry',
+        type: 'draw',
+        value: 1,
+        target: 'self',
+        description: 'Draw a card'
       }
     ]
   },
@@ -430,9 +438,9 @@ export const CARDS: Card[] = [
     type: 'minion',
     rarity: 'epic',
     manaCost: 8,
-    attack: 8,
-    health: 8,
-    description: 'Taunt. Costs (1) less for each time you restored Health this game.',
+    attack: 6,
+    health: 10,
+    description: 'Taunt.',
     imageUrl: '',
     abilities: [
       {
@@ -440,7 +448,7 @@ export const CARDS: Card[] = [
         type: 'buff',
         value: 0,
         target: 'self',
-        description: 'Taunt. Cost reduction based on healing'
+        description: 'Taunt'
       }
     ]
   },
@@ -450,10 +458,10 @@ export const CARDS: Card[] = [
     element: 'earth',
     type: 'minion',
     rarity: 'epic',
-    manaCost: 7,
-    attack: 4,
-    health: 10,
-    description: 'Taunt. Battlecry: Restore 5 Health to all friendly characters.',
+    manaCost: 6,
+    attack: 3,
+    health: 8,
+    description: 'Taunt. Deathrattle: Restore 5 Health to your hero.',
     imageUrl: '',
     abilities: [
       {
@@ -467,8 +475,8 @@ export const CARDS: Card[] = [
         trigger: 'battlecry',
         type: 'heal',
         value: 5,
-        target: 'all',
-        description: 'Heal all friendlies'
+        target: 'self',
+        description: 'Restore 5 Health to your hero'
       }
     ]
   },
@@ -483,15 +491,15 @@ export const CARDS: Card[] = [
     manaCost: 4,
     attack: 2,
     health: 6,
-    description: 'End of Turn: Restore 2 Health to your hero.',
+    description: 'Battlecry: Restore 4 Health to your hero.',
     imageUrl: '',
     abilities: [
       {
-        trigger: 'end_of_turn',
+        trigger: 'battlecry',
         type: 'heal',
-        value: 2,
+        value: 4,
         target: 'self',
-        description: 'Restore 2 Health to your hero'
+        description: 'Restore 4 Health to your hero'
       }
     ]
   },
@@ -504,7 +512,7 @@ export const CARDS: Card[] = [
     manaCost: 5,
     attack: 2,
     health: 8,
-    description: 'Taunt. Deathrattle: Restore 5 Health to your hero.',
+    description: 'Taunt. Deathrattle: Restore 3 Health to your hero.',
     imageUrl: '',
     abilities: [
       {
@@ -517,9 +525,9 @@ export const CARDS: Card[] = [
       {
         trigger: 'deathrattle',
         type: 'heal',
-        value: 5,
+        value: 3,
         target: 'self',
-        description: 'Restore 5 Health to your hero'
+        description: 'Restore 3 Health to your hero'
       }
     ]
   },
@@ -530,9 +538,9 @@ export const CARDS: Card[] = [
     type: 'minion',
     rarity: 'rare',
     manaCost: 6,
-    attack: 5,
+    attack: 4,
     health: 8,
-    description: 'Taunt. Costs (1) less for each healing effect this game.',
+    description: 'Taunt.',
     imageUrl: '',
     abilities: [
       {
@@ -540,7 +548,27 @@ export const CARDS: Card[] = [
         type: 'buff',
         value: 0,
         target: 'self',
-        description: 'Taunt, cost reduction'
+        description: 'Taunt,'
+      }
+    ]
+  },
+  {
+    id: 'e_rare_4',
+    name: 'Earthen Protector',
+    element: 'earth',
+    type: 'minion',
+    rarity: 'rare',
+    manaCost: 3,
+    attack: 2,
+    health: 5,
+    description: 'Taunt.',
+    abilities: [
+      {
+        trigger: 'passive',
+        type: 'buff',
+        value: 0,
+        target: 'self',
+        description: 'Taunt'
       }
     ]
   },
@@ -548,7 +576,7 @@ export const CARDS: Card[] = [
   // EARTH COMMON
   {
     id: 'e_common_1',
-    name: 'Fir Bolg Defender',
+    name: 'Furbolg Defender',
     element: 'earth',
     type: 'minion',
     rarity: 'common',
@@ -565,9 +593,9 @@ export const CARDS: Card[] = [
     type: 'minion',
     rarity: 'common',
     manaCost: 2,
-    attack: 0,
-    health: 5,
-    description: 'Taunt. Cannot attack.',
+    attack: 1,
+    health: 4,
+    description: 'Taunt.',
     imageUrl: '',
     abilities: [
       {
@@ -575,7 +603,7 @@ export const CARDS: Card[] = [
         type: 'buff',
         value: 0,
         target: 'self',
-        description: 'Taunt (enemies must attack this first)'
+        description: 'Taunt'
       }
     ]
   },
@@ -607,7 +635,7 @@ export const CARDS: Card[] = [
     type: 'minion',
     rarity: 'common',
     manaCost: 4,
-    attack: 3,
+    attack: 2,
     health: 6,
     description: 'Taunt.',
     imageUrl: '',
@@ -633,216 +661,89 @@ export const CARDS: Card[] = [
     description: 'Young druid learning the ancient ways.',
     imageUrl: ''
   },
+  {
+    id: 'e_common_6',
+    name: 'Rooted Treant',
+    element: 'earth',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 5,
+    attack: 3,
+    health: 7,
+    description: 'Solid and immovable.',
+  },
+  {
+    id: 'e_common_7',
+    name: 'Healing Wisp',
+    element: 'earth',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 1,
+    attack: 1,
+    health: 1,
+    description: 'Deathrattle: Restore 2 Health to your hero.',
+    abilities: [
+      {
+        trigger: 'deathrattle',
+        type: 'heal',
+        value: 2,
+        target: 'self',
+        description: 'Restore 2 Health to your hero'
+      }
+    ]
+  },
 
   // EARTH SPELLS
   {
     id: 'e_spell_1',
-    name: "Dagda's Blessing",
+    name: 'Healing Springs',
     element: 'earth',
     type: 'spell',
     rarity: 'common',
     manaCost: 2,
-    description: 'Restore 6 Health.',
+    description: 'Restore 5 Health to your hero.',
     abilities: [
       {
         trigger: 'battlecry',
         type: 'heal',
-        value: 6,
-        target: 'choose',
-        description: 'Restore 6 Health to a character'
+        value: 5,
+        target: 'self',
+        description: 'Restore 5 Health to your hero'
       }
     ]
   },
   {
     id: 'e_spell_2',
-    name: 'Forest\'s Wrath',
+    name: 'Bounty of Nature',
     element: 'earth',
     type: 'spell',
-    rarity: 'rare',
-    manaCost: 6,
-    description: 'Destroy all minions with 3 or less Health. Restore 3 Health to your hero.',
+    rarity: 'common',
+    manaCost: 3,
+    description: 'Restore 3 Health to your hero. Draw a card.',
     abilities: [
-      {
-        trigger: 'battlecry',
-        type: 'destroy',
-        value: 999,
-        target: 'all',
-        condition: 'low_health_minions',
-        description: 'Destroy minions with 3 or less Health'
-      },
       {
         trigger: 'battlecry',
         type: 'heal',
         value: 3,
         target: 'self',
         description: 'Restore 3 Health to your hero'
+      },
+      {
+        trigger: 'battlecry',
+        type: 'draw',
+        value: 1,
+        target: 'self',
+        description: 'Draw a card'
       }
     ]
   },
   {
     id: 'e_spell_3',
-    name: 'Healing Springs',
-    element: 'earth',
-    type: 'spell',
-    rarity: 'common',
-    manaCost: 1,
-    description: 'Restore 3 Health.',
-    abilities: [
-      {
-        trigger: 'battlecry',
-        type: 'heal',
-        value: 3,
-        target: 'choose',
-        description: 'Restore 3 Health'
-      }
-    ]
-  },
-  {
-    id: 'e_spell_4',
-    name: 'Rejuvenation',
-    element: 'earth',
-    type: 'spell',
-    rarity: 'common',
-    manaCost: 3,
-    description: 'Restore 5 Health. Draw a card.',
-    abilities: [
-      {
-        trigger: 'battlecry',
-        type: 'heal',
-        value: 5,
-        target: 'choose',
-        description: 'Heal 5, draw 1'
-      }
-    ]
-  },
-  {
-    id: 'e_spell_5',
-    name: 'Entangling Roots',
+    name: 'Ancient Wisdom',
     element: 'earth',
     type: 'spell',
     rarity: 'rare',
     manaCost: 4,
-    description: 'Destroy a minion with 2 or less Attack.',
-    abilities: [
-      {
-        trigger: 'battlecry',
-        type: 'destroy',
-        value: 1,
-        target: 'choose',
-        condition: 'low_attack',
-        description: 'Destroy low attack minion'
-      }
-    ]
-  },
-  {
-    id: 'e_spell_6',
-    name: 'Wild Growth',
-    element: 'earth',
-    type: 'spell',
-    rarity: 'rare',
-    manaCost: 3,
-    description: 'Gain +1 maximum mana.',
-    abilities: [
-      {
-        trigger: 'battlecry',
-        type: 'gain_mana',
-        value: 1,
-        target: 'self',
-        description: 'Permanent mana'
-      }
-    ]
-  },
-
-  // ═════════════════════════════════════════════════════════════
-  // NEUTRAL CARDS - UNIVERSAL TOOLS
-  // Theme: Historical Irish figures, flexible effects
-  // Strategy: Fill gaps in any deck archetype
-  // ═════════════════════════════════════════════════════════════
-
-  // NEUTRAL LEGENDARY
-  {
-    id: 'n_leg_1',
-    name: 'St. Patrick',
-    element: 'neutral',
-    type: 'minion',
-    rarity: 'legendary',
-    manaCost: 6,
-    attack: 5,
-    health: 5,
-    description: 'Battlecry: Destroy all minions. Restore 8 Health to your hero.',
-    abilities: [
-      {
-        trigger: 'battlecry',
-        type: 'destroy',
-        value: 999,
-        target: 'all',
-        condition: 'spirit_minions_only',
-        description: 'Destroy all Spirit minions'
-      },
-      {
-        trigger: 'battlecry',
-        type: 'heal',
-        value: 8,
-        target: 'self',
-        description: 'Restore 8 Health to your hero'
-      }
-    ]
-  },
-
-  // NEUTRAL EPIC
-  {
-    id: 'n_epic_1',
-    name: 'Cú Chulainn',
-    element: 'neutral',
-    type: 'minion',
-    rarity: 'epic',
-    manaCost: 4,
-    attack: 5,
-    health: 2,
-    description: 'When this attacks, deal 1 damage to all enemies.',
-    imageUrl: '',
-    abilities: [
-      {
-        trigger: 'when_attack',
-        type: 'damage',
-        value: 1,
-        target: 'enemy',
-        description: 'Deal 1 damage to all enemies when attacking'
-      }
-    ]
-  },
-
-  // NEUTRAL RARE
-  {
-    id: 'n_rare_1',
-    name: 'Brian Boru',
-    element: 'neutral',
-    type: 'minion',
-    rarity: 'rare',
-    manaCost: 5,
-    attack: 4,
-    health: 4,
-    description: 'Battlecry: Give all friendly minions +1/+1.',
-    imageUrl: '',
-    abilities: [
-      {
-        trigger: 'battlecry',
-        type: 'buff',
-        value: 1,
-        target: 'all',
-        description: 'Give all friendly minions +1/+1'
-      }
-    ]
-  },
-
-  // NEUTRAL COMMON
-  {
-    id: 'n_common_1',
-    name: 'Harvest Festival',
-    element: 'neutral',
-    type: 'spell',
-    rarity: 'common',
-    manaCost: 2,
     description: 'Draw 2 cards.',
     abilities: [
       {
@@ -853,7 +754,107 @@ export const CARDS: Card[] = [
         description: 'Draw 2 cards'
       }
     ]
-  }
+  },
+
+  // ═════════════════════════════════════════════════════════════
+  // NEUTRAL CARDS - UNIVERSAL TOOLS
+  // Theme: Historical Irish figures, flexible effects
+  // Strategy: Fill gaps in any deck archetype
+  // ═════════════════════════════════════════════════════════════
+
+  {
+    id: 'n_common_1',
+    name: 'Battle Ready',
+    element: 'neutral',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 1,
+    attack: 1,
+    health: 2,
+    description: 'A humble beginning.',
+  },
+  {
+    id: 'n_common_2',
+    name: 'Celtic Warrior',
+    element: 'neutral',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 2,
+    attack: 2,
+    health: 3,
+    description: 'Reliable fighter.',
+  },
+  {
+    id: 'n_common_3',
+    name: 'Village Elder',
+    element: 'neutral',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 3,
+    attack: 3,
+    health: 3,
+    description: 'Battlecry: Draw a card.',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'draw',
+        value: 1,
+        target: 'self',
+        description: 'Draw a card'
+      }
+    ]
+  },
+  {
+    id: 'n_common_4',
+    name: 'Wandering Bard',
+    element: 'neutral',
+    type: 'minion',
+    rarity: 'common',
+    manaCost: 4,
+    attack: 3,
+    health: 5,
+    description: 'Tells tales of ancient heroes.',
+  },
+  {
+    id: 'n_rare_1',
+    name: 'Brian Boru',
+    element: 'neutral',
+    type: 'minion',
+    rarity: 'rare',
+    manaCost: 5,
+    attack: 4,
+    health: 4,
+    description: 'Battlecry: Give all friendly minions +1/+1.',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'buff',
+        value: 1,
+        target: 'all',
+        description: 'Give all friendly minions +1/+1'
+      }
+    ]
+  },
+  {
+    id: 'n_rare_2',
+    name: 'High King',
+    element: 'neutral',
+    type: 'minion',
+    rarity: 'rare',
+    manaCost: 6,
+    attack: 5,
+    health: 5,
+    description: 'Battlecry: Draw 2 cards.',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'draw',
+        value: 2,
+        target: 'self',
+        description: 'Draw 2 cards'
+      }
+    ]
+  },
 ];
 
 // ═════════════════════════════════════════════════════════════
@@ -862,7 +863,7 @@ export const CARDS: Card[] = [
 
 
 // Get all cards for an archetype deck (element + neutral)
-export function getArchetypeCards(archetype: 'aggressive'| 'defensive'): Card[] {
+export function getArchetypeCards(archetype: 'aggressive' | 'defensive'): Card[] {
   const elementMap = {
     aggressive: 'fire',
     defensive: 'earth',
