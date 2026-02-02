@@ -146,7 +146,7 @@ export const CARDS: Card[] = [
       {
         trigger: 'deathrattle',
         type: 'damage',
-        value: 3,
+        value: 2,
         target: 'enemy',
         description: 'Deal 2 damage to enemy hero'
       }
@@ -231,6 +231,15 @@ export const CARDS: Card[] = [
     health: 2,
     description: 'Battlecry: Deal 2 damage to your own hero.',
     imageUrl: '',
+    abilities: [
+      {
+        trigger: 'battlecry',
+        type: 'damage',
+        value: 2,
+        target: 'self',
+        description: 'Deal 2 damage to your own hero'
+      }
+    ]
   },
   {
     id: 'f_common_4',
