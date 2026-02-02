@@ -11,12 +11,12 @@ interface DeckSelectorProps {
 }
 
 export function DeckSelector({ selectedDeck, onSelectDeck, label }: DeckSelectorProps) {
-  const decks: DeckArchetype[] = ['fire', 'water', 'earth', 'air'];
+  const decks: DeckArchetype[] = ['fire', 'earth'];
 
   return (
     <div className="w-full max-w-4xl">
       <h2 className="text-2xl font-bold text-white mb-4 text-center">{label}</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
         {decks.map((archetype) => {
           const info = DECK_INFO[archetype];
           const isSelected = selectedDeck === archetype;

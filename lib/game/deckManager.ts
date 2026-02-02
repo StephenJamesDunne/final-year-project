@@ -26,10 +26,7 @@ export function shuffleDeck<T>(array: T[]): T[] {
 // Basically just a fancy if else that gets the right set of cards
 export function createArchetypeDeck(archetype: DeckArchetype): Card[] {
   const archetypeCards = getArchetypeCards(
-    archetype === 'fire' ? 'aggressive' :
-    archetype === 'water' ? 'tempo' :
-    archetype === 'earth' ? 'defensive' :
-    'balanced'
+    archetype === 'fire' ? 'aggressive' : 'defensive'
   );
 
   // Create 2 copies of each card (standard deck building)
