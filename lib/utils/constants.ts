@@ -1,77 +1,66 @@
-// For game constants
+// Core gameplay constants
 
-import { Element } from '@/lib/types/game';
-
-export const BOARD_DIMENSIONS = {
-  width: 1400,
-  height: 900,
-};
-
-// Element styling constants
-export const ELEMENT_COLORS = {
-  fire: 'from-red-600 to-orange-600',
-  water: 'from-blue-600 to-cyan-600',
-  earth: 'from-green-600 to-emerald-600',
-  air: 'from-purple-600 to-pink-600',
-  spirit: 'from-indigo-600 to-violet-600',
-  neutral: 'from-gray-600 to-slate-600',
-} as const;
-
-export const ELEMENT_BORDERS: Record<Element, string> = {
-  fire: 'border-red-600',
-  water: 'border-blue-600',
-  earth: 'border-green-600',
-  air: 'border-purple-600',
-  spirit: 'border-indigo-600',
-  neutral: 'border-gray-600',
-} as const;
-
-// Rarity styling constants
-export const RARITY_COLORS = {
-  common: 'from-gray-400 to-gray-600',
-  rare: 'from-blue-400 to-blue-600',
-  epic: 'from-purple-400 to-purple-600',
-  legendary: 'from-yellow-400 to-orange-500',
-} as const;
-
-export const RARITY_BORDERS = {
-  common: 'border-gray-400',
-  rare: 'border-blue-400',
-  epic: 'border-purple-400',
-  legendary: 'border-yellow-400',
-} as const;
-
-// General Game constants
 export const GAME_CONSTANTS = {
+  // Maximum cards in hand before burning draws
   MAX_HAND_SIZE: 10,
+  
+  // Starting health for both players
   STARTING_HEALTH: 30,
+  
+  // Starting mana on turn 1
   STARTING_MANA: 1,
+  
+  //Maximum mana cap (reached on turn 10)
   MAX_MANA: 10,
+  
+  // Maximum minions on board per player
+  MAX_BOARD_SIZE: 7,
+  
+  // Cards drawn per turn (after initial hand)
   CARDS_DRAWN_PER_TURN: 1,
+  
+  // Cards in starting hand
   INITIAL_HAND_SIZE: 4,
 } as const;
 
-// Keywords for card descriptions
-export const KEYWORDS = [
-  'Battlecry', 'Deathrattle', 'End of Turn', 'Start of Turn', 'Passive',
-  'Summon', 'Deal', 'Restore', 'Draw', 'Destroy', 'Give', 'Add', 'Choose',
-  'Discover', 'Double', 'Random', 'Friendly', 'Enemy', 'All', 'Attack', 'Health'
+// Card mechanics
+export const ABILITY_TRIGGERS = [
+  'battlecry',      // when played from the hand
+  'deathrattle',    // when minion dies
+  'end_of_turn',    // at end of turn
+  'start_of_turn',  // at start of turn
+  'passive'         // always active
 ] as const;
 
-export const KEYWORD_DEFINITIONS: Record<string, string> = {
-  'Battlecry': 'Does something when you play it from your hand.',
-  'Deathrattle': 'Does something when it dies.',
-  'Taunt': 'Enemies must attack this minion.',
-  'Rush': 'Can attack minions immediately.',
-  'Charge': 'Can attack immediately.',
-  'Divine Shield': 'The first time this takes damage, ignore it.',
-  'Windfury': 'Can attack twice each turn.',
-  'Stealth': 'Can\'t be attacked until it attacks.',
-  'Lifesteal': 'Damage dealt by this heals your hero.',
-  'Poisonous': 'Destroy any minion damaged by this.',
-  'Freeze': 'Frozen characters lose their next attack.',
-  'Silence': 'Remove all card text and enchantments.',
-  'End of Turn': 'Triggers at the end of your turn.',
-  'Start of Turn': 'Triggers at the start of your turn.',
-  'Passive': 'Always active while this minion is alive.'
-} as const;
+// What abilities do when they trigger
+export const ABILITY_TYPES = [
+  'damage',         // Deal damage
+  'heal',           // Restore health
+  'draw',           // Draw cards
+  'buff',           // Increase stats on the board
+  'summon',         // Create minions
+] as const;
+
+// Who/what is affected by the triggered ability
+export const ABILITY_TARGETS = [
+  'self',           // Friendly hero
+  'enemy',          // Enemy hero
+  'all',            // All minions
+  'random',         // Random minion
+  'choose',         // Player chooses target
+] as const;
+
+// Keywords: Special rules text that appears on the cards
+// Used for parsing and validation
+export const KEYWORDS = [
+  'Taunt',          // Must be attacked first
+  'Charge',         // Can attack immediately
+  'Battlecry',      // Effect triggered when minion is played
+  'Deathrattle',    // Effect triggered when minion dies
+] as const;
+
+// Type Exports
+export type AbilityTrigger = typeof ABILITY_TRIGGERS[number];
+export type AbilityType = typeof ABILITY_TYPES[number];
+export type AbilityTarget = typeof ABILITY_TARGETS[number];
+export type Keyword = typeof KEYWORDS[number];
