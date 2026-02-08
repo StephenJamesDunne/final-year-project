@@ -16,7 +16,6 @@ import { MinionRenderer } from './rendering/MinionRenderer';
 import { BoardRenderer } from './rendering/BoardRenderer';
 import { COLORS } from './utils/StyleConstants';
 import { HoverCardDisplay } from './ui/HoverCardDisplay';
-import { hover } from 'framer-motion';
 
 
 // Callbacks passed from React to handle all user interactions are here.
@@ -52,9 +51,23 @@ export interface BoardState {
   aiAction?: string;
 }
 
+// Rendering layer containers
+// Each container holds sprites for a specific layer
+// Added to stage in z-order sequence
+interface RenderingContainers {
+  background: PIXI.Container;
+  aiHand: PIXI.Container;
+  aiBoard: PIXI.Container;
+  playerBoard: PIXI.Container;
+  playerHand: PIXI.Container;
+  ui: PIXI.Container;
+}
+
 export class PixiBoard {
   // Instance of Pixi app
   private app: PIXI.Application | null = null;
+
+  // Flag to track if board has been destroyed
   private isDestroyed = false;
 
   // Renderers corresponding to different elements of the game
@@ -76,17 +89,11 @@ export class PixiBoard {
   private boundHandleResize: (() => void) | null = null;
 
   // Z-ordering here is important, similar to SFML, PIXI renders bottom to top:
-  private containers: {
-    background: PIXI.Container;
-    aiHand: PIXI.Container;
-    aiBoard: PIXI.Container;
-    playerBoard: PIXI.Container;
-    playerHand: PIXI.Container;
-    ui: PIXI.Container;
-  } | null = null;
+  private containers: RenderingContainers | null = null;
 
   // Creates instances of each renderer before initializing PIXI instance
   constructor(callbacks: BoardCallbacks) {
+    this.callbacks = callbacks;
 
     // hover functionality for detailed view of cards highlighted
     const hoverHandler = (card: Card | Minion | null, x: number, y:number) => {
@@ -97,7 +104,7 @@ export class PixiBoard {
       }
     }
 
-    this.callbacks = callbacks;
+    
     this.boardLayout = new BoardLayout();
     this.cardRenderer = new CardRenderer();
     this.uiManager = new UIManager(this.boardLayout);
@@ -107,12 +114,24 @@ export class PixiBoard {
     this.hoverCardDisplay = new HoverCardDisplay();
   }
 
-  // Create the instance of PIXI and init
+  // Initialization of PixiJS, set up rendering
+
+  // Async initialization of flow:
+  // 1. Create PIXI.Application
+  // 2. Wait for WebGL initialization
+  // 3. Update layout for the screen size
+  // 4. Load card assets
+  // 5. Set up containers and initial render
+  // 6. Start listening for window resize
+  // MUST be called before using the board
+
   async init(canvas: HTMLCanvasElement): Promise<void> {
     this.isDestroyed = false;
 
+    // Create PixiJS app
     this.app = new PIXI.Application();
 
+    // Init with WebGL renderer
     await this.app.init({
       canvas,
       width: window.innerWidth,
@@ -123,16 +142,25 @@ export class PixiBoard {
       autoDensity: true,
     });
 
+    // Check if board is destroyed during async init
     if (this.isDestroyed || !this.app) return;
 
     // Align board size to fit the screen size
     this.boardLayout.updateDimensions(this.app.screen.width, this.app.screen.height);
 
+    // Load card art and frame assets
     await this.cardRenderer.loadAssets();
+
+    // Check for board destruction again after second async operation
     if (this.isDestroyed || !this.app) return;
 
+    // Set up rendering layers
     this.setupContainers();
+
+    // Render static background
     this.renderBackground();
+
+    // Create initial UI elements
     this.createUIElements();
 
     // Listen for window resize events
@@ -140,6 +168,8 @@ export class PixiBoard {
     window.addEventListener('resize', this.boundHandleResize);
   }
 
+  // Create and add rendering containers to stage
+  // Container creation order defines z-order
   private setupContainers(): void {
     if (!this.app) return;
 
@@ -152,31 +182,42 @@ export class PixiBoard {
       ui: new PIXI.Container(),
     };
 
+    // Add containers in z-order (bottom to top)
     this.app.stage.addChild(this.containers.background);
     this.app.stage.addChild(this.containers.aiHand);
     this.app.stage.addChild(this.containers.aiBoard);
     this.app.stage.addChild(this.containers.playerBoard);
     this.app.stage.addChild(this.containers.playerHand);
     this.app.stage.addChild(this.containers.ui);
+
+    // Add hover card display at highest z-order
     this.app.stage.addChild(this.hoverCardDisplay.getContainer());
 
     // Need this to enable z-ordering
     this.app.stage.sortableChildren = true;
   }
 
+  // Render static background (base color, board zones, decorative elements)
   private renderBackground(): void {
     if (!this.containers) return;
     const bg = this.boardRenderer.createBackground();
     this.containers.background.addChild(bg);
   }
 
+  // UI elements that persist through entire game session
+  // Portraits for player/AI, deck indicators, turn indicator,
+  // Combat log, end turn button
   private createUIElements(): void {
     if (!this.containers) return;
     this.uiManager.createInitialUI(this.containers.ui, this.callbacks);
   }
 
   // Update the game board with new state. This gets
-  // called by PixiGameBoard.tsx whenever React state changes
+  // called by PixiGameBoard.tsx React component whenever Zustand state changes
+  // Flow:
+  // 1. Clear dynamic containers (hands, boards)
+  // 2. Re-render with new state
+  // 3. Update UI elements
   update(state: BoardState): void {
     if (!this.containers) return;
 
@@ -211,6 +252,8 @@ export class PixiBoard {
     this.uiManager.updateUI(this.containers.ui, state, this.callbacks);
   }
 
+  // Clear containers that change every update
+  // Only dynamic elements: hands, boards, UI
   private clearDynamicContainers(): void {
     if (!this.containers) return;
 
@@ -220,6 +263,8 @@ export class PixiBoard {
     this.destroyChildren(this.containers.playerHand);
   }
 
+  // Destroy all children of a container
+  // Properly cleans up parent container, sprite and its children
   private destroyChildren(container: PIXI.Container): void {
     while (container.children.length > 0) {
       const child = container.children[0];

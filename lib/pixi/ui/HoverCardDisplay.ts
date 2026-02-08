@@ -1,7 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { Card, Minion } from '@/lib/types/game';
-import { COLORS, FONTS } from '../utils/StyleConstants'
-import { desc } from 'framer-motion/client';
+import { COLORS } from '../utils/StyleConstants'
 
 export class HoverCardDisplay {
     private container: PIXI.Container;

@@ -1,8 +1,17 @@
 import * as PIXI from 'pixi.js';
 import { COLORS } from '../utils/StyleConstants';
 
-// BoardLayout provides all the math logic for positioning of my PIXI elements on the screen. This is where
-// all elements on the canvas are anchored to their positions on the page.
+// BoardLayout provides all the math logic for positioning of my PIXI elements on the screen. 
+// This is where all elements on the canvas are anchored to their positions on the page.
+
+// Stores current screen dimensions
+// Calculates positions for all game elements
+// Create background graphics
+
+// All positions use percentages of screen size
+// Responsive to window resize
+// Centers elements horizontally
+// Divides screen into zones, vertically
 
 
 interface Position {
@@ -19,11 +28,18 @@ export class BoardLayout {
     this.height = height;
   }
 
+  // Update default/old dimensions on window resize
   updateDimensions(width: number, height: number) {
     this.width = width;
     this.height = height;
   }
 
+  // Create complete background graphics
+  // Layers:
+  // Base background colour
+  // Enemy board zone (top of screen)
+  // Player board zone (bottom of screen)
+  // Center battlefield divider line
   createBackground(): PIXI.Graphics {
     const bg = new PIXI.Graphics();
 
@@ -31,19 +47,19 @@ export class BoardLayout {
     bg.rect(0, 0, this.width, this.height);
     bg.fill(COLORS.UI.baseBG);
 
-    // Enemy territory (top)
+    // Enemy territory (top third)
     const enemyZone = this.createBoardZone(
       'enemy',
-      this.height * 0.20,
-      this.height * 0.18
+      this.height * 0.20, // Y position (20% down from very top of screen)
+      this.height * 0.18  // Height (18% of screen)
     );
     bg.addChild(enemyZone);
 
-    // Player territory (bottom)
+    // Player territory (middle of screen)
     const playerZone = this.createBoardZone(
       'player',
-      this.height * 0.50,
-      this.height * 0.18
+      this.height * 0.50, // Y position (50% down from top)
+      this.height * 0.18  // Height (18% of screen)
     );
     bg.addChild(playerZone);
 
@@ -53,10 +69,16 @@ export class BoardLayout {
     return bg;
   }
 
+  // Create a baord zone, either player or enemy territory
+  // Rounded rectangle background
+  // Border with team colour
+  // Inner glow effect
+  // Decorative Celtic pattern overlay
   private createBoardZone(type: 'player' | 'enemy', y: number, height: number): PIXI.Container {
     const zone = new PIXI.Container();
     zone.y = y;
 
+    // Get zone width (65% of screen, centered)
     const boardWidth = this.width * 0.65;
     const marginLeft = (this.width - boardWidth) / 2;
 
@@ -77,7 +99,7 @@ export class BoardLayout {
       bg.fill({ color: COLORS.TEAMS.player, alpha: 0.5 });
       bg.stroke({ width: 3, color: COLORS.UI.forest });
 
-      // Inner glow
+      // Inner glow (green)
       bg.roundRect(marginLeft + 4, 4, boardWidth - 8, height - 8, 10);
       bg.stroke({ width: 2, color: COLORS.UI.forestGlow, alpha: 0.3 });
     }
@@ -141,6 +163,11 @@ export class BoardLayout {
     }
   }
 
+  // Calculate positions for AI cards in hand
+  // Layout:
+  // Horizontal row at top of screen
+  // Slightly off-centered on screen
+  // Even spacing between cards
   getAIHandPositions(count: number): Position[] {
     if (count === 0) return [];
     const y = this.height * 0.0001;
