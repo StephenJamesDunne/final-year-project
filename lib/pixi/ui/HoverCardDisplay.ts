@@ -6,6 +6,8 @@ export class HoverCardDisplay {
     private container: PIXI.Container;
     private readonly WIDTH = 200;
     private readonly HEIGHT = 280;
+    private readonly PADDING = 10;
+    private readonly OFFSET = 20;
 
     constructor() {
         this.container = new PIXI.Container();
@@ -33,29 +35,46 @@ export class HoverCardDisplay {
         const descText = this.createDescriptionText(card.description);
         this.container.addChild(descText);
 
-        let x = globalX + 50;
-        let y = globalY - this.HEIGHT / 2;
-
-        // Push tooltip to left side of the screen if too close to right edge
-        // Prevents cards in the far right of the player's hand from having their 
-        // detailed views go off screen
-        if (x + this.WIDTH > screenWidth - 10) {
-            x = globalX - this.WIDTH - 20;
-        }
-
-        // Keep within vertical bounds of the screen
-        if (y < 10) y = 10;
-        if (y + this.HEIGHT > screenHeight - 10) {
-            y = screenHeight - this.HEIGHT - 10;
-        }
-
-        this.container.x = x;
-        this.container.y = y;
+        const position = this.calculatePosition(globalX, globalY, screenWidth, screenHeight);
+        this.container.x = position.x;
+        this.container.y = position.y;
         this.container.visible = true;
     }
 
     hide(): void {
         this.container.visible = false;
+    }
+
+    private calculatePosition(
+        cursorX: number,
+        cursorY: number,
+        screenWidth: number,
+        screenHeight: number
+    ): { x: number, y: number } {
+
+        // Try to show tooltip on the right side of cursor
+        let x = cursorX + this.OFFSET;
+        let y = cursorY - this.HEIGHT / 2;  // Center vertically on cursor
+
+        // If tooltip goes off right edge, show on left instead
+        const wouldOverflowRight = (x + this.WIDTH) > (screenWidth - this.PADDING);
+        if (wouldOverflowRight) {
+            x = cursorX - this.WIDTH - this.OFFSET;
+        }
+
+        // Keep tooltip within vertical bounds
+        // If too high, push down
+        if (y < this.PADDING) {
+            y = this.PADDING;
+        }
+
+        // If too low, push up
+        const bottomEdge = y + this.HEIGHT;
+        if (bottomEdge > screenHeight - this.PADDING) {
+            y = screenHeight - this.HEIGHT - this.PADDING;
+        }
+
+        return { x, y };
     }
 
     // Background elements of the detailed card view
