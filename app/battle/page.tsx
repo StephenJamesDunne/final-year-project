@@ -118,7 +118,7 @@ function DeckSelectionScreen() {
     ]);
 
     // Callbacks object for PixiBoard
-    // Uses getState() to avoid stale closures
+    // Uses getState(); callbacks never change, so unnecessary re-renders of PixiBoard are avoided
     const boardCallbacks: BoardCallbacks = useMemo(() => ({
       onCardPlay: (cardIndex: number) => {
         useBattleStore.getState().playCard(cardIndex);

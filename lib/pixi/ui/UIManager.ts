@@ -59,6 +59,8 @@ export class UIManager {
   }
 
   updateUI(container: PIXI.Container, state: BoardState, callbacks: BoardCallbacks): void {
+    this.destroyOldElements();
+
     // Remove old elements
     this.removeElements(container);
 
@@ -115,6 +117,18 @@ export class UIManager {
     // Position and add to container
     this.positionElements();
     this.addElements(container);
+  }
+
+  private destroyOldElements(): void {
+    // Destroy each element if it exists
+    // children: true destroys nested elements
+    this.aiHealthDisplay?.destroy({children: true});
+    this.playerHealthDisplay?.destroy({ children: true });
+    this.aiDeckIndicator?.destroy({ children: true });
+    this.playerDeckIndicator?.destroy({ children: true });
+    this.combatLogDisplay?.destroy({ children: true });
+    this.turnIndicatorDisplay?.destroy({ children: true });
+    this.endTurnButtonDisplay?.destroy({ children: true });
   }
 
   private positionElements(): void {
