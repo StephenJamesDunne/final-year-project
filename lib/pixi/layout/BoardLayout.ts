@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { COLORS } from '../utils/StyleConstants';
+import { cache } from 'react';
 
 // BoardLayout provides all the math logic for positioning of my PIXI elements on the screen. 
 // This is where all elements on the canvas are anchored to their positions on the page.
@@ -23,15 +24,20 @@ export class BoardLayout {
   private width: number;
   private height: number;
 
+  // Cache for storing calculated positions of elements on the board
+  private positionCache: Map<string, Position[]> = new Map();
+
   constructor(width = 1920, height = 1080) {
     this.width = width;
     this.height = height;
   }
 
-  // Update default/old dimensions on window resize
+  // Update dimensions and clear cache when screen resizes
   updateDimensions(width: number, height: number) {
     this.width = width;
     this.height = height;
+
+    this.positionCache.clear();
   }
 
   // Create complete background graphics
@@ -170,19 +176,41 @@ export class BoardLayout {
   // Even spacing between cards
   getAIHandPositions(count: number): Position[] {
     if (count === 0) return [];
+
+    // create a unique key for this count to add to the map
+    const cacheKey = `ai-hand-${count}`;
+
+    // Check if this has already been done
+    if (this.positionCache.has(cacheKey)) {
+      return this.positionCache.get(cacheKey)!;
+    }
+
+    // Calculations for positions in the AI's hand:
     const y = this.height * 0.0001;
     const spacing = 45;
     const centerX = this.width / 3;
     const totalWidth = (count - 1) * spacing;
     const startX = centerX - totalWidth / 2;
-    return Array.from({ length: count }, (_, i) => ({
+    const positions = Array.from({ length: count }, (_, i) => ({
       x: startX + i * spacing,
       y,
     }));
+
+    this.positionCache.set(cacheKey, positions);
+    return positions;
   }
 
+  // Get positions for all minions on the AI's side of the field
   getAIBoardPositions(count: number): Position[] {
     if (count === 0) return [];
+
+    // create a unique key for this count and add it to the map
+    const cacheKey = `ai-board-${count}`;
+
+    // return if this has already been done
+    if (this.positionCache.has(cacheKey)) {
+      return this.positionCache.get(cacheKey)!;
+    }
 
     // y = height 
     const y = this.height * 0.22;
@@ -190,40 +218,65 @@ export class BoardLayout {
     const centerX = this.width / 2;
     const totalWidth = (count - 1) * spacing;
     const startX = centerX - totalWidth / 2;
-    return Array.from({ length: count }, (_, i) => ({
+    const positions = Array.from({ length: count }, (_, i) => ({
       x: startX + i * spacing,
       y,
     }));
+
+    this.positionCache.set(cacheKey, positions);
+    return positions;
   }
 
+  // get the positions of minions on the player's side of the field
   getPlayerBoardPositions(count: number): Position[] {
     if (count === 0) return [];
+
+    const cacheKey = `player-board-${count}`;
+
+    if (this.positionCache.has(cacheKey)) {
+      return this.positionCache.get(cacheKey)!;
+    }
+
     const y = this.height * 0.515;
     const spacing = 130;
     const centerX = this.width / 2;
     const totalWidth = (count - 1) * spacing;
     const startX = centerX - totalWidth / 2;
-    return Array.from({ length: count }, (_, i) => ({
+    const positions = Array.from({ length: count }, (_, i) => ({
       x: startX + i * spacing,
       y,
     }));
+
+    this.positionCache.set(cacheKey, positions);
+    return positions;
   }
 
+  // Get player hand positions
   getPlayerHandPositions(count: number): Position[] {
     if (count === 0) return [];
+
+    const cacheKey = `player-hand-${count}`;
+
+    if (this.positionCache.has(cacheKey)) {
+      return this.positionCache.get(cacheKey)!;
+    }
+
     const baseY = this.height * 0.85;
     const centerX = this.width / 2.125;
     const spacing = count <= 7 ? 115 : Math.min(115, (this.width * 0.6) / count);
     const totalWidth = (count - 1) * spacing;
     const startX = centerX - totalWidth / 2;
 
-    return Array.from({ length: count }, (_, i) => {
+    const positions = Array.from({ length: count }, (_, i) => {
       const progress = count > 1 ? i / (count - 1) : 0.5;
       const xPos = startX + i * spacing;
       const curveAmount = 25;
       const yOffset = curveAmount * Math.pow(2 * progress - 1, 2) - curveAmount;
       return { x: xPos, y: baseY + yOffset };
     });
+
+    this.positionCache.set(cacheKey, positions);
+    return positions;
   }
 
   getAIPortraitPosition(): Position {
