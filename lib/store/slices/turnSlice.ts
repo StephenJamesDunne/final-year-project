@@ -1,21 +1,12 @@
-/**
- * Turn Slice
- * 
- * Handles the turn cycle:
- * 1. Player ends their turn
- * 2. endTurn async function call - AI turn begins
- * 3. AI plays cards to spend mana, then attacks
- * 4. New turn starts, both players draw and refresh mana
- */
-
 import { StateCreator } from 'zustand';
 import { DeckSlice } from './deckSlice';
 import { BattleSlice } from './battleSlice';
 import { BattleState } from '../../types/game';
 import { drawCards, addCardsToHand } from '../../game/deckManager';
-import { getAIAction, executeAIPlayCard, executeAIAttacks, } from '../../game/aiPlayer';
-import { checkGameOver, enableMinionAttacks, incrementTurn } from '../../game/gameLogic';
+import { executeAIPlayCard, executeAIAttacks } from '@/lib/game/aiPlayer';
+import { checkGameOver, enableMinionAttacks, incrementTurn } from '@/lib/game/gameLogic';
 
+// interface for the turn slice of the Zustand store; manages turn progression and AI actions during the AI's turn
 export interface TurnSlice {
     endTurn: () => Promise<void>;
 }
@@ -33,9 +24,9 @@ export const createTurnSlice: StateCreator<
 
         if (state.currentTurn !== 'player' || state.gameOver) return;
 
-        ///
-        /// Switch to AI's turn
-        ///
+        // Get AI Strategy; works for both rule-based and DQN since they share the same interface
+        const aiStrategy = state.aiStrategy;
+
         let battleState: BattleState = {
             player: { ...state.player },
             ai: { ...state.ai },
@@ -54,20 +45,30 @@ export const createTurnSlice: StateCreator<
 
         await delay(500);
 
-        ///
-        /// AI plays cards to spend all its current mana
-        ///
+        // AI plays cards using the selected strategy
         let keepPlaying = true;
 
         while (keepPlaying) {
             const currentState = get();
-            const aiAction = getAIAction(currentState.ai, currentState);
 
+            // Use strategy pattern for AI type
+            const aiAction = aiStrategy.selectAction({
+                player: currentState.player,
+                ai: currentState.ai,
+                currentTurn: currentState.currentTurn,
+                turnNumber: currentState.turnNumber,
+                gameOver: currentState.gameOver,
+                winner: currentState.winner,
+                combatLog: currentState.combatLog,
+            });
+
+            // If the AI decides to pass or if the action is invalid, end the card-playing phase
             if (aiAction.type !== 'play_card' || aiAction.cardIndex === undefined) {
                 keepPlaying = false;
                 continue;
             }
 
+            // Execute the AI's chosen action and update the state accordingly
             const result = executeAIPlayCard(aiAction.cardIndex, {
                 player: currentState.player,
                 ai: currentState.ai,
@@ -78,6 +79,7 @@ export const createTurnSlice: StateCreator<
                 combatLog: currentState.combatLog,
             });
 
+            // Update the battle state with the results of the AI's action
             battleState = result.newState;
             battleState.combatLog = [...battleState.combatLog, result.logMessage];
 
@@ -91,6 +93,11 @@ export const createTurnSlice: StateCreator<
             const gameResult = checkGameOver(battleState.player.health, battleState.ai.health);
 
             if (gameResult.gameOver) {
+
+                // Notify the AI strategy of the game result (for learning in DQN)
+                aiStrategy.onGameEnd?.(battleState, gameResult.winner === 'ai');
+
+                // Update the state with the game result and end the game
                 set({
                     ...battleState,
                     ...gameResult,
@@ -104,9 +111,7 @@ export const createTurnSlice: StateCreator<
             }
         }
 
-        ///
-        /// AI attacks
-        ///
+        // AI attacks after playing cards
         const stateBeforeAttacks = get();
 
         const attackResult = executeAIAttacks({
@@ -139,6 +144,10 @@ export const createTurnSlice: StateCreator<
         );
 
         if (gameResultAfterAttacks.gameOver) {
+
+            // Notify the AI strategy of the game result (for learning in DQN)
+            aiStrategy.onGameEnd?.(battleState, gameResultAfterAttacks.winner === 'ai');
+
             set({
                 ...battleState,
                 ...gameResultAfterAttacks,
@@ -151,10 +160,7 @@ export const createTurnSlice: StateCreator<
             return;
         }
 
-        ///
-        /// Start new turn
-        ///
-
+        // Start new turn: increment turn number, increase mana, draw cards, and enable minion attacks
         const turnResult = incrementTurn(battleState.turnNumber, battleState.player.maxMana);
 
         const playerDraw = drawCards(battleState.player.deck, 1);
@@ -196,6 +202,7 @@ export const createTurnSlice: StateCreator<
     },
 });
 
+// Utility function to create a delay
 function delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
