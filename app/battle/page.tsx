@@ -3,11 +3,12 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { use, useMemo } from 'react';
 import { useBattleStore } from '@/lib/store/battleStore';
 import { PixiGameBoard } from '@/components/game/PixiGameBoard';
 import { DeckSelector } from '@/components/DeckSelector';
 import { BoardState, BoardCallbacks } from '@/lib/pixi';
+import { AISelector } from '@/components/AISelector';
 
 export default function BattlePage() {
   const initialized = useBattleStore((state) => state.initialized);
@@ -25,8 +26,11 @@ export default function BattlePage() {
 function DeckSelectionScreen() {
   const playerDeckArchetype = useBattleStore((state) => state.playerDeckArchetype);
   const aiDeckArchetype = useBattleStore((state) => state.aiDeckArchetype);
+  const aiType = useBattleStore((state) => state.aiType);
+
   const selectPlayerDeck = useBattleStore((state) => state.selectPlayerDeck);
   const selectAIDeck = useBattleStore((state) => state.selectAIDeck);
+  const selectAIType = useBattleStore((state) => state.selectAIType);
   const startBattle = useBattleStore((state) => state.startBattle);
 
   const canStartBattle = playerDeckArchetype !== null && aiDeckArchetype !== null;
@@ -45,6 +49,11 @@ function DeckSelectionScreen() {
         selectedDeck={aiDeckArchetype}
         onSelectDeck={selectAIDeck}
         label="Opponent's Deck"
+      />
+
+      <AISelector
+        selectedAI={aiType}
+        onSelectAI={selectAIType}
       />
 
       <button

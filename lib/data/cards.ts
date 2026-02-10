@@ -17,15 +17,15 @@ export const CARDS: Card[] = [
     manaCost: 7,
     attack: 6,
     health: 6,
-    description: 'Battlecry: Summon two 2/2 Connacht Warriors. Deal 1 damage to all enemies.',
+    description: 'Charge. Battlecry: Deal 1 damage to all enemies.',
     imageUrl: '/images/cards/queenmaedhbh.png',
     abilities: [
       {
-        trigger: 'battlecry',
-        type: 'summon',
-        value: 2,
+        trigger: 'passive',
+        type: 'buff',
+        value: 0,
         target: 'self',
-        description: 'Summon two 2/2 Connacht Warriors'
+        description: 'Can attack immediately (Charge)'
       },
       {
         trigger: 'battlecry',
