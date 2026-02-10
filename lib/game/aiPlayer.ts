@@ -4,13 +4,9 @@ import {
   getTauntMinions,
   handleMinionCombat,
   updateBoardAfterCombat,
-  hasTaunt,
-  boardHasTaunt,
 } from "./gameLogic";
 import { processAbilities } from "./abilitySystem";
-import { findPlayableCard, removeCardFromHand } from "./deckManager";
-import { select } from "framer-motion/client";
-import { kill } from "process";
+import { removeCardFromHand } from "./deckManager";
 
 export interface AIAction {
   type: "play_card" | "attack" | "pass";
