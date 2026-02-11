@@ -3,7 +3,7 @@
 
 'use client';
 
-import { use, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useBattleStore } from '@/lib/store/battleStore';
 import { PixiGameBoard } from '@/components/game/PixiGameBoard';
 import { DeckSelector } from '@/components/DeckSelector';
