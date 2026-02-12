@@ -11,6 +11,7 @@ import {
   handleMinionCombat,
   updateBoardAfterCombat,
 } from "@/lib/game/gameLogic";
+import { AIStrategy } from "@/lib/ai/aiStrategy";
 
 // interface for the turn slice of the Zustand store; manages turn progression and AI actions during the AI's turn
 export interface TurnSlice {
@@ -35,7 +36,7 @@ export const createTurnSlice: StateCreator<
       currentTurn: "ai",
       selectedMinion: null,
       aiAction: "Thinking...",
-      combatLog: [...state.combatLog, "─── Enemy Turn ───"],
+      combatLog: [...state.combatLog, "--- Enemy Turn ---"],
     });
 
     await delay(500);
@@ -149,7 +150,7 @@ export const createTurnSlice: StateCreator<
     const playerDraw = drawCards(finalState.player.deck, 1);
     const aiDraw = drawCards(finalState.ai.deck, 1);
 
-    const newLog = [...finalState.combatLog, `─── Turn ${turnResult.turnNumber} ───`,];
+    const newLog = [...finalState.combatLog, `─── Turn ${turnResult.turnNumber} ───`];
 
     if (playerDraw.drawn.length > 0) {
       newLog.push(`You draw: ${playerDraw.drawn[0].name}`);
@@ -185,9 +186,9 @@ export const createTurnSlice: StateCreator<
 
 // Handle game ending - victory/defeat logic
 function endGame(
-  set: any,
-  get: any,
-  aiStrategy: any
+  set: (state: Partial<BattleSlice & DeckSlice & TurnSlice>) => void,
+  get: () => BattleSlice & DeckSlice & TurnSlice,
+  aiStrategy: AIStrategy
 ): void {
   const state = get();
   const gameResult = checkGameOver(state.player.health, state.ai.health);
@@ -199,7 +200,7 @@ function endGame(
     winner: gameResult.winner,
     combatLog: [
       ...state.combatLog,
-      gameResult.winner === "player" ? "═══ VICTORY! ═══" : "═══ DEFEAT ═══",
+      gameResult.winner === "player" ? "=== VICTORY! ===" : "=== DEFEAT ===",
     ],
     aiAction: undefined,
   });
