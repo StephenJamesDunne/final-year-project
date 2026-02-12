@@ -773,7 +773,7 @@ export const CARDS: Card[] = [
 
   {
     id: 'n_common_1',
-    name: 'Battle Ready',
+    name: 'Battle Ready Villager',
     element: 'neutral',
     type: 'minion',
     rarity: 'common',

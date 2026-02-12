@@ -31,25 +31,16 @@ export const createTurnSlice: StateCreator<
     // Get AI Strategy; works for both rule-based and DQN since they share the same interface
     const aiStrategy = state.aiStrategy;
 
-    let battleState: BattleState = {
-      player: { ...state.player },
-      ai: { ...state.ai },
-      currentTurn: "ai",
-      turnNumber: state.turnNumber,
-      gameOver: state.gameOver,
-      winner: state.winner,
-      combatLog: [...state.combatLog, "─── Enemy Turn ───"],
-    };
-
     set({
-      ...battleState,
+      currentTurn: "ai",
       selectedMinion: null,
       aiAction: "Thinking...",
+      combatLog: [...state.combatLog, "─── Enemy Turn ───"],
     });
 
     await delay(500);
 
-    // AI plays cards using the selected strategy
+    // Phase 1 of AI Turn: AI plays cards using the selected strategy
     let keepPlaying = true;
 
     while (keepPlaying) {
@@ -83,46 +74,26 @@ export const createTurnSlice: StateCreator<
         combatLog: currentState.combatLog,
       });
 
-      // Update the battle state with the results of the AI's action
-      battleState = result.newState;
-      battleState.combatLog = [...battleState.combatLog, result.logMessage];
-
       set({
-        ...battleState,
+        player: result.newState.player,
+        ai: result.newState.ai,
+        combatLog: [...result.newState.combatLog, result.logMessage],
         aiAction: result.actionMessage,
       });
 
       await delay(600);
 
-      const gameResult = checkGameOver(
-        battleState.player.health,
-        battleState.ai.health,
-      );
-
-      if (gameResult.gameOver) {
-        // Notify the AI strategy of the game result (for learning in DQN)
-        aiStrategy.onGameEnd?.(battleState, gameResult.winner === "ai");
-
-        // Update the state with the game result and end the game
-        set({
-          ...battleState,
-          ...gameResult,
-          combatLog: [
-            ...battleState.combatLog,
-            gameResult.winner === "player"
-              ? "=== VICTORY! ==="
-              : " === DEFEAT ===",
-          ],
-          aiAction: undefined,
-        });
-        return;
+      // Check if card play ended the game
+      if (checkGameOver(result.newState.player.health, result.newState.ai.health).gameOver) {
+        return endGame(set, get, aiStrategy);
       }
     }
 
-    // After playing cards, let the AI perform attacks
-    let attackLogMessages: string[] = [];
+    // Second phase of AI turn: after playing cards, AI performs attacks with valid minions
+    const attackMessages: string[] = [];
+    let keepAttacking = true;
 
-    while (true) {
+    while (keepAttacking) {
       const currentState = get();
 
       // Use strategy pattern for AI type to select an attack action; if the action is invalid or if the AI decides to pass, end the attack phase
@@ -137,6 +108,7 @@ export const createTurnSlice: StateCreator<
       });
 
       if (action.type !== "attack" || !action.attackerId || !action.targetId) {
+        keepAttacking = false;
         break;
       }
 
@@ -151,38 +123,87 @@ export const createTurnSlice: StateCreator<
         combatLog: currentState.combatLog,
       });
 
+      attackMessages.push(...result.logMessages);
+
       set({
         player: result.newState.player,
         ai: result.newState.ai,
         combatLog: [...currentState.combatLog, ...result.logMessages],
       });
 
-      attackLogMessages.push(...result.logMessages);
-
-      const gameResult = checkGameOver(
-        result.newState.player.health,
-        result.newState.ai.health,
-      );
-
-      if (gameResult.gameOver) {
-        aiStrategy.onGameEnd?.(result.newState, gameResult.winner === "ai");
-
-        set({
-          ...result.newState,
-          ...gameResult,
-          combatLog: [
-            ...result.newState.combatLog,
-            gameResult.winner === "player"
-              ? "=== VICTORY! ==="
-              : " === DEFEAT ===",
-          ],
-          aiAction: undefined,
-        });
-        return;
+      // Check if attack ended the game
+      if (checkGameOver(result.newState.player.health, result.newState.ai.health).gameOver) {
+        return endGame(set, get, aiStrategy);
       }
     }
+
+    // Show attack animation if any attacks happened
+    if (attackMessages.length > 0) {
+      set({ aiAction: "Attacking..." });
+      await delay(800);
+    }
+
+    // Last/fallback phase for AI turn: start new turn
+    const finalState = get();
+    const turnResult = incrementTurn(finalState.turnNumber, finalState.player.maxMana);
+    const playerDraw = drawCards(finalState.player.deck, 1);
+    const aiDraw = drawCards(finalState.ai.deck, 1);
+
+    const newLog = [...finalState.combatLog, `─── Turn ${turnResult.turnNumber} ───`,];
+
+    if (playerDraw.drawn.length > 0) {
+      newLog.push(`You draw: ${playerDraw.drawn[0].name}`);
+    } else {
+      newLog.push("Your deck is empty!");
+    }
+
+    set({
+      player: {
+        ...finalState.player,
+        mana: turnResult.newMaxMana,
+        maxMana: turnResult.newMaxMana,
+        hand: addCardsToHand(finalState.player.hand, playerDraw.drawn),
+        deck: playerDraw.remaining,
+        board: enableMinionAttacks(finalState.player.board),
+      },
+      ai: {
+        ...finalState.ai,
+        mana: turnResult.newMaxMana,
+        maxMana: turnResult.newMaxMana,
+        hand: addCardsToHand(finalState.ai.hand, aiDraw.drawn),
+        deck: aiDraw.remaining,
+        board: enableMinionAttacks(finalState.ai.board),
+      },
+      currentTurn: "player",
+      turnNumber: turnResult.turnNumber,
+      combatLog: newLog,
+      aiAction: undefined,
+      selectedMinion: null,
+    });
   },
 });
+
+// Handle game ending - victory/defeat logic
+function endGame(
+  set: any,
+  get: any,
+  aiStrategy: any
+): void {
+  const state = get();
+  const gameResult = checkGameOver(state.player.health, state.ai.health);
+
+  aiStrategy.onGameEnd?.(state, gameResult.winner === "ai");
+
+  set({
+    gameOver: true,
+    winner: gameResult.winner,
+    combatLog: [
+      ...state.combatLog,
+      gameResult.winner === "player" ? "═══ VICTORY! ═══" : "═══ DEFEAT ═══",
+    ],
+    aiAction: undefined,
+  });
+}
 
 // Execute a single attack action from the AI
 // Returns the new battle state and any log messages generated by the attack
