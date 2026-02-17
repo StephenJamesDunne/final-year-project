@@ -121,7 +121,6 @@ export function isValidAttackTarget(
 
 export function handleHeroAttack(
   attacker: Minion,
-  currentHealth: number
 ): { damage: number; updatedAttacker: Minion } {
   return {
     damage: attacker.attack,

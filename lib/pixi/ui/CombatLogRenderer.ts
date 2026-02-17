@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { COLORS, FONTS } from '../utils/StyleConstants';
+import { COLORS } from '../utils/StyleConstants';
 
 export class CombatLogRenderer {
   private readonly WIDTH = 320;

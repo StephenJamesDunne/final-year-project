@@ -17,8 +17,8 @@ export class CardRenderer {
             await this.textureLoader.loadTexture('card-frame', '/images/default/card-frame.png');
             await this.textureLoader.loadTexture('card-back', '/images/default/card-back.png');
             console.log('CardRenderer: Assets loaded successfully');
-        } catch (error) {
-            console.warn('CardRenderer: Some assets failed to load, using fallbacks', error);
+        } catch {
+            console.warn('CardRenderer: Some assets failed to load, using fallbacks');
         }
     }
 
@@ -32,7 +32,7 @@ export class CardRenderer {
         const bg = this.createCardBackground(card);
         container.addChild(bg);
 
-        const frame = this.createCardFrame(card);
+        const frame = this.createCardFrame();
         container.addChild(frame);
 
         if (showName) {
@@ -62,7 +62,7 @@ export class CardRenderer {
     }
 
     // create a minion card, larger sized element for the board
-    createMinionCard(minion: Minion, isPlayer: boolean): PIXI.Container {
+    createMinionCard(minion: Minion): PIXI.Container {
         const container = new PIXI.Container();
 
         if (this.hasTauntAbility(minion)) {
@@ -76,11 +76,11 @@ export class CardRenderer {
         if (minion.imageUrl) {
             this.loadCardArt(minion.imageUrl, container);
         } else {
-            const placeholder = this.createArtPlaceholder(minion);
+            const placeholder = this.createArtPlaceholder();
             container.addChild(placeholder);
         }
 
-        const frame = this.createCardFrame(minion);
+        const frame = this.createCardFrame();
         container.addChild(frame);
 
         const attackBadge = this.createAttackBadge(minion.attack);
@@ -192,7 +192,7 @@ export class CardRenderer {
             sprite.mask = mask;
 
             container.addChildAt(artContainer, 2);
-        } catch (error) {
+        } catch {
             console.warn('Failed to load card art:', imageUrl);
         }
     }
@@ -204,7 +204,7 @@ export class CardRenderer {
         ) ?? false;
     }
 
-    private createArtPlaceholder(card: Card | Minion): PIXI.Container {
+    private createArtPlaceholder(): PIXI.Container {
         const placeholder = new PIXI.Container();
         placeholder.x = 8;
         placeholder.y = 30;
@@ -225,7 +225,7 @@ export class CardRenderer {
         return placeholder;
     }
 
-    private createCardFrame(card: Card | Minion): PIXI.Graphics {
+    private createCardFrame(): PIXI.Graphics {
         const frame = new PIXI.Graphics();
         frame.roundRect(0, 0, this.CARD_WIDTH, this.CARD_HEIGHT, CARD_DIMENSIONS.BORDER_RADIUS);
         frame.stroke({ width: 2, color: COLORS.UI.gold, alpha: 0.6 });
@@ -249,7 +249,7 @@ export class CardRenderer {
             text: name,
             style: {
                 fontSize: compact ? 9 : FONTS.CARD_NAME.fontSize,
-                fontWeight: FONTS.CARD_NAME.fontWeight as any,
+                fontWeight: FONTS.CARD_NAME.fontWeight as 'bold',
                 fill: FONTS.CARD_NAME.fill,
                 stroke: { color: COLORS.UI.black, width: 2 },
                 align: 'center',

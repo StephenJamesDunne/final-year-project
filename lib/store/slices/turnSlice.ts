@@ -221,7 +221,7 @@ function executeAttack(
   }
 
   // Create a new state object to modify
-  let newState = { ...state };
+  const newState = { ...state };
   const logMessages: string[] = [];
 
   // Attack hero

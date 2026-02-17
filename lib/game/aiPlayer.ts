@@ -2,8 +2,6 @@ import { BattleState, Player, Card, Minion } from "../types/game";
 import {
   createMinion,
   getTauntMinions,
-  handleMinionCombat,
-  updateBoardAfterCombat,
 } from "./gameLogic";
 import { processAbilities } from "./abilitySystem";
 import { removeCardFromHand } from "./deckManager";

@@ -1,6 +1,5 @@
 import * as PIXI from 'pixi.js';
 import { COLORS } from '../utils/StyleConstants';
-import { cache } from 'react';
 
 // BoardLayout provides all the math logic for positioning of my PIXI elements on the screen. 
 // This is where all elements on the canvas are anchored to their positions on the page.

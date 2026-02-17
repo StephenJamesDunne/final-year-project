@@ -79,7 +79,8 @@ export class HoverCardDisplay {
 
     // Background elements of the detailed card view
     // (need to mess with these values for a better looking tooltip)
-    private createBackground(card: Card | Minion): PIXI.Graphics {
+    private createBackground(card: Card | Minion): PIXI.Container {
+        const container = new PIXI.Container();
         const bg = new PIXI.Graphics();
 
         bg.roundRect(0, 0, this.WIDTH, this.HEIGHT, 8);
@@ -89,7 +90,8 @@ export class HoverCardDisplay {
         bg.roundRect(3, 3, this.WIDTH - 6, this.HEIGHT - 6, 6);
         bg.stroke({ width: 1, color: COLORS.UI.gold, alpha: 0.3 });
 
-        return bg;
+        container.addChild(bg);
+        return container;
     }
 
     // Name of the card in detailed view

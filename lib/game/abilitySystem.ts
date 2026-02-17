@@ -1,4 +1,4 @@
-import { BattleState, Card, CardAbility, Minion, Player } from '../types/game';
+import { BattleState, Card, CardAbility, Minion } from '../types/game';
 import { drawCards } from './deckManager';
 
 const MAX_HEALTH = 30;

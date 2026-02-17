@@ -53,7 +53,7 @@ export const createGameActionsSlice: StateCreator<
 > = (set, get) => ({
 
   // Update state when player plays a card
-  playCard: (cardIndex, targetId) => {
+  playCard: (cardIndex) => {
 
     // get the current state of the game and check it hasn't ended
     const state = get();
@@ -196,7 +196,7 @@ export const createGameActionsSlice: StateCreator<
       return;
     }
 
-    let newState: BattleState = {
+    const newState: BattleState = {
       ...state,
       combatLog: [...state.combatLog]
     };
