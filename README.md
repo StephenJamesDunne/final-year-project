@@ -28,10 +28,22 @@ fiverealms/
 │
 ├── components/
 │   ├── game/
-│   │   ├── PixiGameBoard.tsx    # PixiJS canvas wrapper component
+│   │   └── PixiGameBoard.tsx    # PixiJS canvas wrapper component
+│   ├── AISelector.tsx           # AI type selection UI (Rule-Based vs DQN)
 │   └── DeckSelector.tsx         # Deck selection UI
 │
 ├── lib/
+│   ├── ai/                      # AI System
+│   │   ├── aiStrategy.ts        # Strategy interface + RuleBasedAI + DQNAgent stub
+│   │   └── dqn/                 # Deep Q-Network Implementation
+│   │       ├── ActionSpace.ts       # Action encoding/decoding (68 actions)
+│   │       ├── AutoPlay.ts          # Self-play training loop
+│   │       ├── DQNAgent.ts          # Agent brain (epsilon-greedy, replay)
+│   │       ├── DQNModel.ts          # TensorFlow.js neural network
+│   │       ├── ExperienceReplay.ts  # Replay buffer (circular, 50k capacity)
+│   │       ├── RewardSystem.ts      # Reward shaping & configs
+│   │       └── stateEncoder.ts      # Game state → 121-feature vector
+│   │
 │   ├── pixi/                    # PixiJS Rendering Engine
 │   │   ├── PixiBoard.ts         # Main board orchestrator
 │   │   ├── index.ts             # Public exports
@@ -44,6 +56,7 @@ fiverealms/
 │   │   │   └── BoardRenderer.ts     # Background rendering
 │   │   ├── ui/
 │   │   │   ├── UIManager.ts         # UI orchestration
+│   │   │   ├── HoverCardDisplay.ts  # Card hover tooltip (detailed view)
 │   │   │   ├── PortraitRenderer.ts  # Hero portraits
 │   │   │   ├── CombatLogRenderer.ts # Combat log
 │   │   │   ├── EndTurnButton.ts     # Turn button
@@ -58,15 +71,15 @@ fiverealms/
 │   │   ├── gameLogic.ts         # Core combat & minion logic
 │   │   ├── deckManager.ts       # Deck building & card drawing
 │   │   ├── abilitySystem.ts     # Card ability processing
-│   │   └── aiPlayer.ts          # AI decision-making
+│   │   └── aiPlayer.ts          # Rule-based AI decision-making
 │   │
 │   ├── store/
 │   │   ├── battleStore.ts       # Main Zustand store
 │   │   └── slices/              # Modular state slices
 │   │       ├── battleSlice.ts        # Core battle state
-│   │       ├── deckSlice.ts          # Deck selection
+│   │       ├── deckSlice.ts          # Deck + AI type selection
 │   │       ├── gameActionsSlice.ts   # Play/attack actions
-│   │       ├── turnSlice.ts          # Turn management & AI
+│   │       ├── turnSlice.ts          # Turn management & AI (strategy pattern)
 │   │       └── initializationSlice.ts # Game initialization
 │   │
 │   ├── data/
@@ -102,6 +115,12 @@ fiverealms/
 ┌─────────────────────────────────────────────────────────────┐
 │              Pure Game Logic Layer                          │
 │  (gameLogic.ts, deckManager.ts, abilitySystem.ts, etc.)     │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   AI Layer                                  │
+│  (aiStrategy.ts → RuleBasedAI | DQNAgent → dqn/)           │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
@@ -146,17 +165,71 @@ graph LR
 ```mermaid
 graph LR
     A[Player ends turn] --> B[battleStore.endTurn]
-    B --> C[aiPlayer.getAIAction]
-    C --> D{Action Type}
-    D -->|Play Card| E[executeAIPlayCard]
-    D -->|Attack| F[executeAIAttacks]
-    E --> G[Process abilities]
+    B --> C[aiStrategy.selectAction]
+    C --> D{AI Type}
+    D -->|Rule-Based| E[RuleBasedAI - heuristic logic]
+    D -->|DQN| F[DQNAgent - neural network]
+    E --> G{Action Type}
     F --> G
-    G --> H[Update state]
-    H --> I[Increment turn]
-    I --> J[Draw cards]
-    J --> K[Re-render PixiBoard]
+    G -->|Play Card| H[executeAIPlayCard]
+    G -->|Attack| I[executeAIAttacks]
+    H --> J[Process abilities]
+    I --> J
+    J --> K[Update state]
+    K --> L[Increment turn]
+    L --> M[Draw cards]
+    M --> N[Re-render PixiBoard]
 ```
+
+### **4. DQN Training Flow**
+
+```mermaid
+graph LR
+    A[AutoPlay.trainAgent] --> B[initializeGameState]
+    B --> C[playEpisode loop]
+    C --> D[DQNAgent.selectAction]
+    D --> E{epsilon-greedy}
+    E -->|explore| F[Random action]
+    E -->|exploit| G[DQNModel.predict Q-values]
+    F --> H[executeAction]
+    G --> H
+    H --> I[calculateReward]
+    I --> J[storeExperience → ReplayBuffer]
+    J --> K[DQNAgent.train]
+    K --> L[DQNModel.trainOnBatch]
+    L --> M[Bellman equation → update weights]
+    M --> C
+```
+
+---
+
+## AI System
+
+The AI system uses the **Strategy Pattern** so opponent types can be swapped without changing game logic. Both implement the `AIStrategy` interface, making them interchangeable.
+
+### Rule-Based AI (`aiStrategy.ts` → `aiPlayer.ts`)
+A simple heuristic opponent that plays on curve, makes favorable board trades, and prioritises lethal damage. No training required.
+
+### DQN Agent (`lib/ai/dqn/`)
+A Deep Q-Network implementation using TensorFlow.js. Currently falls back to rule-based logic until a trained model is loaded.
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| Agent brain | `DQNAgent.ts` | Epsilon-greedy action selection, training loop |
+| Neural network | `DQNModel.ts` | 121→128→128→64→68 feed-forward network |
+| Memory | `ExperienceReplay.ts` | Circular replay buffer (50k capacity) |
+| Actions | `ActionSpace.ts` | Encodes/decodes 68 possible game actions |
+| Rewards | `RewardSystem.ts` | Configurable reward shaping (aggressive/defensive/tempo) |
+| State | `stateEncoder.ts` | Converts game state to 121-feature vector |
+| Training | `AutoPlay.ts` | Self-play loop, universal training across all matchups |
+
+**Action Space (68 total):**
+- `0–9`: Play card from hand
+- `10–59`: Attack with board minion (7 attackers × 7 targets)
+- `60–66`: Attack enemy hero (7 attackers)
+- `67`: End turn
+
+**State Vector (121 features):** Player/opponent vitals (9), hand cards × 4 features (40), player board × 5 features (35), opponent board × 4 features (28), deck sizes (2), normalised to `[0, 1]`.
 
 ---
 
@@ -169,21 +242,22 @@ graph LR
 | **Language**      | TypeScript | Type safety                         |
 | **Rendering**     | PixiJS     | WebGL canvas rendering              |
 | **State**         | Zustand    | Lightweight state management        |
-| **Stylings**      | Tailwind   | Inlining CSS styles for ease of use |
+| **Styling**       | Tailwind   | Inlining CSS styles for ease of use |
+| **ML**            | TensorFlow.js | DQN neural network (browser-side) |
 
 ---
 
-## Immediate Todo (This Week)
+## Immediate Todo
 - [ ] Refactor multiple files and remove unused/legacy code and functions
-- [ ] Researching AI Training model and how this might be implemented using my states and/or Battlestore
+- [ ] Extract more shared helpers into `GraphicsHelpers.ts` (noted in `MinionRenderer.ts`)
+- [ ] Consolidate card-on-board design with hand card design for better visual cohesion (`MinionRenderer.ts` TODO)
 
-## Medium-term Todo (End of November and all of December)
+## Medium-term Todo
 - [ ] Implement sprite pooling to better improve PixiJS performance
-- [ ] Fully implement AI machine learning in some shape or form
+- [ ] Train the DQN agent and persist a model to replace the rule-based fallback
+- [ ] Build a `TrainingPanel` UI component for in-browser training visualisation
 
-## Long-term Todo (Next Semester)
+## Long-term Todo
 - [ ] Set up database for cards, accounts + logins for multiple players
 - [ ] Add WebSocket support for multiplayer
 - [ ] Implement deck builder UI, glossary for all cards and lore information
-
----
