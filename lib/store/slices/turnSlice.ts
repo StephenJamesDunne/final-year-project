@@ -2,11 +2,9 @@ import { StateCreator } from "zustand";
 import { DeckSlice } from "./deckSlice";
 import { BattleSlice } from "./battleSlice";
 import { BattleState } from "../../types/game";
-import { drawCards, addCardsToHand } from "../../game/deckManager";
 import { executeAIPlayCard } from "@/lib/game/aiPlayer";
 import {
   checkGameOver,
-  enableMinionAttacks,
   incrementTurn,
   handleMinionCombat,
   updateBoardAfterCombat,
@@ -85,7 +83,10 @@ export const createTurnSlice: StateCreator<
       await delay(600);
 
       // Check if card play ended the game
-      if (checkGameOver(result.newState.player.health, result.newState.ai.health).gameOver) {
+      if (
+        checkGameOver(result.newState.player.health, result.newState.ai.health)
+          .gameOver
+      ) {
         return endGame(set, get, aiStrategy);
       }
     }
@@ -133,7 +134,10 @@ export const createTurnSlice: StateCreator<
       });
 
       // Check if attack ended the game
-      if (checkGameOver(result.newState.player.health, result.newState.ai.health).gameOver) {
+      if (
+        checkGameOver(result.newState.player.health, result.newState.ai.health)
+          .gameOver
+      ) {
         return endGame(set, get, aiStrategy);
       }
     }
@@ -146,35 +150,50 @@ export const createTurnSlice: StateCreator<
 
     // Last/fallback phase for AI turn: start new turn
     const finalState = get();
-    const turnResult = incrementTurn(finalState.turnNumber, finalState.player.maxMana);
-    const playerDraw = drawCards(finalState.player.deck, 1);
-    const aiDraw = drawCards(finalState.ai.deck, 1);
+    const turnResult = incrementTurn(finalState.turnNumber, finalState.player.maxMana, finalState.ai, finalState.player);
 
     const newLog = [...finalState.combatLog, `─── Turn ${turnResult.turnNumber} ───`];
 
-    if (playerDraw.drawn.length > 0) {
-      newLog.push(`You draw: ${playerDraw.drawn[0].name}`);
+    if (turnResult.opponent.hand.length > finalState.player.hand.length) {
+      newLog.push(
+        `You draw: ${turnResult.opponent.hand[turnResult.opponent.hand.length - 1].name}`,
+      );
     } else {
-      newLog.push("Your deck is empty!");
+      newLog.push(
+        `Your deck is empty! You take ${turnResult.opponent.fatigueCounter} fatigue damage.`,
+      );
+    }
+
+    if (turnResult.ai.health < finalState.ai.health) {
+      newLog.push(
+        `Enemy deck is empty! Enemy takes ${turnResult.ai.fatigueCounter} fatigue damage.`,
+      );
+    }
+
+    const fatigueResult = checkGameOver(
+      turnResult.opponent.health,
+      turnResult.ai.health,
+    );
+    if (fatigueResult.gameOver) {
+      set({
+        player: turnResult.opponent,
+        ai: turnResult.ai,
+        gameOver: true,
+        winner: fatigueResult.winner,
+        combatLog: [
+          ...newLog,
+          fatigueResult.winner === "player"
+            ? "=== VICTORY! ==="
+            : "=== DEFEAT ===",
+        ],
+        aiAction: undefined,
+      });
+      return;
     }
 
     set({
-      player: {
-        ...finalState.player,
-        mana: turnResult.newMaxMana,
-        maxMana: turnResult.newMaxMana,
-        hand: addCardsToHand(finalState.player.hand, playerDraw.drawn),
-        deck: playerDraw.remaining,
-        board: enableMinionAttacks(finalState.player.board),
-      },
-      ai: {
-        ...finalState.ai,
-        mana: turnResult.newMaxMana,
-        maxMana: turnResult.newMaxMana,
-        hand: addCardsToHand(finalState.ai.hand, aiDraw.drawn),
-        deck: aiDraw.remaining,
-        board: enableMinionAttacks(finalState.ai.board),
-      },
+      player: turnResult.opponent,
+      ai: turnResult.ai,
       currentTurn: "player",
       turnNumber: turnResult.turnNumber,
       combatLog: newLog,
@@ -188,7 +207,7 @@ export const createTurnSlice: StateCreator<
 function endGame(
   set: (state: Partial<BattleSlice & DeckSlice & TurnSlice>) => void,
   get: () => BattleSlice & DeckSlice & TurnSlice,
-  aiStrategy: AIStrategy
+  aiStrategy: AIStrategy,
 ): void {
   const state = get();
   const gameResult = checkGameOver(state.player.health, state.ai.health);
@@ -213,7 +232,6 @@ function executeAttack(
   targetId: string,
   state: BattleState,
 ): { newState: BattleState; logMessages: string[] } {
-
   // Find the attacking minion on the AI's board and check it can attack
   const attacker = state.ai.board.find((m) => m.instanceId === attackerId);
   if (!attacker || !attacker.canAttack) {
@@ -230,7 +248,7 @@ function executeAttack(
     logMessages.push(`${attacker.name} attacks for ${attacker.attack} damage`);
 
     newState.ai.board = newState.ai.board.map((m) =>
-      m.instanceId === attackerId ? { ...m, canAttack: false } : m
+      m.instanceId === attackerId ? { ...m, canAttack: false } : m,
     );
 
     return { newState, logMessages };

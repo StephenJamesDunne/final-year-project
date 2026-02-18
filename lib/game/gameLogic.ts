@@ -1,4 +1,6 @@
+import { Player } from '../types/game';
 import { Card, Minion } from '../types/game';
+import { drawCards, addCardsToHand } from './deckManager';
 
 // Minion Creation and Management
 export function createMinion(card: Card): Minion {
@@ -143,10 +145,65 @@ export function updateBoardAfterCombat(
 }
 
 // Game State Management
-export function incrementTurn(currentTurn: number, maxMana: number = 10): { turnNumber: number, newMaxMana: number } {
+// Updating incrementTurn to handle fatigue (player attempts to draw a card with an empty deck)
+// 
+export function incrementTurn(
+  turnNumber: number,
+  currentMaxMana: number,
+  aiPlayer: Player,
+  opponentPlayer: Player
+): {
+  turnNumber: number;
+  newMaxMana: number;
+  ai: Player;
+  opponent: Player;
+} {
+  const newTurnNumber = turnNumber + 1;
+  const newMaxMana = Math.min(currentMaxMana + 1, 10);
+  
+  // Draw cards for both players
+  const aiDraw = drawCards(aiPlayer.deck, 1);
+  const opponentDraw = drawCards(opponentPlayer.deck, 1);
+  
+  // Apply fatigue to AI if deck is empty
+  let aiHealth = aiPlayer.health;
+  let aiFatigueCounter = aiPlayer.fatigueCounter || 0;
+  if (aiDraw.cardsMissing > 0) {
+    aiFatigueCounter += aiDraw.cardsMissing;
+    aiHealth -= aiFatigueCounter;
+  }
+  
+  // Apply fatigue to opponent if deck is empty
+  let opponentHealth = opponentPlayer.health;
+  let opponentFatigueCounter = opponentPlayer.fatigueCounter || 0;
+  if (opponentDraw.cardsMissing > 0) {
+    opponentFatigueCounter += opponentDraw.cardsMissing;
+    opponentHealth -= opponentFatigueCounter;
+  }
+  
   return {
-    turnNumber: currentTurn + 1,
-    newMaxMana: Math.min(maxMana + 1, 10)
+    turnNumber: newTurnNumber,
+    newMaxMana,
+    ai: {
+      ...aiPlayer,
+      health: aiHealth,
+      fatigueCounter: aiFatigueCounter,
+      mana: newMaxMana,
+      maxMana: newMaxMana,
+      hand: addCardsToHand(aiPlayer.hand, aiDraw.drawn),
+      deck: aiDraw.remaining,
+      board: enableMinionAttacks(aiPlayer.board),
+    },
+    opponent: {
+      ...opponentPlayer,
+      health: opponentHealth,
+      fatigueCounter: opponentFatigueCounter,
+      mana: newMaxMana,
+      maxMana: newMaxMana,
+      hand: addCardsToHand(opponentPlayer.hand, opponentDraw.drawn),
+      deck: opponentDraw.remaining,
+      board: enableMinionAttacks(opponentPlayer.board),
+    },
   };
 }
 

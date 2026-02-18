@@ -80,6 +80,7 @@ export const createInitializationSlice: StateCreator<
           hand: playerDraw.drawn,
           board: [],
           deck: playerDraw.remaining,
+          fatigueCounter: 0.
         },
         ai: {
           health: 30,
@@ -88,6 +89,7 @@ export const createInitializationSlice: StateCreator<
           hand: aiDraw.drawn,
           board: [],
           deck: aiDraw.remaining,
+          fatigueCounter: 0,
         },
         currentTurn: 'player',
         turnNumber: 1,

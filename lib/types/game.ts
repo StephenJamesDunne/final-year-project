@@ -61,6 +61,7 @@ export interface Player {
   hand: Card[];
   board: Minion[];
   deck: Card[];
+  fatigueCounter: number;
 }
 
 export interface BattleState {
