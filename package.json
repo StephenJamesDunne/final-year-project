@@ -6,10 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "train": "ts-node --project tsconfig.node.json -r tsconfig-paths/register train.ts"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-node": "^4.22.0",
     "framer-motion": "^12.23.22",
     "next": "^16.0.0",
     "pixi.js": "^8.14.0",

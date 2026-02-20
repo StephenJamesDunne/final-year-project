@@ -4,7 +4,9 @@
 // .predict() = the forward pass; return Q-values for a given prediction
 // .fit() = the backpropagation; adjust the weights to minimize the error between the prediction made and the target
 
-import * as tf from "@tensorflow/tfjs";
+import * as tf from "@tensorflow/tfjs-node";
+import * as fs from "fs";
+import * as path from "path";
 
 export class DQNModel {
   // The neural network model
@@ -132,7 +134,6 @@ export class DQNModel {
     // Prep the training data inside of tf.tidy() for memory cleanup
     // Tensors don't automatically free up memory, do dispose() is required
     const { statesTensor, targetQsTensor } = tf.tidy(() => {
-
       // Convert state arrays into tensors
       // Shape: [batchSize, 121], each row in the tensor is one game state
       const statesTensor = tf.tensor2d(states, [batchSize, this.STATE_SIZE]);
@@ -194,12 +195,12 @@ export class DQNModel {
         batchSize: batchSize,
       });
 
-      const loss = history.history.loss[0] as number;   // Wrongness of predictions made
-      const mae = history.history.mae[0] as number;     // Mean absolute error
+      const loss = history.history.loss[0] as number; // Wrongness of predictions made
+      const mae = history.history.mae[0] as number; // Mean absolute error
 
       return { loss, mae };
     } finally {
-        // Memory clean up
+      // Memory clean up
       statesTensor.dispose();
       targetQsTensor.dispose();
     }
@@ -213,41 +214,37 @@ export class DQNModel {
     console.log("[DQN] Target network synced with current model.");
   }
 
-  // Save model to browser's local storage (for persistence across sessions)
+  // Save the model within project directory at the root (fiverealms/models/five-realms-dqn)
   async save(name: string = "five-realms-dqn"): Promise<void> {
     try {
-      await this.model.save(`localstorage://${name}`);
-      console.log(`[DQN] Model saved to localStorage as '${name}'`);
+      const savePath = path.resolve(`./models/${name}`);
+      fs.mkdirSync(savePath, { recursive: true });
+      await this.model.save(`file://${savePath}`);
+      console.log(`[DQN] Model saved to ${savePath}`);
     } catch (error) {
       console.error("[DQN] Failed to save model:", error);
       throw error;
     }
   }
 
-  // Load model from browser's local storage
+  // Load trained model from the project directory
   // Returns true if loading was successful, false otherwise
   async load(name: string = "five-realms-dqn"): Promise<boolean> {
     try {
-      // Dispose old model before loading new one
-      if (this.model) {
-        this.model.dispose();
-      }
-      if (this.targetModel) {
-        this.targetModel.dispose();
-      }
+      if (this.model) this.model.dispose();
+      if (this.targetModel) this.targetModel.dispose();
 
-      this.model = await tf.loadLayersModel(`localstorage://${name}`);
+      const loadPath = path.resolve(`./models/${name}/model.json`);
+      this.model = await tf.loadLayersModel(`file://${loadPath}`);
 
-      // Need to recompile after loading
       this.model.compile({
         optimizer: tf.train.adam(this.LEARNING_RATE),
         loss: "meanSquaredError",
         metrics: ["mae"],
       });
 
-      // Also sync the target network
       this.syncTargetNetwork();
-      console.log(`[DQN] Model loaded from localStorage: '${name}'`);
+      console.log(`[DQN] Model loaded from ${loadPath}`);
       return true;
     } catch (error) {
       console.warn(
@@ -260,12 +257,8 @@ export class DQNModel {
 
   // Check if a saved model exists in local storage
   async modelExists(name: string = "five-realms-dqn"): Promise<boolean> {
-    try {
-      const models = await tf.io.listModels();
-      return Object.keys(models).includes(`localstorage://${name}`);
-    } catch {
-      return false;
-    }
+    const modelPath = path.resolve(`./models/${name}/model.json`);
+    return fs.existsSync(modelPath);
   }
 
   // Get model summary for debugging purposes
