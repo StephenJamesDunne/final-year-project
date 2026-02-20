@@ -46,21 +46,22 @@ export function encodeGameState(state: BattleState, aiPerspective: boolean): num
             vector.push(minion.canAttack ? 1 : 0);       // Can attack this turn
             vector.push(hasTaunt(minion) ? 1 : 0);       // Has taunt
         } else {
-            vector.push(0, 0, 0, 0, 0, 0, 0);            // Empty board slots
+            vector.push(0, 0, 0, 0, 0);            // Empty board slots
         }
     }
 
-    // Encoding for opponent's board. 28 values: 7 minions x 4 features
+    // Encoding for opponent's board. 35 values: 7 minions x 5 features
     for (let i = 0; i < 7; i++){
         if (i < opponent.board.length) {
             const minion = opponent.board[i];
 
+            vector.push(minion.manaCost / 10);           // Normalize mana cost to [0,1] range
             vector.push(minion.attack / 10);             // Normalize attack to [0,1] range
             vector.push(minion.health / 30);             // Normalize health to [0,1] range
             vector.push(minion.canAttack ? 1 : 0);       // Can attack this turn
             vector.push(hasTaunt(minion) ? 1 : 0);       // Has taunt
         } else {
-            vector.push(0, 0, 0, 0);            // Empty board slots
+            vector.push(0, 0, 0, 0, 0);            // Empty board slots
         }
     }
 
@@ -104,8 +105,9 @@ export function getStateDescription(): string[] {
         description.push(`Minion on Board Slot ${i+1} - Has Taunt`);
     }
 
-    // Opponent's board (7 minions x 4 features)
+    // Opponent's board (7 minions x 5 features)
     for (let i = 0; i < 7; i++) {
+        description.push(`Opponent Minion on Board Slot ${i+1} - Mana Cost`);
         description.push(`Opponent Minion on Board Slot ${i+1} - Attack`);
         description.push(`Opponent Minion on Board Slot ${i+1} - Health`);
         description.push(`Opponent Minion on Board Slot ${i+1} - Can Attack`);

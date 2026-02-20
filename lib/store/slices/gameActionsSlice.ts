@@ -201,7 +201,7 @@ export const createGameActionsSlice: StateCreator<
       combatLog: [...state.combatLog]
     };
 
-    const heroAttack = handleHeroAttack(attacker, newState.ai.health);
+    const heroAttack = handleHeroAttack(attacker);
     newState.ai.health -= heroAttack.damage;
     newState.player.board = updateBoardAfterCombat(
       newState.player.board,

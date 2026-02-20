@@ -45,6 +45,7 @@ export const createBattleSlice: StateCreator<BattleSlice> = (set) => ({
     hand: [],
     board: [],
     deck: [],
+    fatigueCounter: 0,
   },
   ai: {
     health: 30,
@@ -53,6 +54,7 @@ export const createBattleSlice: StateCreator<BattleSlice> = (set) => ({
     hand: [],
     board: [],
     deck: [],
+    fatigueCounter: 0,
   },
   currentTurn: 'player',
   turnNumber: 1,

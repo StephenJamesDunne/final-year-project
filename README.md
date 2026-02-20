@@ -229,7 +229,7 @@ A Deep Q-Network implementation using TensorFlow.js. Currently falls back to rul
 - `60–66`: Attack enemy hero (7 attackers)
 - `67`: End turn
 
-**State Vector (121 features):** Player/opponent vitals (9), hand cards × 4 features (40), player board × 5 features (35), opponent board × 4 features (28), deck sizes (2), normalised to `[0, 1]`.
+**State Vector (121 features):** Player/opponent vitals (9), hand cards × 4 features (40), player board × 5 features (35), opponent board × 5 features (35), deck sizes (2), normalised to `[0, 1]`.
 
 ---
 
