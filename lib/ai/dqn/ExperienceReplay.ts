@@ -184,7 +184,7 @@ export class ExperienceReplay {
         savedAt: new Date().toISOString(),
       };
 
-      const savePath = path.resolve(`./models/${key}.json`);
+      const savePath = path.resolve(__dirname, '../../models', `${key}.json`);
       fs.writeFileSync(savePath, JSON.stringify(data));
       console.log(
         `[ExperienceReplay] Saved ${recentExperiences.length} experiences to ${savePath}`,
@@ -197,7 +197,7 @@ export class ExperienceReplay {
   // Load buffer from local storage
   load(key: string = "five-realms-replay-buffer"): boolean {
     try {
-      const loadPath = path.resolve(`./models/${key}.json`);
+      const loadPath = path.resolve(__dirname, '../../models', `${key}.json`);
 
       if (!fs.existsSync(loadPath)) {
         console.log("[ExperienceReplay] No saved buffer found");

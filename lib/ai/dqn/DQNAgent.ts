@@ -275,7 +275,8 @@ export class DQNAgent {
         savedAt: new Date().toISOString(),
       };
 
-      const statePath = path.resolve(`./models/${name}-state.json`);
+      const statePath = path.resolve(__dirname, '../../models', `${name}-state.json`);
+      fs.mkdirSync(path.resolve(__dirname, '../../models'), { recursive: true });
       fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
 
       console.log("[DQNAgent] Saved successfully");
@@ -299,7 +300,7 @@ export class DQNAgent {
 
     this.replay.load(`${name}-replay`);
 
-    const statePath = path.resolve(`./models/${name}-state.json`);
+    const statePath = path.resolve(__dirname, '../../models', `${name}-state.json`);
     if (fs.existsSync(statePath)) {
       const state = JSON.parse(fs.readFileSync(statePath, "utf-8"));
       this.epsilon = state.epsilon;

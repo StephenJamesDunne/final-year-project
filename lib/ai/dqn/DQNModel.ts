@@ -217,7 +217,7 @@ export class DQNModel {
   // Save the model within project directory at the root (fiverealms/models/five-realms-dqn)
   async save(name: string = "five-realms-dqn"): Promise<void> {
     try {
-      const savePath = path.resolve(`./models/${name}`);
+      const savePath = path.resolve(__dirname, '../../models', name);
       fs.mkdirSync(savePath, { recursive: true });
       await this.model.save(`file://${savePath}`);
       console.log(`[DQN] Model saved to ${savePath}`);
@@ -234,7 +234,7 @@ export class DQNModel {
       if (this.model) this.model.dispose();
       if (this.targetModel) this.targetModel.dispose();
 
-      const loadPath = path.resolve(`./models/${name}/model.json`);
+      const loadPath = path.resolve(__dirname, '../../models', name, 'model.json');
       this.model = await tf.loadLayersModel(`file://${loadPath}`);
 
       this.model.compile({
@@ -257,7 +257,7 @@ export class DQNModel {
 
   // Check if a saved model exists in local storage
   async modelExists(name: string = "five-realms-dqn"): Promise<boolean> {
-    const modelPath = path.resolve(`./models/${name}/model.json`);
+    const modelPath = path.resolve(__dirname, '../../models', name, 'model.json');
     return fs.existsSync(modelPath);
   }
 
