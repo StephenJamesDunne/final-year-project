@@ -4,7 +4,7 @@
 // .predict() = the forward pass; return Q-values for a given prediction
 // .fit() = the backpropagation; adjust the weights to minimize the error between the prediction made and the target
 
-import * as tf from "@tensorflow/tfjs-node";
+import * as tf from "@tensorflow/tfjs";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -217,9 +217,18 @@ export class DQNModel {
   // Save the model within project directory at the root (fiverealms/models/five-realms-dqn)
   async save(name: string = "five-realms-dqn"): Promise<void> {
     try {
-      const savePath = path.resolve(__dirname, '../../models', name);
+      const savePath = path.resolve(__dirname, "../../../models", name);
       fs.mkdirSync(savePath, { recursive: true });
-      await this.model.save(`file://${savePath}`);
+
+      const weightData = this.model.getWeights().map((w) => ({
+        shape: w.shape,
+        data: Array.from(w.dataSync()),
+      }));
+
+      fs.writeFileSync(
+        path.resolve(savePath, "weights.json"),
+        JSON.stringify(weightData),
+      );
       console.log(`[DQN] Model saved to ${savePath}`);
     } catch (error) {
       console.error("[DQN] Failed to save model:", error);
@@ -231,33 +240,34 @@ export class DQNModel {
   // Returns true if loading was successful, false otherwise
   async load(name: string = "five-realms-dqn"): Promise<boolean> {
     try {
-      if (this.model) this.model.dispose();
-      if (this.targetModel) this.targetModel.dispose();
+      const loadPath = path.resolve(
+        __dirname,
+        "../../../models",
+        name,
+        "weights.json",
+      );
+      if (!fs.existsSync(loadPath)) return false;
 
-      const loadPath = path.resolve(__dirname, '../../models', name, 'model.json');
-      this.model = await tf.loadLayersModel(`file://${loadPath}`);
+      const weightData = JSON.parse(fs.readFileSync(loadPath, "utf-8"));
+      const weights = weightData.map((w: { shape: number[]; data: number[] }) =>
+        tf.tensor(w.data, w.shape),
+      );
 
-      this.model.compile({
-        optimizer: tf.train.adam(this.LEARNING_RATE),
-        loss: "meanSquaredError",
-        metrics: ["mae"],
-      });
-
+      this.model.setWeights(weights);
+      weights.forEach((w: tf.Tensor) => w.dispose());
       this.syncTargetNetwork();
+
       console.log(`[DQN] Model loaded from ${loadPath}`);
       return true;
     } catch (error) {
-      console.warn(
-        "[DQN] Failed to load model (this is normal if no model exists yet):",
-        error,
-      );
+      console.warn("[DQN] Failed to load model:", error);
       return false;
     }
   }
 
   // Check if a saved model exists in local storage
   async modelExists(name: string = "five-realms-dqn"): Promise<boolean> {
-    const modelPath = path.resolve(__dirname, '../../models', name, 'model.json');
+    const modelPath = path.resolve(__dirname, '../../../models', name, 'weights.json');
     return fs.existsSync(modelPath);
   }
 

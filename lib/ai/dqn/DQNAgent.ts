@@ -8,6 +8,7 @@ import { DQNModel } from "./DQNModel";
 import { ExperienceReplay } from "./ExperienceReplay";
 import { encodeGameState } from "./stateEncoder";
 import { BattleState } from "@/lib/types/game";
+import { getLegalActions } from "./ActionSpace";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -31,10 +32,10 @@ export interface DQNAgentConfig {
 const DEFAULT_CONFIG: DQNAgentConfig = {
   epsilonStart: 1.0, // Start completely random
   epsilonEnd: 0.01, // End at 1% random (never fully deterministic)
-  epsilonDecay: 0.995, // Decay ~0.5% per episode
+  epsilonDecay: 0.9995, // Decay ~0.05% per episode
   batchSize: 32, // Standard batch size
   targetUpdateFreq: 1000, // Sync every 1000 training steps
-  minExperiences: 1000, // Wait for 1000 experiences (~5 games)
+  minExperiences: 100, // Wait for 1000 experiences (~5 games)
   replayCapacity: 50000, // Store ~250 games worth
 };
 
@@ -97,21 +98,25 @@ export class DQNAgent {
     const shouldExplore = training && Math.random() < this.epsilon;
 
     if (shouldExplore) {
-      const randomAction = Math.floor(Math.random() * 68); // 0-67
-      return randomAction;
+      const legalActions = getLegalActions(state, true);
+      return legalActions[Math.floor(Math.random() * legalActions.length)];
     } else {
       const qValues = this.model.predict(encodedState);
+      const legalActions = new Set(getLegalActions(state, true));
 
       // Find action with highest Q-value
-      let bestAction = 0;
-      let bestQValue = qValues[0];
+      let bestAction = -1;
+      let bestQValue = -Infinity;
 
-      for (let i = 1; i < qValues.length; i++) {
-        if (qValues[i] > bestQValue) {
+      for (let i = 0; i < qValues.length; i++) {
+        if (legalActions.has(i) && qValues[i] > bestQValue) {
           bestQValue = qValues[i];
           bestAction = i;
         }
       }
+
+      // Fallback if somehow no legal action found
+      if (bestAction === -1) bestAction = 67;
 
       return bestAction;
     }
@@ -140,7 +145,7 @@ export class DQNAgent {
 
       // Track win/loss (positive final reward = win)
       this.games++;
-      if (reward > 0) {
+      if (nextState.winner === 'ai') {
         this.wins++;
       }
 
@@ -275,14 +280,17 @@ export class DQNAgent {
         savedAt: new Date().toISOString(),
       };
 
-      const statePath = path.resolve(__dirname, '../../models', `${name}-state.json`);
-      fs.mkdirSync(path.resolve(__dirname, '../../models'), { recursive: true });
+      const statePath = path.resolve(
+        __dirname,
+        "../../../models",
+        `${name}-state.json`,
+      );
+      fs.mkdirSync(path.resolve(__dirname, "../../../models"), {
+        recursive: true,
+      });
       fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
 
-      console.log("[DQNAgent] Saved successfully");
-      console.log(
-        `[DQNAgent] Episode: ${this.episodeCount}, Epsilon: ${this.epsilon.toFixed(3)}`,
-      );
+      console.log(`[DQNAgent] Saved — Episode: ${this.episodeCount}, Epsilon: ${this.epsilon.toFixed(3)}\n`);
     } catch (error) {
       console.error("[DQNAgent] Save failed:", error);
       throw error;
@@ -291,37 +299,43 @@ export class DQNAgent {
 
   // Load agent state from project directory if it exists
   async load(name: string = "five-realms-dqn-agent"): Promise<boolean> {
-  try {
-    const modelLoaded = await this.model.load(name);
-    if (!modelLoaded) {
-      console.log("[DQNAgent] No saved model found");
+    try {
+      const modelLoaded = await this.model.load(name);
+      if (!modelLoaded) {
+        console.log("[DQNAgent] No saved model found");
+        return false;
+      }
+
+      this.replay.load(`${name}-replay`);
+
+      const statePath = path.resolve(
+        __dirname,
+        "../../../models",
+        `${name}-state.json`,
+      );
+      if (fs.existsSync(statePath)) {
+        const state = JSON.parse(fs.readFileSync(statePath, "utf-8"));
+        this.epsilon = state.epsilon;
+        this.episodeCount = state.episodeCount;
+        this.trainingSteps = state.trainingSteps;
+        this.wins = state.wins;
+        this.games = state.games;
+        this.episodeRewards = state.episodeRewards;
+        this.config = { ...this.config, ...state.config };
+
+        console.log("[DQNAgent] Loaded successfully");
+        console.log(
+          `[DQNAgent] Episode: ${this.episodeCount}, Epsilon: ${this.epsilon.toFixed(3)}`,
+        );
+        console.log(`[DQNAgent] Saved at: ${state.savedAt}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error("[DQNAgent] Load failed:", error);
       return false;
     }
-
-    this.replay.load(`${name}-replay`);
-
-    const statePath = path.resolve(__dirname, '../../models', `${name}-state.json`);
-    if (fs.existsSync(statePath)) {
-      const state = JSON.parse(fs.readFileSync(statePath, "utf-8"));
-      this.epsilon = state.epsilon;
-      this.episodeCount = state.episodeCount;
-      this.trainingSteps = state.trainingSteps;
-      this.wins = state.wins;
-      this.games = state.games;
-      this.episodeRewards = state.episodeRewards;
-      this.config = { ...this.config, ...state.config };
-
-      console.log("[DQNAgent] Loaded successfully");
-      console.log(`[DQNAgent] Episode: ${this.episodeCount}, Epsilon: ${this.epsilon.toFixed(3)}`);
-      console.log(`[DQNAgent] Saved at: ${state.savedAt}`);
-    }
-
-    return true;
-  } catch (error) {
-    console.error("[DQNAgent] Load failed:", error);
-    return false;
   }
-}
 
   // Check if agent already exists
   async exists(name: string = "five-realms-dqn-agent"): Promise<boolean> {

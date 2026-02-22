@@ -118,11 +118,19 @@ function initializeGameState(
 // Flip the game state perspective for when the AI is playing itself
 // Converts AI to Player, or vice-versa
 function flipStatePerspective(state: BattleState): BattleState {
+  const flippedWinner =
+    state.winner === "ai"
+      ? "player"
+      : state.winner === "player"
+        ? "ai"
+        : state.winner; // handles "draw" or undefined
+
   return {
     ...state,
     ai: state.player,
     player: state.ai,
     currentTurn: state.currentTurn === "ai" ? "player" : "ai",
+    winner: flippedWinner,
   };
 }
 
@@ -134,22 +142,15 @@ function executeAction(
 ): BattleState {
   const gameAction = decodeAction(action);
 
-  // Only deep copy the parts that change (memory optimization)
-  const newAI: Player = isAI
-    ? {
-        ...state.ai,
-        board: [...state.ai.board],
-        hand: [...state.ai.hand],
-      }
-    : state.ai;
+  // Need to deep copy for the replay buffer, in case any of these values in state change
+  const copyPlayer = (p: Player): Player => ({
+    ...p,
+    hand: [...p.hand],
+    board: p.board.map((m) => ({ ...m })),
+  });
 
-  const newPlayer: Player = !isAI
-    ? {
-        ...state.player,
-        board: [...state.player.board],
-        hand: [...state.player.hand],
-      }
-    : state.player;
+  const newAI: Player = isAI ? copyPlayer(state.ai) : state.ai;
+  const newPlayer: Player = !isAI ? copyPlayer(state.player) : state.player;
 
   let newState: BattleState = {
     ...state,
@@ -268,18 +269,21 @@ function executeAction(
     }
 
     case "end_turn": {
+      const current = isAI ? newState.ai : newState.player;
+      const opponent = isAI ? newState.player : newState.ai;
+
       // All turn logic handled in incrementTurn
       const turnResult = incrementTurn(
         newState.turnNumber,
-        newState.ai.maxMana,
-        newState.ai,
-        newState.player,
+        current.maxMana,
+        current,
+        opponent,
       );
 
       newState = {
         ...newState,
-        ai: turnResult.ai,
-        player: turnResult.opponent,
+        ai: isAI ? turnResult.ai : turnResult.opponent,
+        player: isAI ? turnResult.opponent : turnResult.ai,
         turnNumber: turnResult.turnNumber,
         currentTurn: newState.currentTurn === "ai" ? "player" : "ai",
       };
@@ -330,12 +334,12 @@ async function playEpisode(
   let illegalActionCount = 0;
 
   // Safety: prevent infinite loops
-  let consecutiveSameTurns = 0;
   const MAX_CONSECUTIVE_SAME_TURNS = 10;
+  let consecutiveSameTurns = 0; // moved outside while loop so it persists between iterations
 
   // Play until game ends or max turns reached
   while (!state.gameOver && state.turnNumber <= config.maxTurnsPerGame) {
-    const prevTurn = state.currentTurn;
+    const prevTurnNumber = state.turnNumber;
 
     // AI's turn
     if (state.currentTurn === "ai") {
@@ -347,9 +351,6 @@ async function playEpisode(
       // Validate action is legal (safety check)
       if (!isActionLegal(decodeAction(action), state, true)) {
         illegalActionCount++;
-        console.warn(
-          `[AutoPlay] Illegal action ${action} selected! Falling back to random legal action.`,
-        );
 
         // Fallback to random legal action
         const legalActions = getLegalActions(state, true);
@@ -393,30 +394,53 @@ async function playEpisode(
       }
 
       state = newState;
+
+      // Safety check: inside AI block so prevState and action are in scope
+      if (
+        action === 67 &&
+        state.turnNumber === prevTurnNumber &&
+        !state.gameOver
+      ) {
+        consecutiveSameTurns++;
+
+        if (consecutiveSameTurns >= MAX_CONSECUTIVE_SAME_TURNS) {
+
+          state.gameOver = true;
+          state.winner = "player";
+
+          // Store terminal experience with large penalty
+          agent.storeExperience(prevState, action, -10, state, true);
+          break;
+        }
+      } else if (state.turnNumber !== prevTurnNumber) {
+        consecutiveSameTurns = 0;
+      }
     }
     // Opponent's turn
     else {
+      const prevTurnNumberOpp = state.turnNumber;
       const action = selectOpponentAction(state, agent, config.opponentType);
       state = executeAction(action, state, false);
-    }
 
-    // Safety check: detect infinite loops
-    if (state.currentTurn === prevTurn) {
-      consecutiveSameTurns++;
-      if (consecutiveSameTurns >= MAX_CONSECUTIVE_SAME_TURNS) {
-        console.error("[AutoPlay] Infinite loop detected! Force ending game.");
-        state.gameOver = true;
-        state.winner = "player"; // AI loses if it causes an infinite loop
-        break;
+      if (
+        action === 67 &&
+        state.turnNumber === prevTurnNumberOpp &&
+        !state.gameOver
+      ) {
+        consecutiveSameTurns++;
+        if (consecutiveSameTurns >= MAX_CONSECUTIVE_SAME_TURNS) {
+
+          state.gameOver = true;
+          state.winner = "ai"; // opponent is stuck, AI wins
+          break;
+        }
+      } else if (state.turnNumber !== prevTurnNumberOpp) {
+        consecutiveSameTurns = 0;
       }
-    } else {
-      consecutiveSameTurns = 0;
     }
   }
 
   // Determine winner
-  // Updated to account for draw matches so that win rate tracking is not corrupted
-  // Rare edge cases of draw matches accounted for
   let winner: "ai" | "player" | "draw";
   if (state.gameOver) {
     if (state.winner === "ai") {
@@ -452,7 +476,6 @@ async function playEpisode(
 async function trainAgent(
   agent: DQNAgent,
   config: Partial<TrainingConfig> = {},
-  onProgress?: (progress: TrainingProgress) => void,
 ): Promise<TrainingProgress> {
   const fullConfig = { ...DEFAULT_TRAINING_CONFIG, ...config };
 
@@ -462,20 +485,7 @@ async function trainAgent(
   let draws = 0;
 
   // Progress recovery: check if training is resuming
-  const savedProgress =
-    typeof localStorage !== "undefined"
-      ? localStorage.getItem("five-realms-training-progress")
-      : null;
-  const startEpisode = savedProgress ? JSON.parse(savedProgress).episode : 0;
-
-  if (startEpisode > 0) {
-    console.log(`[AutoPlay] Resuming training from episode ${startEpisode}`);
-  }
-
-  console.log("[AutoPlay] Starting training...");
-  console.log(`[AutoPlay] Episodes: ${startEpisode} → ${fullConfig.episodes}`);
-  console.log(`[AutoPlay] Max turns: ${fullConfig.maxTurnsPerGame}`);
-  console.log(`[AutoPlay] Opponent: ${fullConfig.opponentType}`);
+  const startEpisode = 0;
 
   for (let episode = startEpisode; episode < fullConfig.episodes; episode++) {
     try {
@@ -488,17 +498,6 @@ async function trainAgent(
       if (result.winner === "ai") wins++;
       else if (result.winner === "player") losses++;
       else draws++;
-
-      // Save progress for recovery
-      if (typeof localStorage !== "undefined") {
-        localStorage.setItem(
-          "five-realms-training-progress",
-          JSON.stringify({
-            episode: episode + 1,
-            timestamp: Date.now(),
-          }),
-        );
-      }
 
       // Log progress
       if ((episode + 1) % fullConfig.logEveryNEpisodes === 0) {
@@ -527,25 +526,6 @@ async function trainAgent(
             `Illegal Actions: ${recentIllegalActions} (last 100 episodes)`,
           );
         }
-
-        // Progress callback
-        if (onProgress) {
-          const progress: TrainingProgress = {
-            episodesCompleted: episode + 1,
-            totalGames: fullConfig.episodes,
-            wins,
-            losses,
-            draws,
-            winRate: recentWinRate,
-            averageReward: stats.avgReward,
-            averageTurns:
-              recentResults.reduce((sum, r) => sum + r.turns, 0) /
-              recentResults.length,
-            currentEpsilon: stats.epsilon,
-            trainingStats: stats,
-          };
-          onProgress(progress);
-        }
       }
 
       // Save periodically
@@ -563,13 +543,6 @@ async function trainAgent(
 
   // Final save
   await agent.save();
-
-  // Clear progress recovery data
-  if (typeof localStorage !== "undefined") {
-    localStorage.removeItem("five-realms-training-progress");
-  }
-
-  console.log("\n[AutoPlay] Training complete!");
 
   // Calculate final stats
   const recentResults = results.slice(-100);
@@ -590,14 +563,6 @@ async function trainAgent(
     trainingStats: finalStats,
   };
 
-  console.log("\n=== Final Results ===");
-  console.log(`Total Games: ${wins + losses + draws}`);
-  console.log(`Wins: ${wins} | Losses: ${losses} | Draws: ${draws}`);
-  console.log(
-    `Win Rate (last 100): ${(finalProgress.winRate * 100).toFixed(1)}%`,
-  );
-  console.log(`Final Epsilon: ${finalStats.epsilon.toFixed(3)}`);
-
   return finalProgress;
 }
 
@@ -613,8 +578,7 @@ export async function trainUniversalAgent(
     maxTurnsPerGame?: number;
     opponentType?: "self" | "random";
     saveEveryNBatches?: number;
-  },
-  onProgress?: (progress: TrainingProgress) => void,
+  }
 ): Promise<TrainingProgress> {
   const {
     episodesPerMatchup,
@@ -681,7 +645,6 @@ export async function trainUniversalAgent(
           logEveryNEpisodes: Math.max(1, Math.floor(batchEpisodes / 5)),
           saveEveryNEpisodes: 999999,
         },
-        onProgress,
       );
 
       totalWins += progress.wins;

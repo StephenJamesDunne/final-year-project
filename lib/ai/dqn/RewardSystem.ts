@@ -148,7 +148,7 @@ export function calculateReward(
   // Small penalty for ending turn with unused mana (only when ending turn)
   // Action 67 = end turn (from actionSpace.ts)
   if (action === 67) {
-    const manaWasted = newState.ai.mana;
+    const manaWasted = prevState.ai.mana;
     reward += manaWasted * config.manaWasted;
   }
   
