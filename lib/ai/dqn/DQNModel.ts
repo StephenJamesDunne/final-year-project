@@ -271,11 +271,6 @@ export class DQNModel {
     return fs.existsSync(modelPath);
   }
 
-  // Get model summary for debugging purposes
-  printSummary(): void {
-    this.model.summary();
-  }
-
   // Dispose of model to free up memory
   dispose(): void {
     this.model.dispose();

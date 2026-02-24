@@ -3,7 +3,7 @@ import * as path from "path";
 
 // Single experience tuple
 // Represents a single action that the AI can take in a game session
-export interface Experience {
+interface Experience {
   state: number[]; // Game state before action (121 features)
   action: number; // Action taken (0-67)
   reward: number; // Immediate reward received
@@ -13,7 +13,7 @@ export interface Experience {
 
 // Batch of experiences for training
 // Structure matches that of DQNModel.trainOnBatch()
-export interface ExperienceBatch {
+interface ExperienceBatch {
   states: number[][]; // Array of state vectors
   actions: number[]; // Array of action indices
   rewards: number[]; // Array of rewards

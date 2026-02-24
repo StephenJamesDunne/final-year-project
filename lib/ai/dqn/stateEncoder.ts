@@ -73,7 +73,8 @@ export function encodeGameState(state: BattleState, aiPerspective: boolean): num
     return vector;
 }
 
-// Get a human-readable description for what each index in the encoded state vector means
+/* // Get a human-readable description for what each index in the encoded state vector means
+// To be used for debugging and understanding the state representation, not needed for the DQN itself
 export function getStateDescription(): string[] {
     const description: string[] = [];
 
@@ -119,4 +120,4 @@ export function getStateDescription(): string[] {
     description.push("Opponent Deck Size");
 
     return description;
-}
+} */
