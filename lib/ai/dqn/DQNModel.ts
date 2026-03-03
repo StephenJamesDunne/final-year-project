@@ -22,7 +22,7 @@ export class DQNModel {
   private readonly ACTION_SIZE = 68;
 
   // Hyperparameters
-  private readonly LEARNING_RATE = 0.0001; // how fast the network learns
+  private readonly LEARNING_RATE = 0.00001; // how fast the network learns
   private readonly DISCOUNT_FACTOR = 0.99; // how much future rewards are valued
 
   constructor() {

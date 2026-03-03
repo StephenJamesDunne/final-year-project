@@ -19,7 +19,7 @@ export class RuleBasedAI implements AIStrategy {
 }
 
 // DQN AI stub, will be replaced later after testing all this
-export class DQNAgent implements AIStrategy {
+export class DQNStrategy implements AIStrategy {
     name = "DQN Agent";
     private fallbackAI: RuleBasedAI;
 
@@ -47,7 +47,7 @@ export function createAI(type: AIType): AIStrategy {
         case "rule-based":
             return new RuleBasedAI();
         case "dqn":
-            return new DQNAgent();
+            return new DQNStrategy();
         default:
             return new RuleBasedAI();
     }
