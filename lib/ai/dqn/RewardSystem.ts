@@ -166,8 +166,10 @@ function calculateBoardStrength(board: Minion[]): number {
   }, 0);
 }
 
-// Custom reward configs for different strategies:
-export function createAggressiveRewards(): RewardConfig {
+// Custom reward configs for different strategies.
+// Currently unused, but can be used to create different AI personalities by changing the reward emphasis:
+
+/* export function createAggressiveRewards(): RewardConfig {
   return {
     ...DEFAULT_REWARDS,
     enemyHealthChange: 0.6,  // Focus on face damage
@@ -194,4 +196,4 @@ export function createTempoRewards(): RewardConfig {
     manaWasted: -0.05,       // Not playing on curve should be disincentivised
     minionKilled: 0.7,       // Kill enemy minions aggressively
   };
-}
+} */

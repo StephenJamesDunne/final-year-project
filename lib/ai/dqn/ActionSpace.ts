@@ -85,37 +85,6 @@ export function decodeAction(actionIndex: number): GameAction {
   throw new Error(`Failed to find action index: ${actionIndex}`);
 }
 
-// Convert the given GameAction into an action index
-export function encodeAction(action: GameAction): number {
-  switch (action.type) {
-    case 'play_card':
-      if (action.cardIndex === undefined) {
-        throw new Error('play_card action requires cardIndex');
-      }
-      return ACTION_SPACE.PLAY_CARD_START + action.cardIndex;
-    
-    case 'attack_minion':
-      if (action.attackerIndex === undefined || action.targetIndex === undefined) {
-        throw new Error('attack_minion action requires attackerIndex and targetIndex');
-      }
-      return ACTION_SPACE.ATTACK_MINION_START + 
-             (action.attackerIndex * ACTION_SPACE.MAX_BOARD_SIZE) + 
-             action.targetIndex;
-    
-    case 'attack_face':
-      if (action.attackerIndex === undefined) {
-        throw new Error('attack_face action requires attackerIndex');
-      }
-      return ACTION_SPACE.ATTACK_FACE_START + action.attackerIndex;
-    
-    case 'end_turn':
-      return ACTION_SPACE.END_TURN;
-    
-    default:
-      throw new Error(`Unknown action type: ${(action as GameAction).type}`);
-  }
-}
-
 // Validate taken action given the current game state
 export function isActionLegal(
   action: GameAction,
@@ -227,39 +196,4 @@ export function getLegalActions(state: BattleState, isAI: boolean = true): numbe
   }
   
   return legalActions;
-}
-
-// For neural network training: filter out the moves
-// that the AI can't make from its Q-values, before picking the best action
-export function getLegalActionMask(state: BattleState, isAI: boolean = true): number[] {
-  const mask = new Array(ACTION_SPACE.TOTAL_ACTIONS).fill(0);
-  
-  const legalActions = getLegalActions(state, isAI);
-  for (const actionIndex of legalActions) {
-    mask[actionIndex] = 1;
-  }
-  
-  return mask;
-}
-
-// Get human-readable version of the action taken
-export function getActionDescription(actionIndex: number): string {
-  const action = decodeAction(actionIndex);
-  
-  switch (action.type) {
-    case 'play_card':
-      return `Play card from hand position ${action.cardIndex}`;
-    
-    case 'attack_minion':
-      return `Minion ${action.attackerIndex} attacks enemy minion ${action.targetIndex}`;
-    
-    case 'attack_face':
-      return `Minion ${action.attackerIndex} attacks enemy hero`;
-    
-    case 'end_turn':
-      return 'End turn';
-    
-    default:
-      return 'Unknown action';
-  }
 }
