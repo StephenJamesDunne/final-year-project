@@ -34,6 +34,7 @@ interface TrainingConfig {
   opponentType: "self" | "random"; // Who to play against
   aiDeckType: DeckArchetype; // which deck the AI uses
   opponentDeckType: DeckArchetype; // which deck opponent uses
+  matchupKey: string;       // "aiDeck_vs_oppDeck" - used for per-matchup stat tracking
 }
 
 // Default values for all data needed during training
@@ -47,6 +48,7 @@ const DEFAULT_TRAINING_CONFIG: TrainingConfig = {
   opponentType: "self",
   aiDeckType: "fire",
   opponentDeckType: "fire",
+  matchupKey: "fire_vs_fire",
 };
 
 // Values to show in UI for testing/debugging
@@ -525,33 +527,28 @@ async function trainAgent(
       else if (result.winner === "player") losses++;
       else draws++;
 
-      // Log progress
+      // Record per-matchup outcome for balancing analysis
+      agent.recordEpisodeResult(
+        fullConfig.matchupKey,
+        result.winner,
+        result.turns,
+        result.finalHealth,
+        result.opponentFinalHealth,
+      );
+
+      // One-liner log: global episode count, matchup, running win rate, epsilon, avg reward
       if ((episode + 1) % fullConfig.logEveryNEpisodes === 0) {
         const stats = agent.getStats();
         const recentResults = results.slice(-100);
-        const recentWins = recentResults.filter(
-          (r) => r.winner === "ai",
-        ).length;
-        const recentWinRate = recentWins / recentResults.length;
-        const recentIllegalActions = recentResults.reduce(
-          (sum, r) => sum + r.illegalActions,
-          0,
-        );
+        const recentWins = recentResults.filter((r) => r.winner === "ai").length;
+        const recentWinRate = (recentWins / recentResults.length * 100).toFixed(1);
+        const recentIllegalActions = recentResults.reduce((sum, r) => sum + r.illegalActions, 0);
 
-        console.log(`\n[Episode ${episode + 1}/${fullConfig.episodes}]`);
         console.log(
-          `  Win Rate (last 100): ${(recentWinRate * 100).toFixed(1)}%`,
+          `  [ep ${result.episodeNumber}/${fullConfig.episodes}] ${fullConfig.matchupKey}` +
+          ` | win% ${recentWinRate}% | Epsilon ${stats.epsilon.toFixed(3)} | avg reward ${stats.avgReward.toFixed(2)}` +
+          (recentIllegalActions > 0 ? ` | illegal actions ${recentIllegalActions}` : "")
         );
-        console.log(`  Epsilon: ${stats.epsilon.toFixed(3)}`);
-        console.log(`  Avg Reward: ${stats.avgReward.toFixed(2)}`);
-        console.log(`  Avg Loss: ${stats.avgLoss.toFixed(4)}`);
-        console.log(`  Buffer: ${stats.bufferSize} experiences`);
-        console.log(`  Training Steps: ${stats.trainingSteps}`);
-        if (recentIllegalActions > 0) {
-          console.log(
-            `Illegal Actions: ${recentIllegalActions} (last 100 episodes)`,
-          );
-        }
       }
 
       // Save periodically
@@ -656,9 +653,8 @@ export async function trainUniversalAgent(
 
       if (batchEpisodes <= 0) continue;
 
-      console.log(
-        `Training ${matchup.ai} vs ${matchup.opp} (${batchEpisodes} episodes)...`,
-      );
+      const matchupKey = `${matchup.ai}_vs_${matchup.opp}`;
+      console.log(`  ${matchupKey} (${batchEpisodes} episodes)...`);
 
       const progress = await trainAgent(
         agent,
@@ -666,6 +662,7 @@ export async function trainUniversalAgent(
           episodes: batchEpisodes,
           aiDeckType: matchup.ai,
           opponentDeckType: matchup.opp,
+          matchupKey,
           maxTurnsPerGame,
           opponentType,
           logEveryNEpisodes: Math.max(1, Math.floor(batchEpisodes / 5)),
@@ -685,14 +682,16 @@ export async function trainUniversalAgent(
       console.log(`\n[Progress saved after batch ${batch + 1}]`);
     }
 
-    // Report progress
+    // Batch boundary summary: global stats + per-matchup table
     const stats = agent.getStats();
-    console.log(`\n=== Batch ${batch + 1} Complete ===`);
-    console.log(`Episodes: ${episodesCompleted}/${totalEpisodes}`);
-    console.log(`Overall W/L/D: ${totalWins}/${totalLosses}/${totalDraws}`);
-    console.log(`Epsilon: ${stats.epsilon.toFixed(3)}`);
-    console.log(`Avg Reward: ${stats.avgReward.toFixed(2)}`);
-    console.log(`Buffer: ${stats.bufferSize} experiences`);
+    const globalWinRate = (totalWins / (totalWins + totalLosses + totalDraws) * 100).toFixed(1);
+
+    console.log(`\n--- Batch ${batch + 1}/${batchesPerMatchup} complete ---`);
+    console.log(`  Episodes: ${episodesCompleted}/${totalEpisodes} | Win%: ${globalWinRate}% | Epsilon: ${stats.epsilon.toFixed(3)} | Avg reward: ${stats.avgReward.toFixed(2)}`);
+    console.log(`  Matchup results:`);
+    for (const [key, m] of Object.entries(agent.getMatchupStats())) {
+      console.log(`    ${key}: ${m.episodes} ep | win% ${(m.winRate * 100).toFixed(1)}% | draw% ${(m.drawRate * 100).toFixed(1)}% | avg turns ${m.avgTurns.toFixed(1)} | avg health delta ${m.avgHealthDifferential.toFixed(1)}`);
+    }
   }
 
   // Final save
@@ -712,11 +711,16 @@ export async function trainUniversalAgent(
     trainingStats: finalStats,
   };
 
-  console.log("\n=== Universal Training Complete ===");
-  console.log(`Total Episodes: ${totalEpisodes}`);
-  console.log(`Total W/L/D: ${totalWins}/${totalLosses}/${totalDraws}`);
-  console.log(`Overall Win Rate: ${(finalProgress.winRate * 100).toFixed(1)}%`);
-  console.log(`Final Epsilon: ${finalStats.epsilon.toFixed(3)}`);
+  const finalGlobalWinRate = (finalProgress.winRate * 100).toFixed(1);
+
+  console.log(`\n=== Training Complete ===`);
+  console.log(`  Total episodes: ${totalEpisodes} | Win%: ${finalGlobalWinRate}% | Final Epsilon: ${finalStats.epsilon.toFixed(3)}`);
+  console.log(`  W/L/D: ${totalWins}/${totalLosses}/${totalDraws}`);
+  console.log(`  Matchup results:`);
+
+  for (const [key, m] of Object.entries(agent.getMatchupStats())) {
+    console.log(`    ${key}: ${m.episodes} episodes | wins ${(m.winRate * 100).toFixed(1)}% | draws ${(m.drawRate * 100).toFixed(1)}% | avg turns ${m.avgTurns.toFixed(1)} | avg health delta ${m.avgHealthDifferential.toFixed(1)}`);
+  }
 
   return finalProgress;
 }

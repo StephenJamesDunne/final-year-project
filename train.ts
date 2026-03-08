@@ -10,15 +10,13 @@ async function main() {
   const loaded = await agent.load();
   if (loaded) {
     console.log("Resuming training from saved model...\n");
-  } else {
-    console.log("No saved model found, starting fresh...\n");
   }
 
   try {
     await trainUniversalAgent(
       agent,
       {
-        episodesPerMatchup: 5000,
+        episodesPerMatchup: 200,
         deckTypes: ["fire", "earth"],
         batchSize: 50,
         maxTurnsPerGame: 50,

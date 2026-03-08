@@ -32,14 +32,14 @@ export interface DQNAgentConfig {
 const DEFAULT_CONFIG: DQNAgentConfig = {
   epsilonStart: 1.0, // Start completely random
   epsilonEnd: 0.01, // End at 1% random (never fully deterministic)
-  epsilonDecay: 0.9999, // slower decay gives more stable early exploration
+  epsilonDecay: 0.9995, // slower decay gives more stable early exploration
   batchSize: 32, // Standard batch size
   targetUpdateFreq: 5000, // Sync every 5000 training steps
   minExperiences: 1000, // Wait for 1000 experiences
   replayCapacity: 100000, // Store ~250 games worth
 };
 
-// Training stats for monitoring progression a visual component
+// Training stats for monitoring progression in a (soon to be made) visual component
 export interface TrainingStats {
   episode: number; // Current episode number
   epsilon: number; // Current exploration rate
@@ -48,6 +48,18 @@ export interface TrainingStats {
   winRate: number; // Win rate over last N episodes
   bufferSize: number; // Number of experiences stored
   trainingSteps: number; // Total training iterations
+}
+
+// Matchup stats for monitoring stats across all 4 matchups
+export interface MatchupStats {
+  episodes: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  winRate: number;
+  drawRate: number;
+  avgTurns: number;
+  avgHealthDifferential: number; // positive = AI ended with more health, negative = opponent ended with more health
 }
 
 // DQN Agent: Core AI player object
@@ -68,6 +80,9 @@ export class DQNAgent {
   private recentLosses: number[] = []; // Recent training losses
   private wins: number = 0; // Recent wins
   private games: number = 0; // Recent games
+
+  // Per-matchup outcome tracking in key format, e.g.: "aiDeck_vs_oppDeck" -> "fire_vs_earth"
+  private matchupStats: Record<string, MatchupStats> = {};
 
   constructor(config: Partial<DQNAgentConfig> = {}) {
     // Merge provided config with defaults
@@ -154,6 +169,55 @@ export class DQNAgent {
         this.episodeRewards.shift();
       }
     }
+  }
+
+  // Record the outcome of a completed episode for a specific matchup
+  // Called from trainAgent after playEpisode resolves, where the matchup key is known
+  recordEpisodeResult(
+    matchupKey: string,
+    winner: "ai" | "player" | "draw",
+    turns: number,
+    finalHealth: number,
+    opponentFinalHealth: number,
+  ): void {
+    if (!this.matchupStats[matchupKey]) {
+      this.matchupStats[matchupKey] = {
+        episodes: 0,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        winRate: 0,
+        drawRate: 0,
+        avgTurns: 0,
+        avgHealthDifferential: 0,
+      };
+    }
+
+    const s = this.matchupStats[matchupKey];
+    const prevEpisodes = s.episodes;
+
+    s.episodes++;
+    if (winner === "ai") {
+      s.wins++;
+    }
+    else if (winner === "player") {
+      s.losses++;
+    }
+    else {
+      s.draws++;
+    }
+
+    // Rolling averages for turns and health differential
+    s.avgTurns = (s.avgTurns * prevEpisodes + turns) / s.episodes;
+    s.avgHealthDifferential = (s.avgHealthDifferential * prevEpisodes + (finalHealth - opponentFinalHealth)) / s.episodes;
+
+    // Derived win/draw rates
+    s.winRate = s.wins / s.episodes;
+    s.drawRate = s.draws / s.episodes;
+  }
+
+  getMatchupStats(): Record<string, MatchupStats> {
+    return this.matchupStats;
   }
 
   // Train the agent on a batch of stored experiences
@@ -276,6 +340,7 @@ export class DQNAgent {
         wins: this.wins,
         games: this.games,
         episodeRewards: this.episodeRewards.slice(-20),
+        matchupStats: this.matchupStats,
         config: this.config,
         savedAt: new Date().toISOString(),
       };
@@ -321,6 +386,7 @@ export class DQNAgent {
         this.wins = state.wins;
         this.games = state.games;
         this.episodeRewards = state.episodeRewards;
+        this.matchupStats = state.matchupStats ?? {};
         this.config = { ...this.config, ...state.config };
 
         console.log("[DQNAgent] Loaded successfully");
