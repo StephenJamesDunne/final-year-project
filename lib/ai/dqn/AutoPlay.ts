@@ -123,7 +123,7 @@ function flipStatePerspective(state: BattleState): BattleState {
       ? "player"
       : state.winner === "player"
         ? "ai"
-        : state.winner; // handles "draw" or undefined
+        : state.winner; // handles undefined as the winner in case of a draw
 
   return {
     ...state,
@@ -348,12 +348,13 @@ async function playEpisode(
       // Select action (epsilon-greedy)
       let action = agent.selectAction(state, true);
 
+      const legalActions = getLegalActions(state, true);
+
       // Validate action is legal (safety check)
       if (!isActionLegal(decodeAction(action), state, true)) {
         illegalActionCount++;
 
         // Fallback to random legal action
-        const legalActions = getLegalActions(state, true);
         if (legalActions.length > 0) {
           action =
             legalActions[Math.floor(Math.random() * legalActions.length)];
@@ -365,6 +366,30 @@ async function playEpisode(
       // Execute action
       const newState = executeAction(action, state, true);
 
+      // Check whether the agent had at least one legal play_card action this turn
+      // Used by calculateReward to determine if the penalty for wasted mana should apply
+      const hadLegalPlay = legalActions.some(a => a >= 0 && a <= 9);
+
+      // Check whether the action was a clean kill (attacker survived, target died)
+      // Decoded from the action index instead of pulling in decodeAction as another dependency
+      // Attack minion actions start at index 10 (10-59)
+      // Then divide or modulo for attacker/target indices in the 7x7 grid
+      let cleanKill = false;
+      if (action >= 10 && action <= 59) {
+        const attackerIndex = Math.floor((action - 10) / 7);
+        const targetIndex = (action - 10) % 7;
+
+        const attacker = prevState.ai.board[attackerIndex];
+        const target = prevState.player.board[targetIndex];
+
+        // Compare the instance ids of both the attacker and the target in both the previous board state and the new board state
+        if (attacker && target) {
+          const attackerSurvived = newState.ai.board.some(m => m.instanceId === attacker.instanceId);
+          const targetDied = !newState.player.board.some(m => m.instanceId === target.instanceId);
+          cleanKill = attackerSurvived && targetDied;
+        }
+      }
+
       // Calculate reward
       const reward = calculateReward(
         prevState,
@@ -372,6 +397,7 @@ async function playEpisode(
         newState,
         newState.gameOver,
         config.rewardConfig,
+        { hadLegalPlay, cleanKill },
       );
 
       totalReward += reward;
@@ -406,10 +432,10 @@ async function playEpisode(
         if (consecutiveSameTurns >= MAX_CONSECUTIVE_SAME_TURNS) {
 
           state.gameOver = true;
-          state.winner = "player";
+          state.winner = undefined; // agent is stuck, draw match
 
-          // Store terminal experience with large penalty
-          agent.storeExperience(prevState, action, -10, state, true);
+          // Store terminal experience with no reward or penalty given
+          agent.storeExperience(prevState, action, 0, state, true);
           break;
         }
       } else if (state.turnNumber !== prevTurnNumber) {
@@ -431,7 +457,7 @@ async function playEpisode(
         if (consecutiveSameTurns >= MAX_CONSECUTIVE_SAME_TURNS) {
 
           state.gameOver = true;
-          state.winner = "ai"; // opponent is stuck, AI wins
+          state.winner = undefined; // opponent is stuck, draw match
           break;
         }
       } else if (state.turnNumber !== prevTurnNumberOpp) {

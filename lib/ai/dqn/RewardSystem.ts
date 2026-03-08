@@ -54,6 +54,7 @@ export interface RewardConfig {
   // Mana efficiency rewards
   manaUsed: number;               // Small bonus for using mana
   manaWasted: number;             // Small penalty for ending turn with mana
+  cleanKill: number;              // Bonues for killing an enemy minion with losing the attacker
 }
 
 // Default values for a configuration of rewards
@@ -75,9 +76,10 @@ export const DEFAULT_REWARDS: RewardConfig = {
   // Card advantage - medium importance
   cardDraw: 0.1,
   
-  // Mana efficiency - small nudges toward good habits
+  // Mana efficiency - nudges toward good habits
   manaUsed: 0.05,
-  manaWasted: -0.02,
+  manaWasted: -0.20,
+  cleanKill: 0.8,
 };
 
 // Calculate reward for a state transition
@@ -87,15 +89,19 @@ export function calculateReward(
   action: number,
   newState: BattleState,
   done: boolean,
-  config: RewardConfig = DEFAULT_REWARDS
+  config: RewardConfig = DEFAULT_REWARDS,
+  context?: {hadLegalPlay: boolean; cleanKill: boolean}
 ): number {
   
   // Game over, most important
   if (done) {
     if (newState.winner === 'ai') {
       return config.winReward;  // +10.0 - largest reward for winning
-    } else {
+    } else if (newState.winner === 'player') {
       return config.lossReward; // -10.0 - largest penalty for losing
+    }
+    else {
+      return 0;               // 0 for a draw; should mean that draws don't impact agent decision making either way
     }
   }
   
@@ -122,6 +128,11 @@ export function calculateReward(
   if (aiMinionCountDelta < 0) {
     reward += aiMinionCountDelta * config.minionLost; // minionLost is always negative
   }
+
+  // Clean kill bonus if attacker survived combat
+  if (context?.cleanKill) {
+    reward += config.cleanKill;
+  }
   
   // Board advantage reward - having stronger board is good
   const aiBoardStrength = calculateBoardStrength(newState.ai.board);
@@ -145,9 +156,10 @@ export function calculateReward(
   const manaUsed = prevState.ai.mana - newState.ai.mana;
   reward += manaUsed * config.manaUsed;
   
-  // Small penalty for ending turn with unused mana (only when ending turn)
-  // Action 67 = end turn (from actionSpace.ts)
-  if (action === 67) {
+  // Penalty for ending turn with unused mana, but only if the agent had a legal move
+  // Using the context argument keeps RewardSystem free of dependencies on AutoPlay where
+  // The legal actions are defined
+  if (action === 67 && context?.hadLegalPlay) {
     const manaWasted = prevState.ai.mana;
     reward += manaWasted * config.manaWasted;
   }
