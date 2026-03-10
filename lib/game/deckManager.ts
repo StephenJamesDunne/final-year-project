@@ -72,7 +72,8 @@ export function removeCardFromHand(hand: Card[], cardIndex: number): Card[] {
 // This is different to drawing cards from the deck,
 // because certain abilities/spells may add cards to hand directly.
 export function addCardsToHand(hand: Card[], newCards: Card[]): Card[] {
-  return [...hand, ...newCards];
+  const combined = [...hand, ...newCards];
+  return combined.slice(0, 10); // Max hand size of 10
 }
 
 // Record uses DeckArchetype as key and DeckInfo as value.

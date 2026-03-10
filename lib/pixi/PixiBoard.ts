@@ -36,6 +36,8 @@ export interface BoardState {
   aiBoard: Minion[];
   playerHand: Card[];
   aiHandCount: number;
+  playerDeckCount: number;
+  aiDeckCount: number;
   selectedMinion: string | null;
   currentTurn: 'player' | 'ai';
   playerMana: number;

@@ -5,8 +5,11 @@
 // .fit() = the backpropagation; adjust the weights to minimize the error between the prediction made and the target
 
 import * as tf from "@tensorflow/tfjs";
-import * as fs from "fs";
-import * as path from "path";
+
+if (typeof window === "undefined") {
+  const fs = await import("fs");
+  const path = await import("path");
+}
 
 export class DQNModel {
   // The neural network model

@@ -1,5 +1,7 @@
-import * as fs from "fs";
-import * as path from "path";
+if (typeof window === "undefined") {
+  const fs = await import("fs");
+  const path = await import("path");
+}
 
 // Single experience tuple
 // Represents a single action that the AI can take in a game session
