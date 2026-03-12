@@ -1,6 +1,6 @@
 "use client";
 
-import { AIType } from "@/lib/ai/aiTypes";
+import { AIType } from "@/lib/ai/aiStrategy";
 
 interface AISelectorProps {
   selectedAI: AIType;

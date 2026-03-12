@@ -1,7 +1,6 @@
-if (typeof window === "undefined") {
-  const fs = await import("fs");
-  const path = await import("path");
-}
+import 'server-only';
+import fs from 'fs';
+import path from 'path';
 
 // Single experience tuple
 // Represents a single action that the AI can take in a game session

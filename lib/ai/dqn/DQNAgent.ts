@@ -10,10 +10,9 @@ import { encodeGameState } from "./stateEncoder";
 import { BattleState } from "@/lib/types/game";
 import { getLegalActions } from "./ActionSpace";
 
-if (typeof window === "undefined") {
-  const fs = await import("fs");
-  const path = await import("path");
-}
+import 'server-only';
+import fs from 'fs';
+import path from 'path';
 
 
 // Hyperparameters for the DQN Agent

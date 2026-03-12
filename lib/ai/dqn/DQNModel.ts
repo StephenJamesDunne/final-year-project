@@ -5,11 +5,9 @@
 // .fit() = the backpropagation; adjust the weights to minimize the error between the prediction made and the target
 
 import * as tf from "@tensorflow/tfjs";
-
-if (typeof window === "undefined") {
-  const fs = await import("fs");
-  const path = await import("path");
-}
+import 'server-only';
+import fs from 'fs';
+import path from 'path';
 
 export class DQNModel {
   // The neural network model
@@ -220,7 +218,7 @@ export class DQNModel {
   // Save the model within project directory at the root (fiverealms/models/five-realms-dqn)
   async save(name: string = "five-realms-dqn"): Promise<void> {
     try {
-      const savePath = path.resolve(__dirname, "../../../models", name);
+      const savePath = path.resolve(process.cwd(), 'public/models', name);
       fs.mkdirSync(savePath, { recursive: true });
 
       const weightData = this.model.getWeights().map((w) => ({
@@ -229,7 +227,7 @@ export class DQNModel {
       }));
 
       fs.writeFileSync(
-        path.resolve(savePath, "weights.json"),
+        path.join(savePath, 'weights.json'),
         JSON.stringify(weightData),
       );
       console.log(`[DQN] Model saved to ${savePath}`);

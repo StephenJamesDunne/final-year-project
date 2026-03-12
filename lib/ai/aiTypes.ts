@@ -1,1 +1,0 @@
-export type AIType = "rule-based" | "dqn";

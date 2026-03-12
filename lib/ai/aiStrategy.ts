@@ -1,6 +1,8 @@
 import { BattleState } from "../types/game";
 import { AIAction, getAIAction } from "../game/aiPlayer";
-import { AIType } from "./aiTypes";
+import { encodeGameState } from "./dqn/stateEncoder";
+import { getLegalActions } from "./dqn/ActionSpace";
+import { DQNModelBrowser } from "./dqn/DQNModelBrowser";
 
 // Interface that all AI implementations must follow
 // This allows swapping between rule-based and DQN seamlessly
@@ -25,8 +27,8 @@ export class DQNStrategy implements AIStrategy {
 
     private fallbackAI: RuleBasedAI;
 
-    // Typed as any to avoid a static import - the real type is DQNAgent from lib/ai/dqn/DQNAgent.ts
-    private dqnAgent: any = null;
+    // Loads a browser-safe class to get the trained model
+    private dqnModel: DQNModelBrowser | null = null;
 
     private ready: boolean = false;
 
@@ -42,15 +44,15 @@ export class DQNStrategy implements AIStrategy {
     // then attempt to laod a saved model
     private async loadModel(): Promise<void> {
         try {
-            const { DQNAgent } = await import("./dqn/DQNAgent");
-            this.dqnAgent = new DQNAgent();
+            const { DQNModelBrowser } = await import("./dqn/DQNModelBrowser");
+            this.dqnModel = new DQNModelBrowser();
 
-            const loaded = await this.dqnAgent.load();
+            const loaded = await this.dqnModel.load();
             if (loaded) { 
                 this.ready = true;
                 console.log("[DQNStrategy] Model loaded successfully: using trained policy");
             } else {
-                this.modelFound = true;
+                this.modelFound = false;
                 console.log("[DQNStrategy] No saved model found: using fallback rule-based AI");
             }
         } catch (error) {
@@ -76,17 +78,38 @@ export class DQNStrategy implements AIStrategy {
     }
 
     // Use the trained model if it's ready, otherwise fall back to the rule-based AI until it is
+    // If the trained model has usable weights, this function encodes the game state to readable inputs
+    // for the neural network. It then foes forward passes using the trained weights instead of the changeable
+    // values during a training session. No back prop happens here because training is done
     selectAction(state: BattleState): AIAction {
         if (!this.ready) {
             return this.fallbackAI.selectAction(state);
         }
 
-        // DQNAgent returns an action index (0-67):
-        const actionIndex = this.dqnAgent.selectAction(state, false);
+        const encoded = encodeGameState(state, true);
+
+        // ! non-null assertion operator used just below here: dqnModel can't be null at this point, if this.ready is true
+        // directly above it
+        const qValues = this.dqnModel!.predict(encoded);
+        const legalActions = new Set(getLegalActions(state, true));
+
+        let bestAction = -1;
+        let bestQValue = -Infinity;
+
+        for (let i = 0; i < qValues.length; i++) {
+            if (legalActions.has(i) && qValues[i] > bestQValue) {
+                bestQValue = qValues[i];
+                bestAction = i;
+            }
+        }
+
+        if (bestAction === -1) {
+            bestAction = 67;
+        }
 
        // The returned action then needs to be converted back to the AIAction format
        // turnSlice and executeAIPlayCard both expect a full AIAction object
-        return indexToAction(actionIndex, state);
+        return indexToAction(bestAction, state);
     }
     
     onGameEnd(state: BattleState, won: boolean): void {
@@ -154,6 +177,8 @@ function indexToAction(actionIndex: number, state: BattleState): AIAction {
     // Default fallback action
     return { type: "pass" }; 
 }
+
+export type AIType = "rule-based" | "dqn";
 
 export function createAI(type: AIType): AIStrategy {
     switch (type) {
