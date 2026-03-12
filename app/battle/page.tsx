@@ -75,7 +75,7 @@ function DeckSelectionScreen() {
 
   // Battle Screen with Pixi Game Board
   // Only subscribes to necessary state slices and memoizes callbacks
-
+  // Memoization means PixiGameBoard only re-renders when relevant state changes, not on every store update
   function BattleScreen() {
     const player = useBattleStore((state) => state.player);
     const ai = useBattleStore((state) => state.ai);

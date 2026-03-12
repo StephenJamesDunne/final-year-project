@@ -481,7 +481,7 @@ export const CARDS: Card[] = [
         description: 'Taunt'
       },
       {
-        trigger: 'battlecry',
+        trigger: 'deathrattle',
         type: 'heal',
         value: 5,
         target: 'self',
