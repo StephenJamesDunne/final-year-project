@@ -1,6 +1,20 @@
-// lib/ai/dqn/DQNModelBrowser.ts
-// Browser safe inference-only model:
-// 
+// DQNModelBrowser - Browser-safe model loader for DQN inference
+// Counterpart to DQNModel.ts, which is Node.js only (training)
+//
+// Responsibilities:
+// - Fetch trained weights from public/models/
+// - Load weights into the same network architecture used during training
+// - Use predict() for running forward passes during gameplay
+//
+// This file deliberately has no fs/path imports - weights are loaded
+// via fetch() instead, making it safe to run in the browser.
+//
+// Training is handled entirely separately in Node.js
+// DQNModel.ts -> saves weights to public/models/
+// DQNModelBrowser.ts -> fetches those weights for inference
+//
+// Used by DQNStrategy in aiStrategy.ts to select actions during a game
+
 import * as tf from '@tensorflow/tfjs';
 
 export class DQNModelBrowser {
