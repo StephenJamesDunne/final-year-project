@@ -27,7 +27,7 @@ export class MinionRenderer {
         const hasTauntOnBoard = boardHasTaunt(aiBoard);
 
         aiBoard.forEach((minion, i) => {
-            const minionCard = this.cardRenderer.createMinionCard(minion, false);
+            const minionCard = this.cardRenderer.createMinionCard(minion);
             minionCard.x = positions[i].x;
             minionCard.y = positions[i].y;
 
@@ -71,7 +71,7 @@ export class MinionRenderer {
         const positions = this.layout.getPlayerBoardPositions(playerBoard.length);
 
         playerBoard.forEach((minion, i) => {
-            const minionCard = this.cardRenderer.createMinionCard(minion, true);
+            const minionCard = this.cardRenderer.createMinionCard(minion);
             minionCard.x = positions[i].x;
             minionCard.y = positions[i].y;
 

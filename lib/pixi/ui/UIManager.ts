@@ -94,11 +94,10 @@ export class UIManager {
       false
     );
 
-    const aiCardsRemaining = Math.max(0, 30 - state.aiHandCount - state.aiBoard.length);
-    const playerCardsRemaining = Math.max(
-      0,
-      30 - state.playerHand.length - state.playerBoard.length
-    );
+    // Change deck count calculation to use the new properties from BoardState
+    // This was incorrectly calculating deck size by subtracting hand and board counts from the initial deck size, which doesn't account for cards drawn or played
+    const aiCardsRemaining = state.aiDeckCount;
+    const playerCardsRemaining = state.playerDeckCount;
 
     this.aiDeckIndicator = this.deckIndicator.createIndicator(aiCardsRemaining, true);
     this.playerDeckIndicator = this.deckIndicator.createIndicator(playerCardsRemaining, false);

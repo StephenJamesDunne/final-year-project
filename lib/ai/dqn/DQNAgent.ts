@@ -9,8 +9,12 @@ import { ExperienceReplay } from "./ExperienceReplay";
 import { encodeGameState } from "./stateEncoder";
 import { BattleState } from "@/lib/types/game";
 import { getLegalActions } from "./ActionSpace";
-import * as fs from "fs";
-import * as path from "path";
+
+if (typeof window === "undefined") {
+  const fs = await import("fs");
+  const path = await import("path");
+}
+
 
 // Hyperparameters for the DQN Agent
 export interface DQNAgentConfig {

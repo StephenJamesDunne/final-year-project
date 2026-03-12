@@ -1,6 +1,6 @@
 import { BattleState } from "../types/game";
 import { AIAction, getAIAction } from "../game/aiPlayer";
-import { DQNAgent as ActualDQNAgent } from "./dqn/DQNAgent";
+import { AIType } from "./aiTypes";
 
 // Interface that all AI implementations must follow
 // This allows swapping between rule-based and DQN seamlessly
@@ -24,7 +24,9 @@ export class RuleBasedAI implements AIStrategy {
 export class DQNStrategy implements AIStrategy {
 
     private fallbackAI: RuleBasedAI;
-    private dqnAgent: ActualDQNAgent;
+
+    // Typed as any to avoid a static import - the real type is DQNAgent from lib/ai/dqn/DQNAgent.ts
+    private dqnAgent: any = null;
 
     private ready: boolean = false;
 
@@ -32,14 +34,17 @@ export class DQNStrategy implements AIStrategy {
     private modelFound: boolean = false;
 
     constructor() {
-        this.dqnAgent = new ActualDQNAgent();
         this.fallbackAI = new RuleBasedAI();
         this.loadModel();
     }
 
-    // Start async model loading. selectAction() will use the fallback until this resolves
+    // Dynamically import DQNAgent to keep fs/path out of the client bundle,
+    // then attempt to laod a saved model
     private async loadModel(): Promise<void> {
         try {
+            const { DQNAgent } = await import("./dqn/DQNAgent");
+            this.dqnAgent = new DQNAgent();
+
             const loaded = await this.dqnAgent.load();
             if (loaded) { 
                 this.ready = true;
@@ -149,9 +154,6 @@ function indexToAction(actionIndex: number, state: BattleState): AIAction {
     // Default fallback action
     return { type: "pass" }; 
 }
-
-// AI Factory; easy switching between rule-based and DQN
-export type AIType = "rule-based" | "dqn";
 
 export function createAI(type: AIType): AIStrategy {
     switch (type) {
