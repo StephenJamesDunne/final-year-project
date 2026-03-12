@@ -70,6 +70,21 @@ export const COLORS = {
   },
 } as const;
 
+// CSS hex strings for non-Pixi UI (Next.js pages, HTML elements)
+export const CSS_COLORS = {
+  gold: '#d4af37',
+  blue: '#3b82f6',
+  red: '#ef4444',
+  green: '#10b981',
+  purple: '#9333ea',
+  gray: '#64748b',
+  darkBg: '#1e293b',
+  baseBg: '#0a0e1a',
+  border: '#2d3748',
+  text: '#e2e8f0',
+  subtext: '#94a3b8',
+} as const;
+
 export const FONTS = {
   CARD_NAME: {
     fontSize: 10,

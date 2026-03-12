@@ -5,7 +5,6 @@
 // .fit() = the backpropagation; adjust the weights to minimize the error between the prediction made and the target
 
 import * as tf from "@tensorflow/tfjs";
-import 'server-only';
 import fs from 'fs';
 import path from 'path';
 

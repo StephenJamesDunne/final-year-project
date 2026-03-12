@@ -16,7 +16,7 @@ async function main() {
     await trainUniversalAgent(
       agent,
       {
-        episodesPerMatchup: 200,
+        episodesPerMatchup: 2500,
         deckTypes: ["fire", "earth"],
         batchSize: 50,
         maxTurnsPerGame: 50,

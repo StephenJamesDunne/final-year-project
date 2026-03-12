@@ -1,4 +1,3 @@
-import 'server-only';
 import fs from 'fs';
 import path from 'path';
 
@@ -185,10 +184,12 @@ export class ExperienceReplay {
         savedAt: new Date().toISOString(),
       };
 
-      const savePath = path.resolve(__dirname, '../../../models', `${key}.json`);
-      fs.writeFileSync(savePath, JSON.stringify(data));
+      const savePath = path.resolve(process.cwd(), 'models');
+      fs.mkdirSync(savePath, { recursive: true }); // create if not exists
+      const filePath = path.join(savePath, `${key}.json`);
+      fs.writeFileSync(filePath, JSON.stringify(data));
       console.log(
-        `[ExperienceReplay] Saved ${recentExperiences.length} experiences to ${savePath}`,
+        `[ExperienceReplay] Saved ${recentExperiences.length} experiences to ${filePath}`,
       );
     } catch (error) {
       console.error("[ExperienceReplay] Failed to save buffer:", error);
