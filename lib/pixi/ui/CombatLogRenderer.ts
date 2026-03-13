@@ -3,8 +3,8 @@ import { COLORS } from '../utils/StyleConstants';
 
 export class CombatLogRenderer {
   private readonly WIDTH = 320;
-  private readonly HEIGHT = 450;
-  private readonly LINE_HEIGHT = 32;
+  private readonly HEIGHT = 520;
+  private readonly LINE_HEIGHT = 36;
   private readonly MAX_ENTRIES = 12;
 
   createCombatLog(combatLog: string[]): PIXI.Container {
