@@ -375,11 +375,7 @@ export class DQNAgent {
 
       this.replay.load(`${name}-replay`);
 
-      const statePath = path.resolve(
-        __dirname,
-        "../../../models",
-        `${name}-state.json`,
-      );
+      const statePath = path.resolve(process.cwd(), 'models', `${name}-state.json`);
       if (fs.existsSync(statePath)) {
         const state = JSON.parse(fs.readFileSync(statePath, "utf-8"));
         this.epsilon = state.epsilon;

@@ -641,6 +641,8 @@ export async function trainUniversalAgent(
   let episodesCompleted = 0;
 
   // Train in interleaved batches to prevent forgetting
+  // Forgetting is a common issue in continual learning where training on new data causes the model to perform worse on previously learned data
+  // This happens because the model's weights are updated to optimize for the new data, which can interfere with the patterns it learned from the old data
   for (let batch = 0; batch < batchesPerMatchup; batch++) {
     console.log(`\n--- Batch ${batch + 1}/${batchesPerMatchup} ---`);
 

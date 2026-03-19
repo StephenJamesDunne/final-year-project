@@ -7,6 +7,10 @@
 // 10-59: Attack with a minion on the baord (7 attackers x 7 defenders)
 // 60-66: Attack enemy hero (7 attackers x 1 enemy hero)
 // 67: End turn
+//
+// Action Indices are needed because the DQN outputs a fixed-size vector of Q-values, and they need to be mapped to actual game actions
+// ActionSpace handles the mapping and also checks if the chosen action is legal given the current game state
+
 import { BattleState } from '@/lib/types/game';
 
 // Game action types that can be executed

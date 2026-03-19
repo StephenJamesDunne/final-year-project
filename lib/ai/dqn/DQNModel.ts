@@ -240,12 +240,7 @@ export class DQNModel {
   // Returns true if loading was successful, false otherwise
   async load(name: string = "five-realms-dqn"): Promise<boolean> {
     try {
-      const loadPath = path.resolve(
-        __dirname,
-        "../../../models",
-        name,
-        "weights.json",
-      );
+      const loadPath = path.resolve(process.cwd(), 'public/models', name, 'weights.json');
       if (!fs.existsSync(loadPath)) return false;
 
       const weightData = JSON.parse(fs.readFileSync(loadPath, "utf-8"));
@@ -267,7 +262,7 @@ export class DQNModel {
 
   // Check if a saved model exists in local storage
   async modelExists(name: string = "five-realms-dqn"): Promise<boolean> {
-    const modelPath = path.resolve(__dirname, '../../../models', name, 'weights.json');
+    const modelPath = path.resolve(process.cwd(), 'public/models', name, 'weights.json');
     return fs.existsSync(modelPath);
   }
 
