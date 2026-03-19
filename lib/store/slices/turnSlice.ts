@@ -150,20 +150,37 @@ export const createTurnSlice: StateCreator<
 
     // Last/fallback phase for AI turn: start new turn
     const finalState = get();
-    const turnResult = incrementTurn(finalState.turnNumber, finalState.player.maxMana, finalState.ai, finalState.player);
+    const turnResult = incrementTurn(
+      finalState.turnNumber,
+      finalState.player.maxMana,
+      finalState.ai,
+      finalState.player,
+    );
 
     const newLog = [...finalState.combatLog, `─── Turn ${turnResult.turnNumber} ───`];
 
-    if (turnResult.opponent.hand.length > finalState.player.hand.length) {
+    // Player draw log:
+    // If the deck was empty before the draw, fatigue applies
+    // If the deck shrank, a card was drawn correctly
+    // If the deck didn't shrink but wasn't empty, then the hand was full and the drawn card was discarded
+    const playerDeckWasdEmpty = finalState.player.deck.length === 0;
+    const playerDrewCard = turnResult.opponent.deck.length < finalState.player.deck.length;
+
+    if (playerDeckWasdEmpty) {
+      newLog.push(
+        `Your deck is empty! You take ${turnResult.opponent.fatigueCounter} fatigue damage.`,
+      );
+    } else if (playerDrewCard) {
       newLog.push(
         `You draw: ${turnResult.opponent.hand[turnResult.opponent.hand.length - 1].name}`,
       );
     } else {
       newLog.push(
-        `Your deck is empty! You take ${turnResult.opponent.fatigueCounter} fatigue damage.`,
+        `Your hand is full! The drawn card was discarded.`,
       );
     }
 
+    // AI deck empty log - health drop confirms fatigue damage was taken
     if (turnResult.ai.health < finalState.ai.health) {
       newLog.push(
         `Enemy deck is empty! Enemy takes ${turnResult.ai.fatigueCounter} fatigue damage.`,
