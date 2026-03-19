@@ -1,5 +1,6 @@
 import { Card, DeckArchetype, DeckInfo } from "../types/game";
 import { getArchetypeCards } from "../data/cards";
+import { buildStructureDeck } from "../data/decks";
 
 // Check if running in client environment
 // this is important for shuffling decks only on the client side.
@@ -22,20 +23,41 @@ export function shuffleDeck<T>(array: T[]): T[] {
   return shuffledDeck;
 }
 
-// Create a deck based on chosen archetype
-// Basically just a fancy if else that gets the right set of cards
-export function createArchetypeDeck(archetype: DeckArchetype): Card[] {
+export type DeckBuildMode = "structure" | "random";
+
+// Create a deck based on chosen archetype and build mode.
+// If mode is "structure", builds the deck from the predefined structure deck.
+// If mode is "random", builds a standard 30-card deck by taking all cards of the archetype
+// and creating 2 copies of each (standard deck building rules), then shuffling the result
+export function createArchetypeDeck(
+  archetype: DeckArchetype,
+  mode: DeckBuildMode = "structure",
+): Card[] {
+  if (mode === "structure") {
+    const deck = buildStructureDeck(archetype);
+    return isClient ? shuffleDeck(deck) : deck;
+  }
+
+  // Random mode - pool all cards of the chosen archetype,
+  // expand to 2 copies each, shuffle the result, then slice
+  // the deck to get 30 cards maximum
   const archetypeCards = getArchetypeCards(
     archetype === "fire" ? "aggressive" : "defensive",
   );
 
-  // Create 2 copies of each card (standard deck building)
-  const baseDeck = archetypeCards.flatMap((card, index) => [
-    { ...card, id: `${card.id}-copy1-${index}` },
-    { ...card, id: `${card.id}-copy2-${index}` },
-  ]);
+  // Create 2 copies of each card except for legendaries
+  const baseDeck = archetypeCards.flatMap((card, index) => {
+    if (card.rarity === "legendary") {
+      return [{ ...card, id: `${card.id}-copy1-${index}` }];
+    }
+    return [
+      { ...card, id: `${card.id}-copy1-${index}` },
+      { ...card, id: `${card.id}-copy2-${index}` },
+    ];
+  });
 
-  return isClient ? shuffleDeck(baseDeck) : baseDeck;
+  const shuffled = isClient ? shuffleDeck(baseDeck) : baseDeck;
+  return shuffled.slice(0, 30); // Standard deck size of 30 cards
 }
 
 // Take the deck (array of type Card) and draw 'count' number of cards from the top

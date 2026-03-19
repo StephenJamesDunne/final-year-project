@@ -84,8 +84,8 @@ function initializeGameState(
   opponentDeckType: DeckArchetype,
 ): BattleState {
   // Initialize decks with given arguments
-  const aiDeck = createArchetypeDeck(aiDeckType);
-  const opponentDeck = createArchetypeDeck(opponentDeckType);
+  const aiDeck = createArchetypeDeck(aiDeckType, "structure");
+  const opponentDeck = createArchetypeDeck(opponentDeckType, "structure");
 
   // Draw starting hands
   const aiDraw = drawCards(aiDeck, 4);

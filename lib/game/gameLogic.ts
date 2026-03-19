@@ -1,3 +1,34 @@
+/**
+ * Core game engine logic file. Contains all the pure functions
+ * that dictate how the game state changes in response to game events.
+ * All of the functions take in state and return new state, meaning they are usable in both the
+ * actual browser game and in the Node.js training environment for the AI.
+ * 
+ * Minion creation + management: createMinion takes a Card
+ * and produces a Minion, adding the appropriate fields (see lib/types/game.ts for Card and Minion types).
+ * It also handles Charge detection by parsing the card's ability descriptions.
+ * enableMinionAttacks is called at the start of each new turn to reset canAttack to true
+ * for all minions on a player's board. removeDead filters out minions with currentHealth <= 0.
+ * 
+ * Combat system: calculateCombatDamage works out post-combat health values
+ * and survival flags for both participants. handleMinionCombat wraps that and returns a CombatResult,
+ * which describes what happened, including updated minion states and death flags. handleHeroAttack does
+ * a simpler version of this, but only for minions attacking the enemy hero directly. 
+ * updateBoardAfterCombat is a helper which takes a board and a combat result, and returns the new board
+ * with dead minions removed and surviving minions updated.
+ * 
+ * Taunt system: hasTaunt, getTauntMinions, boardHasTaunt and isValidAttackTarget work together to enforce Taunt rules.
+ * They all work by parsing a card for the string 'taunt' instead of checking a dedicated boolean flag.
+ * 
+ * Turn management: incrementTurn (most complex function here). Handles all the logic for what changes at 
+ * the boundaries of a turn; incrementing the turn counter, increasing max mana (capped at 10), drawing a card
+ * for both players, applying fatigue damage if either deck is empty, and resetting all minions' canAttack flags.
+ * 
+ * checkGameOver is just a health check that returns a gameOver flag and a winner 
+ */
+
+
+
 import { Player } from '../types/game';
 import { Card, Minion } from '../types/game';
 import { drawCards, addCardsToHand } from './deckManager';

@@ -54,6 +54,7 @@ export interface Minion extends Card {
   keywords?: string[];
 }
 
+// Complete state of one side of the board at any moment:
 export interface Player {
   health: number;
   mana: number;
@@ -72,8 +73,6 @@ export interface BattleState {
   gameOver: boolean;
   winner?: 'player' | 'ai';
   combatLog: string[];
-  aiAction?: string; // Current AI action being shown
-  initialized?: boolean;
 }
 
 export type DeckArchetype = 'fire' | 'water' | 'earth' | 'air';

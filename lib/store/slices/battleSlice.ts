@@ -33,6 +33,7 @@ import { BattleState } from '../../types/game';
 
 export interface BattleSlice extends BattleState {
   initialized: boolean;
+  aiAction: string | undefined; // Current AI action being shown
   selectedMinion: string | null;
   selectMinion: (minionId: string | null) => void;
 }
