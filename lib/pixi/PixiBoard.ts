@@ -16,6 +16,7 @@ import { MinionRenderer } from './rendering/MinionRenderer';
 import { BoardRenderer } from './rendering/BoardRenderer';
 import { COLORS } from './utils/StyleConstants';
 import { HoverCardDisplay } from './ui/HoverCardDisplay';
+import { ScaleManager, DESIGN_WIDTH, DESIGN_HEIGHT } from './utils/ScaleManager';
 
 
 // Callbacks passed from React to handle all user interactions are here.
@@ -80,6 +81,12 @@ export class PixiBoard {
   private minionRenderer: MinionRenderer;
   private boardRenderer: BoardRenderer;
   private hoverCardDisplay: HoverCardDisplay;
+
+  // ScaleManager handles all screen-size adaptation
+  // rootContainer is the single container scaleManager scales -
+  // everything in the game is a child of this
+  private scaleManager: ScaleManager | null = null;
+  private rootContainer: PIXI.Container | null = null;
 
   // Callbacks to communicate clicks/user interaction back to React
   private callbacks: BoardCallbacks;
@@ -147,8 +154,14 @@ export class PixiBoard {
     // Check if board is destroyed during async init
     if (this.isDestroyed || !this.app) return;
 
+    // Create the root container and pass it to the scale manager
+    this.rootContainer = new PIXI.Container();
+    this.app.stage.addChild(this.rootContainer);
+    this.scaleManager = new ScaleManager(this.rootContainer);
+    this.scaleManager.apply(window.innerWidth, window.innerHeight);
+
     // Align board size to fit the screen size
-    this.boardLayout.updateDimensions(this.app.screen.width, this.app.screen.height);
+    this.boardLayout.updateDimensions();
 
     // Load card art and frame assets
     await this.cardRenderer.loadAssets();
@@ -173,7 +186,7 @@ export class PixiBoard {
   // Create and add rendering containers to stage
   // Container creation order defines z-order
   private setupContainers(): void {
-    if (!this.app) return;
+    if (!this.rootContainer) return;
 
     this.containers = {
       background: new PIXI.Container(),
@@ -185,18 +198,17 @@ export class PixiBoard {
     };
 
     // Add containers in z-order (bottom to top)
-    this.app.stage.addChild(this.containers.background);
-    this.app.stage.addChild(this.containers.aiHand);
-    this.app.stage.addChild(this.containers.aiBoard);
-    this.app.stage.addChild(this.containers.playerBoard);
-    this.app.stage.addChild(this.containers.playerHand);
-    this.app.stage.addChild(this.containers.ui);
-
+    this.rootContainer.addChild(this.containers.background);
+    this.rootContainer.addChild(this.containers.aiHand);
+    this.rootContainer.addChild(this.containers.aiBoard);
+    this.rootContainer.addChild(this.containers.playerBoard);
+    this.rootContainer.addChild(this.containers.playerHand);
+    this.rootContainer.addChild(this.containers.ui);
     // Add hover card display at highest z-order
-    this.app.stage.addChild(this.hoverCardDisplay.getContainer());
+    this.rootContainer.addChild(this.hoverCardDisplay.getContainer());
 
     // Need this to enable z-ordering
-    this.app.stage.sortableChildren = true;
+    this.rootContainer.sortableChildren = true;
   }
 
   // Render static background (base color, board zones, decorative elements)
@@ -276,10 +288,10 @@ export class PixiBoard {
   }
 
   private handleResize(): void {
-    if (!this.app || !this.containers) return;
+    if (!this.app || !this.containers || !this.scaleManager) return;
 
     this.app.renderer.resize(window.innerWidth, window.innerHeight);
-    this.boardLayout.updateDimensions(this.app.screen.width, this.app.screen.height);
+    this.scaleManager.apply(window.innerWidth, window.innerHeight);
 
     this.destroyChildren(this.containers.background);
     this.renderBackground();
@@ -289,8 +301,12 @@ export class PixiBoard {
 
   // Functions to allow show/hide functionality for the tooltip
   showHoverCard(card: Card | Minion, globalX: number, globalY: number): void {
-    if (!this.app) return;
-    this.hoverCardDisplay.show(card, globalX, globalY, this.app.screen.width, this.app.screen.height);
+    if (!this.app || !this.rootContainer) return;
+    
+    const scale = this.rootContainer.scale.x;
+    const localX = (globalX - this.rootContainer.x) / scale;
+    const localY = (globalY - this.rootContainer.y) / scale;
+    this.hoverCardDisplay.show(card, localX, localY, DESIGN_WIDTH, DESIGN_HEIGHT);
   }
 
   hideHoverCard(): void {
@@ -312,7 +328,8 @@ export class PixiBoard {
       });
     }
     this.app = null;
-
     this.containers = null;
+    this.scaleManager = null;
+    this.rootContainer = null;
   }
 }

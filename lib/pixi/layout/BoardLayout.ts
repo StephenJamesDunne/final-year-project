@@ -1,8 +1,10 @@
 import * as PIXI from 'pixi.js';
 import { COLORS } from '../utils/StyleConstants';
+import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../utils/ScaleManager';
 
-// BoardLayout provides all the math logic for positioning of my PIXI elements on the screen. 
-// This is where all elements on the canvas are anchored to their positions on the page.
+// BoardLayout provides all the math logic for positioning of my PIXI elements on the screen
+// This is where all elements on the canvas are anchored to their positions on the page
+// ScaleManager handles translating these to actual screen pixels
 
 // Stores current screen dimensions
 // Calculates positions for all game elements
@@ -20,8 +22,8 @@ interface Position {
 }
 
 export class BoardLayout {
-  private width: number;
-  private height: number;
+  private width: number = DESIGN_WIDTH;
+  private height: number = DESIGN_HEIGHT;
 
   // Cache for storing calculated positions of elements on the board
   private positionCache: Map<string, Position[]> = new Map();
@@ -32,10 +34,7 @@ export class BoardLayout {
   }
 
   // Update dimensions and clear cache when screen resizes
-  updateDimensions(width: number, height: number) {
-    this.width = width;
-    this.height = height;
-
+  updateDimensions(): void {
     this.positionCache.clear();
   }
 
@@ -295,7 +294,7 @@ export class BoardLayout {
   }
 
   getEndTurnButtonPosition(): Position {
-    return { x: this.width * 0.83, y: this.height / 3 + 40 };
+    return { x: this.width * 0.83, y: (this.height / 3) + 40 };
   }
 
   getTurnIndicatorPosition(): Position {
@@ -303,7 +302,7 @@ export class BoardLayout {
   }
 
   getCombatLogPosition(): Position {
-    return { x: this.width * 0.02, y: this.height * 0.25 };
+    return { x: this.width * 0.005, y: this.height * 0.198 };
   }
 
   getAIHealthPosition(): Position {
