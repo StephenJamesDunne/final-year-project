@@ -26,10 +26,14 @@ export default function BattlePage() {
 function DeckSelectionScreen() {
   const playerDeckArchetype = useBattleStore((state) => state.playerDeckArchetype);
   const aiDeckArchetype = useBattleStore((state) => state.aiDeckArchetype);
+  const playerDeckMode = useBattleStore((state) => state.playerDeckMode);
+  const aiDeckMode = useBattleStore((state) => state.aiDeckMode);
   const aiType = useBattleStore((state) => state.aiType);
 
   const selectPlayerDeck = useBattleStore((state) => state.selectPlayerDeck);
   const selectAIDeck = useBattleStore((state) => state.selectAIDeck);
+  const selectPlayerDeckMode = useBattleStore((state) => state.selectPlayerDeckMode);
+  const selectAIDeckMode = useBattleStore((state) => state.selectAIDeckMode);
   const selectAIType = useBattleStore((state) => state.selectAIType);
   const startBattle = useBattleStore((state) => state.startBattle);
 
@@ -42,13 +46,17 @@ function DeckSelectionScreen() {
       <DeckSelector
         selectedDeck={playerDeckArchetype}
         onSelectDeck={selectPlayerDeck}
-        label="Your Deck"
+        selectedMode={playerDeckMode}
+        onSelectMode={selectPlayerDeckMode}
+        label="Your Deck:"
       />
 
       <DeckSelector
         selectedDeck={aiDeckArchetype}
         onSelectDeck={selectAIDeck}
-        label="Opponent's Deck"
+        selectedMode={aiDeckMode}
+        onSelectMode={selectAIDeckMode}
+        label="Opponent's Deck:"
       />
 
       <AISelector

@@ -2,6 +2,8 @@ import { Card, DeckArchetype, DeckInfo } from "../types/game";
 import { getArchetypeCards } from "../data/cards";
 import { buildStructureDeck } from "../data/decks";
 
+export type DeckBuildMode = "structure" | "random";
+
 // Check if running in client environment
 // this is important for shuffling decks only on the client side.
 // If we shuffle on the server, it can lead to inconsistent game states,
@@ -22,8 +24,6 @@ export function shuffleDeck<T>(array: T[]): T[] {
   }
   return shuffledDeck;
 }
-
-export type DeckBuildMode = "structure" | "random";
 
 // Create a deck based on chosen archetype and build mode.
 // If mode is "structure", builds the deck from the predefined structure deck.
@@ -104,28 +104,28 @@ export function addCardsToHand(hand: Card[], newCards: Card[]): Card[] {
 export const DECK_INFO: Record<DeckArchetype, DeckInfo> = {
   fire: {
     archetype: "fire",
-    name: "Fire - Connacht Warriors",
+    name: "Fire",
     description: "Aggressive deck focused on direct damage and fast minions",
     element: "fire",
     strategy: "Deal damage quickly with burn spells and aggressive minions",
   },
   water: {
     archetype: "water",
-    name: "Water - Leinster Wisdom",
+    name: "Water",
     description: "Tempo deck with card draw and efficient minions",
     element: "water",
     strategy: "Control the board with smart trades and card advantage",
   },
   earth: {
     archetype: "earth",
-    name: "Earth - Munster Endurance",
+    name: "Earth",
     description: "Defensive deck with healing and high-health minions",
     element: "earth",
     strategy: "Survive early aggression and win with late-game power",
   },
   air: {
     archetype: "air",
-    name: "Air - Ulster Cunning",
+    name: "Air",
     description: "Balanced deck with flexible answers and disruption",
     element: "air",
     strategy: "Adapt to your opponent with versatile spells and minions",

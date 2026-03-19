@@ -1,27 +1,27 @@
 /**
  * Initialization Slice
- * 
+ *
  * Purpose:
  * Handles battle initialization when the user clicks "Start Battle" after
  * selecting deck archetypes. Creates decks, deals initial hands, and sets
  * up the initial game state.
- * 
+ *
  * State Dependencies:
  * Requires access to:
  * - deckSlice: playerDeckArchetype and aiDeckArchetype
  * - battleSlice: Sets all initial battle state parameters
- * 
+ *
  * <button onClick={startBattle} disabled={!canStart}>
  *   Start Battle
  * </button>
- * 
+ *
  */
 
-import { StateCreator } from 'zustand';
-import { Card } from '../../types/game';
-import { createArchetypeDeck, drawCards } from '../../game/deckManager';
-import { DeckSlice } from './deckSlice';
-import { BattleSlice } from './battleSlice';
+import { StateCreator } from "zustand";
+import { Card } from "../../types/game";
+import { createArchetypeDeck, drawCards } from "../../game/deckManager";
+import { DeckSlice } from "./deckSlice";
+import { BattleSlice } from "./battleSlice";
 
 // Assign unique instance IDs to each card in the deck for client-side tracking
 // This helps differentiate between multiple copies of the same card in the deck
@@ -29,7 +29,7 @@ import { BattleSlice } from './battleSlice';
 function initializeClientDeck(deck: Card[]): Card[] {
   return deck.map((card, index) => ({
     ...card,
-    instanceId: `${card.id}-deck-${index}-${Date.now()}-${Math.random()}`
+    instanceId: `${card.id}-deck-${index}-${Date.now()}-${Math.random()}`,
   }));
 }
 
@@ -53,17 +53,22 @@ export const createInitializationSlice: StateCreator<
 > = function (set, get) {
   return {
     startBattle: function () {
-
       // get the current game state to access selected deck archetypes
       const currentState = get();
 
       if (!currentState.playerDeckArchetype || !currentState.aiDeckArchetype) {
-        console.warn('Cannot start battle: Both decks must be selected');
+        console.warn("Cannot start battle: Both decks must be selected");
         return;
       }
 
-      const playerDeck = createArchetypeDeck(currentState.playerDeckArchetype);
-      const aiDeck = createArchetypeDeck(currentState.aiDeckArchetype);
+      const playerDeck = createArchetypeDeck(
+        currentState.playerDeckArchetype,
+        currentState.playerDeckMode,
+      );
+      const aiDeck = createArchetypeDeck(
+        currentState.aiDeckArchetype,
+        currentState.aiDeckMode,
+      );
 
       const clientPlayerDeck = initializeClientDeck(playerDeck);
       const clientAIDeck = initializeClientDeck(aiDeck);
@@ -80,7 +85,7 @@ export const createInitializationSlice: StateCreator<
           hand: playerDraw.drawn,
           board: [],
           deck: playerDraw.remaining,
-          fatigueCounter: 0.
+          fatigueCounter: 0,
         },
         ai: {
           health: 30,
@@ -91,16 +96,15 @@ export const createInitializationSlice: StateCreator<
           deck: aiDraw.remaining,
           fatigueCounter: 0,
         },
-        currentTurn: 'player',
+        currentTurn: "player",
         turnNumber: 1,
         gameOver: false,
         winner: undefined,
         combatLog: [
           "The battle begins!",
-          `You chose: ${currentState.playerDeckArchetype.toUpperCase()}`,
-          `Enemy chose: ${currentState.aiDeckArchetype.toUpperCase()}`,
+          `You chose: ${currentState.playerDeckArchetype.toUpperCase()} (${currentState.playerDeckMode})`,
+          `Enemy chose: ${currentState.aiDeckArchetype.toUpperCase()} (${currentState.aiDeckMode})`,
         ],
-
 
         aiAction: undefined,
         selectedMinion: null,
