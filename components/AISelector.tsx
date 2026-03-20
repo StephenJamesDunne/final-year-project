@@ -1,6 +1,7 @@
 "use client";
 
 import { AIType } from "@/lib/ai/aiStrategy";
+import { CSS_COLORS as COLORS } from "@/lib/pixi/utils/StyleConstants";
 
 interface AISelectorProps {
   selectedAI: AIType;
@@ -9,46 +10,99 @@ interface AISelectorProps {
 
 export function AISelector({ selectedAI, onSelectAI }: AISelectorProps) {
   return (
-    <div className="w-full max-w-4xl mt-6">
-      <h2 className="text-2xl font-bold text-white mb-4 text-center">
-        AI Opponent
+    <div style={{ width: "100%", maxWidth: 672, marginTop: 8 }}>
+      <h2 style={{
+        fontSize: 22,
+        fontWeight: 700,
+        color: COLORS.text,
+        textAlign: "center",
+        marginBottom: 16,
+        fontFamily: "monospace",
+      }}>
+        AI Opponent Mode:
       </h2>
-      <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto">
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 16,
+        maxWidth: 672,
+        margin: "0 auto",
+      }}>
+        {/* Rule-Based AI */}
         <button
           onClick={() => onSelectAI("rule-based")}
-          className={`
-            p-4 rounded-lg border-2 transition-all
-            ${
-              selectedAI === "rule-based"
-                ? "border-yellow-400 bg-blue-900 ring-2 ring-yellow-400"
-                : "border-gray-600 bg-gray-800 hover:bg-gray-700"
-            }
-          `}
+          style={{
+            padding: 16,
+            borderRadius: 8,
+            border: `3px solid ${selectedAI === "rule-based" ? COLORS.blue : COLORS.border}`,
+            background: COLORS.darkBg,
+            cursor: "pointer",
+            outline: selectedAI === "rule-based" ? `3px solid ${COLORS.gold}` : "none",
+            outlineOffset: 2,
+            opacity: selectedAI === "rule-based" ? 1 : 0.75,
+            transition: "opacity 0.15s, outline 0.15s",
+            textAlign: "center",
+          }}
         >
-          <h3 className="text-lg font-bold text-white mb-2">Rule-Based AI</h3>
-          <p className="text-sm text-gray-300">
+          <h3 style={{
+            fontSize: 15,
+            fontWeight: 700,
+            color: COLORS.text,
+            marginBottom: 6,
+            fontFamily: "monospace",
+          }}>
+            Rule-Based AI
+          </h3>
+          <p style={{
+            fontSize: 12,
+            color: COLORS.subtext,
+            lineHeight: 1.4,
+          }}>
             Smart strategic opponent. Plays on curve, makes favorable trades.
           </p>
         </button>
 
+        {/* DQN Agent */}
         <button
           onClick={() => onSelectAI("dqn")}
-          className={`
-            p-4 rounded-lg border-2 transition-all
-            ${
-              selectedAI === "dqn"
-                ? "border-yellow-400 bg-blue-900 ring-2 ring-yellow-400"
-                : "border-gray-600 bg-gray-800 hover:bg-gray-700"
-            }
-          `}
+          style={{
+            padding: 16,
+            borderRadius: 8,
+            border: `3px solid ${selectedAI === "dqn" ? COLORS.blue : COLORS.border}`,
+            background: COLORS.darkBg,
+            cursor: "pointer",
+            outline: selectedAI === "dqn" ? `3px solid ${COLORS.gold}` : "none",
+            outlineOffset: 2,
+            opacity: selectedAI === "dqn" ? 1 : 0.75,
+            transition: "opacity 0.15s, outline 0.15s",
+            textAlign: "center",
+          }}
         >
-          <h3 className="text-lg font-bold text-white mb-2">DQN Agent</h3>
-          <p className="text-sm text-gray-300">
+          <h3 style={{
+            fontSize: 15,
+            fontWeight: 700,
+            color: COLORS.text,
+            marginBottom: 6,
+            fontFamily: "monospace",
+          }}>
+            DQN Agent
+          </h3>
+          <p style={{
+            fontSize: 12,
+            color: COLORS.subtext,
+            lineHeight: 1.4,
+          }}>
             Neural network opponent. Falls back to rule-based until trained.
           </p>
           {selectedAI === "dqn" && (
-            <p className="text-xs text-yellow-400 mt-2">
-              No trained model - using heuristic AI for now
+            <p style={{
+              fontSize: 11,
+              color: COLORS.gold,
+              marginTop: 6,
+              fontFamily: "monospace",
+            }}>
+              No trained model — using heuristic AI for now
             </p>
           )}
         </button>
