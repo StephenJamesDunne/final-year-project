@@ -72,7 +72,6 @@ export const createGameActionsSlice: StateCreator<
       gameOver: state.gameOver,
       winner: state.winner,
       combatLog: [...state.combatLog],
-      aiAction: state.aiAction,
     };
 
     // remove the valid card from hand and deduct mana

@@ -95,16 +95,6 @@ export function AISelector({ selectedAI, onSelectAI }: AISelectorProps) {
           }}>
             Neural network opponent. Falls back to rule-based until trained.
           </p>
-          {selectedAI === "dqn" && (
-            <p style={{
-              fontSize: 11,
-              color: COLORS.gold,
-              marginTop: 6,
-              fontFamily: "monospace",
-            }}>
-              No trained model — using heuristic AI for now
-            </p>
-          )}
         </button>
       </div>
     </div>

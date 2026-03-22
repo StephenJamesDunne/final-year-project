@@ -10,9 +10,8 @@ import { encodeGameState } from "./stateEncoder";
 import { BattleState } from "@/lib/types/game";
 import { getLegalActions } from "./ActionSpace";
 
-import fs from 'fs';
-import path from 'path';
-
+import fs from "fs";
+import path from "path";
 
 // Hyperparameters for the DQN Agent
 export interface DQNAgentConfig {
@@ -162,7 +161,7 @@ export class DQNAgent {
 
       // Track win/loss (positive final reward = win)
       this.games++;
-      if (nextState.winner === 'ai') {
+      if (nextState.winner === "ai") {
         this.wins++;
       }
 
@@ -201,17 +200,18 @@ export class DQNAgent {
     s.episodes++;
     if (winner === "ai") {
       s.wins++;
-    }
-    else if (winner === "player") {
+    } else if (winner === "player") {
       s.losses++;
-    }
-    else {
+    } else {
       s.draws++;
     }
 
     // Rolling averages for turns and health differential
     s.avgTurns = (s.avgTurns * prevEpisodes + turns) / s.episodes;
-    s.avgHealthDifferential = (s.avgHealthDifferential * prevEpisodes + (finalHealth - opponentFinalHealth)) / s.episodes;
+    s.avgHealthDifferential =
+      (s.avgHealthDifferential * prevEpisodes +
+        (finalHealth - opponentFinalHealth)) /
+      s.episodes;
 
     // Derived win/draw rates
     s.winRate = s.wins / s.episodes;
@@ -223,6 +223,13 @@ export class DQNAgent {
   }
 
   // Train the agent on a batch of stored experiences
+  // If the replay buffer has fewer than 1000 experiences, this will return null and skip training to allow the buffer to fill up with more varied data
+  // Else, training happens: training steps:
+  // 1. Sample a random batch of 32 experiences from the replay buffer
+  // 2. Train the neural network on this batch and get the loss (how much the network's predictions differed from the actual rewards)
+  // 3. Periodically sync the target network to stabilize training
+  // 4. Decay epsilon to reduce exploration over time
+  // 5. Return training stats for monitoring
   async train(): Promise<TrainingStats | null> {
     // Don't train if not enough experiences
     if (!this.replay.canSample(this.config.minExperiences)) {
@@ -357,7 +364,9 @@ export class DQNAgent {
       });
       fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
 
-      console.log(`[DQNAgent] Saved — Episode: ${this.episodeCount}, Epsilon: ${this.epsilon.toFixed(3)}\n`);
+      console.log(
+        `[DQNAgent] Saved — Episode: ${this.episodeCount}, Epsilon: ${this.epsilon.toFixed(3)}\n`,
+      );
     } catch (error) {
       console.error("[DQNAgent] Save failed:", error);
       throw error;
@@ -375,7 +384,11 @@ export class DQNAgent {
 
       this.replay.load(`${name}-replay`);
 
-      const statePath = path.resolve(process.cwd(), 'models', `${name}-state.json`);
+      const statePath = path.resolve(
+        process.cwd(),
+        "models",
+        `${name}-state.json`,
+      );
       if (fs.existsSync(statePath)) {
         const state = JSON.parse(fs.readFileSync(statePath, "utf-8"));
         this.epsilon = state.epsilon;

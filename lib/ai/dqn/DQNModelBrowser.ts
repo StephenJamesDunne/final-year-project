@@ -22,7 +22,7 @@ export class DQNModelBrowser {
   private readonly STATE_SIZE = 121;
   private readonly ACTION_SIZE = 68;
 
-  async load(name: string = "five-realms-dqn"): Promise<boolean> {
+  async load(name: string = "five-realms-dqn-agent"): Promise<boolean> {
     try {
       const response = await fetch(`/models/${name}/weights.json`);
       if (!response.ok) return false;
