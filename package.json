@@ -7,7 +7,8 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "train": "ts-node --project tsconfig.node.json -r tsconfig-paths/register train.ts"
+    "train": "ts-node --project tsconfig.node.json -r tsconfig-paths/register train.ts",
+    "analyse": "ts-node --project tsconfig.node.json -r tsconfig-paths/register analyse.ts"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",

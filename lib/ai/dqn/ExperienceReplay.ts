@@ -187,7 +187,7 @@ export class ExperienceReplay {
       const savePath = path.resolve(process.cwd(), 'models');
       fs.mkdirSync(savePath, { recursive: true }); // create if not exists
       const filePath = path.join(savePath, `${key}.json`);
-      fs.writeFileSync(filePath, JSON.stringify(data));
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
       console.log(
         `[ExperienceReplay] Saved ${recentExperiences.length} experiences to ${filePath}`,
       );
