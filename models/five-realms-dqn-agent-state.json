@@ -1,0 +1,81 @@
+{
+  "epsilon": 0.01,
+  "episodeCount": 7900,
+  "trainingSteps": 342927,
+  "wins": 3178,
+  "games": 3813,
+  "episodeRewards": [
+    -14.25,
+    7.349999999999999,
+    -15.450000000000003,
+    -11.15,
+    5.75,
+    2.4499999999999993,
+    -23.499999999999996,
+    -20.300000000000004,
+    5.399999999999999,
+    -15.350000000000005,
+    -21.5,
+    -19.8,
+    -17.950000000000003,
+    -16.65,
+    9.700000000000001,
+    6.45,
+    5.050000000000001,
+    8.7,
+    -23.400000000000002,
+    -13.65
+  ],
+  "matchupStats": {
+    "fire_vs_fire": {
+      "episodes": 2000,
+      "wins": 1112,
+      "losses": 888,
+      "draws": 0,
+      "winRate": 0.556,
+      "drawRate": 0,
+      "avgTurns": 12.679999999999996,
+      "avgHealthDifferential": 0.8895
+    },
+    "fire_vs_earth": {
+      "episodes": 2000,
+      "wins": 693,
+      "losses": 1307,
+      "draws": 0,
+      "winRate": 0.3465,
+      "drawRate": 0,
+      "avgTurns": 21.45050000000002,
+      "avgHealthDifferential": -7.932499999999979
+    },
+    "earth_vs_fire": {
+      "episodes": 1950,
+      "wins": 1161,
+      "losses": 789,
+      "draws": 0,
+      "winRate": 0.5953846153846154,
+      "drawRate": 0,
+      "avgTurns": 22.528717948717933,
+      "avgHealthDifferential": 5.12820512820513
+    },
+    "earth_vs_earth": {
+      "episodes": 1950,
+      "wins": 1299,
+      "losses": 651,
+      "draws": 0,
+      "winRate": 0.6661538461538462,
+      "drawRate": 0,
+      "avgTurns": 31.817435897435896,
+      "avgHealthDifferential": 0.5061538461538456
+    }
+  },
+  "config": {
+    "epsilonStart": 1,
+    "epsilonEnd": 0.01,
+    "epsilonDecay": 0.9995,
+    "batchSize": 32,
+    "targetUpdateFreq": 5000,
+    "minExperiences": 1000,
+    "replayCapacity": 100000
+  },
+  "savedAt": "2026-03-24T13:11:13.540Z"
+}

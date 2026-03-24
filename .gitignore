@@ -41,7 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 # Training artifacts - replay buffer and agent state
-/models/
+/models/five-realms-dqn-agent-replay.json
 
 # Keep trained weights so the browser can load them
 !public/models/

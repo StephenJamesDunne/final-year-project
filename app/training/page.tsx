@@ -343,11 +343,11 @@ export default function TrainingDashboard() {
               }
               accent={COLORS.gold}
             />
-            <StatCard
+            {/* <StatCard
               label="Matchups Tracked"
               value={Object.keys(data.matchupStats).length}
               accent={COLORS.gray}
-            />
+            /> */}
           </div>
 
           {/* Matchup detail table */}
