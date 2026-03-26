@@ -27,8 +27,6 @@
  * checkGameOver is just a health check that returns a gameOver flag and a winner 
  */
 
-
-
 import { Player } from '../types/game';
 import { Card, Minion } from '../types/game';
 import { drawCards, addCardsToHand } from './deckManager';
@@ -175,67 +173,60 @@ export function updateBoardAfterCombat(
   return board.map(m => m.instanceId === minionId ? updatedMinion : m);
 }
 
-// Game State Management
-// Updating incrementTurn to handle fatigue (player attempts to draw a card with an empty deck)
-// 
-export function incrementTurn(
-  turnNumber: number,
+// --- Turn Management -----------------------------------------------------
+
+// called once when a player's turn begins
+// Handles everything that should happen at the start of a turn
+// Draw a card, increment mana (capped at 10), reset minion attacks, and apply fatigue if needed
+
+// Called twice per round, once for the AI at the start of its turn, and once for the player at the start of theirs
+export function startTurn (
+  player: Player,
   currentMaxMana: number,
-  aiPlayer: Player,
-  opponentPlayer: Player
 ): {
-  turnNumber: number;
+  player: Player;
   newMaxMana: number;
-  ai: Player;
-  opponent: Player;
+  drewCard: boolean;
+  deckWasEmpty: boolean;
 } {
-  const newTurnNumber = turnNumber + 1;
   const newMaxMana = Math.min(currentMaxMana + 1, 10);
-  
-  // Draw cards for both players
-  const aiDraw = drawCards(aiPlayer.deck, 1);
-  const opponentDraw = drawCards(opponentPlayer.deck, 1);
-  
-  // Apply fatigue to AI if deck is empty
-  let aiHealth = aiPlayer.health;
-  let aiFatigueCounter = aiPlayer.fatigueCounter || 0;
-  if (aiDraw.cardsMissing > 0) {
-    aiFatigueCounter += aiDraw.cardsMissing;
-    aiHealth -= aiFatigueCounter;
+
+  const drawResult = drawCards(player.deck, 1);
+
+  let health = player.health;
+  let fatigueCounter = player.fatigueCounter || 0;
+  const deckWasEmpty = player.deck.length === 0;
+
+  // Apply fatigue damage if deck is empty
+  if (drawResult.cardsMissing > 0) {
+    fatigueCounter += drawResult.cardsMissing;
+    health -= fatigueCounter; // Fatigue damage increases by 1 each time you fail to draw
   }
-  
-  // Apply fatigue to opponent if deck is empty
-  let opponentHealth = opponentPlayer.health;
-  let opponentFatigueCounter = opponentPlayer.fatigueCounter || 0;
-  if (opponentDraw.cardsMissing > 0) {
-    opponentFatigueCounter += opponentDraw.cardsMissing;
-    opponentHealth -= opponentFatigueCounter;
-  }
-  
+
+  const drewCard = drawResult.drawn.length > 0;
+
   return {
-    turnNumber: newTurnNumber,
+    player: {
+      ...player,
+      health,
+      fatigueCounter,
+      mana: newMaxMana,
+      maxMana: newMaxMana,
+      hand: addCardsToHand(player.hand, drawResult.drawn),
+      deck: drawResult.remaining,
+      board: enableMinionAttacks(player.board) // reset minion attacks at start of turn
+    },
     newMaxMana,
-    ai: {
-      ...aiPlayer,
-      health: aiHealth,
-      fatigueCounter: aiFatigueCounter,
-      mana: newMaxMana,
-      maxMana: newMaxMana,
-      hand: addCardsToHand(aiPlayer.hand, aiDraw.drawn),
-      deck: aiDraw.remaining,
-      board: enableMinionAttacks(aiPlayer.board),
-    },
-    opponent: {
-      ...opponentPlayer,
-      health: opponentHealth,
-      fatigueCounter: opponentFatigueCounter,
-      mana: newMaxMana,
-      maxMana: newMaxMana,
-      hand: addCardsToHand(opponentPlayer.hand, opponentDraw.drawn),
-      deck: opponentDraw.remaining,
-      board: enableMinionAttacks(opponentPlayer.board),
-    },
+    drewCard,
+    deckWasEmpty
   };
+}
+
+// Called once per round to advance the turn counter
+// Separated from startTurn to the turn number only increments once per full round
+// instead of once per player turn
+export function incrementTurnNumber(turnNumber: number): number {
+  return turnNumber + 1;
 }
 
 export function checkGameOver(playerHealth: number, aiHealth: number) {
