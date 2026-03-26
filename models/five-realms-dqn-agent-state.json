@@ -1,71 +1,71 @@
 {
   "epsilon": 0.01,
-  "episodeCount": 7900,
-  "trainingSteps": 342927,
-  "wins": 3178,
-  "games": 3813,
+  "episodeCount": 17900,
+  "trainingSteps": 792994,
+  "wins": 5674,
+  "games": 8633,
   "episodeRewards": [
-    -14.25,
-    7.349999999999999,
-    -15.450000000000003,
-    -11.15,
-    5.75,
-    2.4499999999999993,
-    -23.499999999999996,
-    -20.300000000000004,
-    5.399999999999999,
-    -15.350000000000005,
-    -21.5,
-    -19.8,
-    -17.950000000000003,
-    -16.65,
-    9.700000000000001,
-    6.45,
-    5.050000000000001,
-    8.7,
-    -23.400000000000002,
-    -13.65
+    -11.8,
+    10.849999999999998,
+    9.35,
+    -11.200000000000001,
+    -11.299999999999999,
+    11.15,
+    -13.149999999999999,
+    7.449999999999999,
+    -14.350000000000005,
+    -16.85,
+    -12.500000000000002,
+    -14.200000000000001,
+    -13.95,
+    11.95,
+    -11.100000000000001,
+    3.049999999999998,
+    10.7,
+    -11.500000000000002,
+    5.9499999999999975,
+    -15.850000000000005
   ],
   "matchupStats": {
     "fire_vs_fire": {
-      "episodes": 2000,
-      "wins": 1112,
-      "losses": 888,
+      "episodes": 4500,
+      "wins": 2558,
+      "losses": 1942,
       "draws": 0,
-      "winRate": 0.556,
+      "winRate": 0.5684444444444444,
       "drawRate": 0,
-      "avgTurns": 12.679999999999996,
-      "avgHealthDifferential": 0.8895
+      "avgTurns": 19.97133333333332,
+      "avgHealthDifferential": 0.6691111111111119
     },
     "fire_vs_earth": {
-      "episodes": 2000,
-      "wins": 693,
-      "losses": 1307,
+      "episodes": 4500,
+      "wins": 882,
+      "losses": 3618,
       "draws": 0,
-      "winRate": 0.3465,
+      "winRate": 0.196,
       "drawRate": 0,
-      "avgTurns": 21.45050000000002,
-      "avgHealthDifferential": -7.932499999999979
+      "avgTurns": 25.84133333333337,
+      "avgHealthDifferential": -12.497111111111103
     },
     "earth_vs_fire": {
-      "episodes": 1950,
-      "wins": 1161,
-      "losses": 789,
+      "episodes": 4450,
+      "wins": 3534,
+      "losses": 916,
       "draws": 0,
-      "winRate": 0.5953846153846154,
+      "winRate": 0.7941573033707865,
       "drawRate": 0,
-      "avgTurns": 22.528717948717933,
-      "avgHealthDifferential": 5.12820512820513
+      "avgTurns": 26.407640449438198,
+      "avgHealthDifferential": 10.603370786516841
     },
     "earth_vs_earth": {
-      "episodes": 1950,
-      "wins": 1299,
-      "losses": 651,
+      "episodes": 4450,
+      "wins": 3107,
+      "losses": 1343,
       "draws": 0,
-      "winRate": 0.6661538461538462,
+      "winRate": 0.6982022471910112,
       "drawRate": 0,
-      "avgTurns": 31.817435897435896,
-      "avgHealthDifferential": 0.5061538461538456
+      "avgTurns": 32.16337078651693,
+      "avgHealthDifferential": 0.9979775280898885
     }
   },
   "config": {
@@ -77,5 +77,5 @@
     "minExperiences": 1000,
     "replayCapacity": 100000
   },
-  "savedAt": "2026-03-24T13:11:13.540Z"
+  "savedAt": "2026-03-24T21:38:49.107Z"
 }

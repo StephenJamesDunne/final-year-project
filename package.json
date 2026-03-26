@@ -12,15 +12,10 @@
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
-    "framer-motion": "^12.23.22",
-    "fs": "^0.0.1-security",
     "next": "^16.0.0",
-    "path": "^0.12.7",
     "pixi.js": "^8.14.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "server-only": "^0.0.1",
-    "vitest": "^4.0.18",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
@@ -29,7 +24,6 @@
     "@types/node": "^20.19.19",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "baseline-browser-mapping": "^2.9.15",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "tailwindcss": "^4",
