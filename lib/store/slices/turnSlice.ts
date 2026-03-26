@@ -5,7 +5,8 @@ import { BattleState } from "../../types/game";
 import { executeAIPlayCard } from "@/lib/game/aiPlayer";
 import {
   checkGameOver,
-  incrementTurn,
+  startTurn,
+  incrementTurnNumber,
   handleMinionCombat,
   updateBoardAfterCombat,
 } from "@/lib/game/gameLogic";
@@ -13,11 +14,11 @@ import { AIStrategy } from "@/lib/ai/aiStrategy";
 
 // FSM states for the AI turn
 // Each state represents a different phase in the AI's turn
-type AITurnState = 
-  | "thinking"        // Simulating a "thinking" phase that pauses before actions are taken
-  | "playing_card"    // AI chose to play a card
-  | "attacking"       // AI chose to attack with a minion
-  | "ending_turn";    // AI chose to pass/end turn
+type AITurnState =
+  | "thinking" // Simulating a "thinking" phase that pauses before actions are taken
+  | "playing_card" // AI chose to play a card
+  | "attacking" // AI chose to attack with a minion
+  | "ending_turn"; // AI chose to pass/end turn
 
 // interface for the turn slice of the Zustand store; manages turn progression and AI actions during the AI's turn
 export interface TurnSlice {
@@ -41,17 +42,39 @@ export const createTurnSlice: StateCreator<
     // Get AI Strategy; works for both rule-based and DQN since they share the same interface
     const aiStrategy = state.aiStrategy;
     if (!aiStrategy) {
-      console.error("AI Strategy not found in state");
+      console.error("[TurnSlice] AI Strategy not found in state");
       return;
     }
 
+    // Start AI turn: increment turn counter, draw cards, apply fatigue damage, reset minion attacks
+    const aiTurnStart = startTurn(state.ai, state.ai.maxMana);
+    const aiStartLog = [...state.combatLog, "--- Enemy Turn ---"];
+
+    if (aiTurnStart.deckWasEmpty) {
+      aiStartLog.push(
+        `Enemy deck is empty! Enemy takes ${aiTurnStart.player.fatigueCounter} fatigue damage.`,
+      );
+    } else if (aiTurnStart.drewCard) {
+      aiStartLog.push(`Enemy draws a card.`);
+    } else {
+      aiStartLog.push(`Enemy hand is full! Drawn card discarded.`);
+    }
+
     set({
+      ai: aiTurnStart.player,
       currentTurn: "ai",
       selectedMinion: null,
       aiTurnState: "thinking",
       aiAction: "Thinking...",
-      combatLog: [...state.combatLog, "--- Enemy Turn ---"],
+      combatLog: aiStartLog,
     });
+
+    // Check if fatigue from AI draw ended the game
+    if (
+      checkGameOver(state.player.health, aiTurnStart.player.health).gameOver
+    ) {
+      return endGame(set, get, aiStrategy);
+    }
 
     await delay(DELAYS.THINKING);
 
@@ -85,7 +108,8 @@ export const createTurnSlice: StateCreator<
 
       // Play card action
       if (aiAction.type === "play_card" && aiAction.cardIndex !== undefined) {
-        const cardName = currentState.ai.hand[aiAction.cardIndex]?.name || "Unknown Card";
+        const cardName =
+          currentState.ai.hand[aiAction.cardIndex]?.name || "Unknown Card";
 
         set({
           aiTurnState: "playing_card",
@@ -107,31 +131,48 @@ export const createTurnSlice: StateCreator<
         await delay(DELAYS.AFTER_CARD_PLAY);
 
         // Check if card play ended the game (e.g. lethal damage was dealt)
-        if (checkGameOver(result.newState.player.health, result.newState.ai.health).gameOver) {
+        if (
+          checkGameOver(
+            result.newState.player.health,
+            result.newState.ai.health,
+          ).gameOver
+        ) {
           return endGame(set, get, aiStrategy);
         }
 
         continue;
-    }
+      }
 
-    // -- Attack phase -------------------------------------------------------
-    if (aiAction.type === "attack" && aiAction.attackerId && aiAction.targetId) {
-      const attackerName = currentState.ai.board.find(
-        m => m.instanceId === aiAction.attackerId
-      )?.name ?? "A minion";
+      // -- Attack phase -------------------------------------------------------
+      if (
+        aiAction.type === "attack" &&
+        aiAction.attackerId &&
+        aiAction.targetId
+      ) {
+        const attackerName =
+          currentState.ai.board.find(
+            (m) => m.instanceId === aiAction.attackerId,
+          )?.name ?? "A minion";
 
-      const targetDescription = aiAction.targetId === "face"
-        ? "your hero"
-        : currentState.player.board.find(m => m.instanceId === aiAction.targetId)?.name ?? "a minion";
+        const targetDescription =
+          aiAction.targetId === "face"
+            ? "your hero"
+            : (currentState.player.board.find(
+                (m) => m.instanceId === aiAction.targetId,
+              )?.name ?? "a minion");
 
-        set ({
+        set({
           aiTurnState: "attacking",
           aiAction: `Attacking ${targetDescription} with ${attackerName}...`,
         });
 
         await delay(DELAYS.BEFORE_ACTION);
 
-        const result = executeAttack(aiAction.attackerId, aiAction.targetId, gameSnapshot);
+        const result = executeAttack(
+          aiAction.attackerId,
+          aiAction.targetId,
+          gameSnapshot,
+        );
 
         set({
           player: result.newState.player,
@@ -144,7 +185,12 @@ export const createTurnSlice: StateCreator<
         await delay(DELAYS.AFTER_ATTACK);
 
         // Check if attack ended the game
-        if (checkGameOver(result.newState.player.health, result.newState.ai.health).gameOver) {
+        if (
+          checkGameOver(
+            result.newState.player.health,
+            result.newState.ai.health,
+          ).gameOver
+        ) {
           return endGame(set, get, aiStrategy);
         }
 
@@ -154,11 +200,12 @@ export const createTurnSlice: StateCreator<
       // Prevents infinite loop if an unexpected action type is returned
       // This should ideally never happen since illegal actions are masked out by the AI strategy,
       // but I'll know there's an issue with masking if this gets hit during testing
-      console.warn("[TurnSlice] Unrecognised AI action type, ending turn:", aiAction);
+      console.warn(
+        "[TurnSlice] Unrecognised AI action type, ending turn:",
+        aiAction,
+      );
       turnEnded = true;
-
     } // <-- end of endTurn FSM loop
-
 
     // Transition to turn ending state
     set({
@@ -168,52 +215,39 @@ export const createTurnSlice: StateCreator<
 
     // Resolve turn: draw cards, increment mana, apply fatigue damage if needed
     const finalState = get();
-    const turnResult = incrementTurn(
-      finalState.turnNumber,
-      finalState.player.maxMana,
-      finalState.ai,
+    const playerTurnStart = startTurn(
       finalState.player,
+      finalState.player.maxMana,
     );
+    const newTurnNumber = incrementTurnNumber(finalState.turnNumber);
 
-    const newLog = [...finalState.combatLog, `─── Turn ${turnResult.turnNumber} ───`];
+    const newLog = [...finalState.combatLog, `─── Turn ${newTurnNumber} ───`];
 
     // Player draw log:
     // If the deck was empty before the draw, fatigue applies
     // If the deck shrank, a card was drawn correctly
     // If the deck didn't shrink but wasn't empty, then the hand was full and the drawn card was discarded
-    const playerDeckWasEmpty = finalState.player.deck.length === 0;
-    const playerDrewCard = turnResult.opponent.deck.length < finalState.player.deck.length;
-
-    if (playerDeckWasEmpty) {
+    if (playerTurnStart.deckWasEmpty) {
       newLog.push(
-        `Your deck is empty! You take ${turnResult.opponent.fatigueCounter} fatigue damage.`,
+        `Your deck is empty! You take ${playerTurnStart.player.fatigueCounter} fatigue damage.`,
       );
-    } else if (playerDrewCard) {
+    } else if (playerTurnStart.drewCard) {
       newLog.push(
-        `You draw: ${turnResult.opponent.hand[turnResult.opponent.hand.length - 1].name}`,
+        `You draw: ${playerTurnStart.player.hand[playerTurnStart.player.hand.length - 1].name}`,
       );
     } else {
-      newLog.push(
-        `Your hand is full! The drawn card was discarded.`,
-      );
+      newLog.push(`Your hand is full! The drawn card was discarded.`);
     }
 
-    // AI deck empty log - health drop confirms fatigue damage was taken
-    if (turnResult.ai.health < finalState.ai.health) {
-      newLog.push(
-        `Enemy deck is empty! Enemy takes ${turnResult.ai.fatigueCounter} fatigue damage.`,
-      );
-    }
-
-    // check if that fatigue damage ended the game before switching turns
+    // Check if player fatigue ended the game
     const fatigueResult = checkGameOver(
-      turnResult.opponent.health,
-      turnResult.ai.health,
+      playerTurnStart.player.health,
+      finalState.ai.health,
     );
+
     if (fatigueResult.gameOver) {
       set({
-        player: turnResult.opponent,
-        ai: turnResult.ai,
+        player: playerTurnStart.player,
         gameOver: true,
         winner: fatigueResult.winner,
         combatLog: [
@@ -228,12 +262,11 @@ export const createTurnSlice: StateCreator<
       return;
     }
 
-    // Pass turn to player with updated state from turn resolution
+    // Hand control back to the player
     set({
-      player: turnResult.opponent,
-      ai: turnResult.ai,
+      player: playerTurnStart.player,
       currentTurn: "player",
-      turnNumber: turnResult.turnNumber,
+      turnNumber: newTurnNumber,
       combatLog: newLog,
       aiAction: undefined,
       aiTurnState: null,
@@ -245,10 +278,10 @@ export const createTurnSlice: StateCreator<
 // --- Delay constants ------------------------------------------------------------
 // Defined here only, timing can be adjusted without hunting through the file
 const DELAYS = {
-  THINKING: 600,        // Pause before AI takes its first action
-  BEFORE_ACTION: 400,   // Pause after announcing action, before executing it
+  THINKING: 600, // Pause before AI takes its first action
+  BEFORE_ACTION: 400, // Pause after announcing action, before executing it
   AFTER_CARD_PLAY: 600, // Pause after a card is played before next decision
-  AFTER_ATTACK: 800,    // Pause after an attack resolves before next decision
+  AFTER_ATTACK: 800, // Pause after an attack resolves before next decision
 } as const;
 
 // --- Helper Functions for AI Turn Logic -----------------------------------------
@@ -300,11 +333,13 @@ function executeAttack(
       ...newState.player,
       health: newState.player.health - attacker.attack,
     };
-    logMessages.push(`${attacker.name} attacks you directly for ${attacker.attack} damage`);
+    logMessages.push(
+      `${attacker.name} attacks you directly for ${attacker.attack} damage`,
+    );
 
     newState.ai = {
       ...newState.ai,
-      board: newState.ai.board.map(m =>
+      board: newState.ai.board.map((m) =>
         m.instanceId === attackerId ? { ...m, canAttack: false } : m,
       ),
     };
@@ -323,12 +358,20 @@ function executeAttack(
 
   newState.ai = {
     ...newState.ai,
-    board: updateBoardAfterCombat(newState.ai.board, attackerId, combatResult.updatedAttacker),
+    board: updateBoardAfterCombat(
+      newState.ai.board,
+      attackerId,
+      combatResult.updatedAttacker,
+    ),
   };
 
   newState.player = {
     ...newState.player,
-    board: updateBoardAfterCombat(newState.player.board, targetId, combatResult.updatedTarget),
+    board: updateBoardAfterCombat(
+      newState.player.board,
+      targetId,
+      combatResult.updatedTarget,
+    ),
   };
 
   if (combatResult.targetDied) logMessages.push(`${target.name} dies!`);
