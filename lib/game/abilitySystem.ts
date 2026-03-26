@@ -1,5 +1,5 @@
 import { BattleState, Card, CardAbility, Minion } from '../types/game';
-import { drawCards } from './deckManager';
+import { addCardsToHand, drawCards } from './deckManager';
 
 const MAX_HEALTH = 30;
 
@@ -62,7 +62,7 @@ function processDrawAbility(
       ...state,
       player: {
         ...state.player,
-        hand: [...state.player.hand, ...drawn],
+        hand: addCardsToHand(state.player.hand, drawn),
         deck: remaining,
       },
     };
@@ -71,7 +71,7 @@ function processDrawAbility(
       ...state,
       ai: {
         ...state.ai,
-        hand: [...state.ai.hand, ...drawn],
+        hand: addCardsToHand(state.ai.hand, drawn),
         deck: remaining,
       },
     };
