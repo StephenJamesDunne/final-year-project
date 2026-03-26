@@ -15,7 +15,8 @@ import {
   removeCardFromHand,
 } from "@/lib/game/deckManager";
 import {
-  incrementTurn,
+  startTurn,
+  incrementTurnNumber,
   checkGameOver,
   createMinion,
   handleMinionCombat,
@@ -34,7 +35,7 @@ interface TrainingConfig {
   opponentType: "self" | "random"; // Who to play against
   aiDeckType: DeckArchetype; // which deck the AI uses
   opponentDeckType: DeckArchetype; // which deck opponent uses
-  matchupKey: string;       // "aiDeck_vs_oppDeck" - used for per-matchup stat tracking
+  matchupKey: string; // "aiDeck_vs_oppDeck" - used for per-matchup stat tracking
 }
 
 // Default values for all data needed during training
@@ -117,8 +118,11 @@ function initializeGameState(
   };
 }
 
-// Flip the game state perspective for when the AI is playing itself
-// Converts AI to Player, or vice-versa
+// Flip the game state perspective for the opponent's turn.
+// Since the agent always acts as "ai" in the state, when it's the opponent's 
+// turn, I flip the board so the opponent also sees itself as "ai".
+// This means the same network weights are used for both sides without needing a separate
+// opponent model to be generated/trained.
 function flipStatePerspective(state: BattleState): BattleState {
   const flippedWinner =
     state.winner === "ai"
@@ -137,10 +141,15 @@ function flipStatePerspective(state: BattleState): BattleState {
 }
 
 // Execute a valid action in the current game state
+// isAISide? determines which side of the board is currently acting:
+//    true = action comes from state.ai (side 1, the learning agent)
+//    false = action comes from state.player (side 2, the opponent)
+// In self-play, both sides use the same network; isAISide just controls
+// which board slots are read from and written to.
 function executeAction(
   action: number,
   state: BattleState,
-  isAI: boolean = true,
+  isAISide: boolean = true, // true = action is from AI's perspective, false = action is from player's perspective (used for opponent actions in self-play)
 ): BattleState {
   const gameAction = decodeAction(action);
 
@@ -151,8 +160,8 @@ function executeAction(
     board: p.board.map((m) => ({ ...m })),
   });
 
-  const newAI: Player = isAI ? copyPlayer(state.ai) : state.ai;
-  const newPlayer: Player = !isAI ? copyPlayer(state.player) : state.player;
+  const newAI: Player = isAISide ? copyPlayer(state.ai) : state.ai;
+  const newPlayer: Player = !isAISide ? copyPlayer(state.player) : state.player;
 
   let newState: BattleState = {
     ...state,
@@ -165,12 +174,12 @@ function executeAction(
     case "play_card": {
       if (gameAction.cardIndex === undefined) break;
 
-      const card = (isAI ? newState.ai : newState.player).hand[
+      const card = (isAISide ? newState.ai : newState.player).hand[
         gameAction.cardIndex
       ];
       if (!card) break;
 
-      if (isAI) {
+      if (isAISide) {
         newState.ai = {
           ...newState.ai,
           hand: removeCardFromHand(newState.ai.hand, gameAction.cardIndex),
@@ -193,7 +202,7 @@ function executeAction(
       }
 
       // Process battlecry (works for both minions and spells)
-      newState = processAbilities(card, "battlecry", newState, isAI);
+      newState = processAbilities(card, "battlecry", newState, isAISide);
       break;
     }
 
@@ -204,8 +213,10 @@ function executeAction(
       )
         break;
 
-      const attackerBoard = isAI ? newState.ai.board : newState.player.board;
-      const targetBoard = isAI ? newState.player.board : newState.ai.board;
+      const attackerBoard = isAISide
+        ? newState.ai.board
+        : newState.player.board;
+      const targetBoard = isAISide ? newState.player.board : newState.ai.board;
 
       const attacker = attackerBoard[gameAction.attackerIndex];
       const target = targetBoard[gameAction.targetIndex];
@@ -214,36 +225,53 @@ function executeAction(
 
       const combatResult = handleMinionCombat(attacker, target);
 
-      if (isAI) {
-        newState.ai.board = updateBoardAfterCombat(
-          newState.ai.board,
-          attacker.instanceId,
-          combatResult.updatedAttacker,
-        );
-        newState.player.board = updateBoardAfterCombat(
-          newState.player.board,
-          target.instanceId,
-          combatResult.updatedTarget,
-        );
+      if (isAISide) {
+        newState.ai = {
+          ...newState.ai,
+          board: updateBoardAfterCombat(
+            newState.ai.board,
+            attacker.instanceId,
+            combatResult.updatedAttacker,
+          ),
+        };
+        newState.player = {
+          ...newState.player,
+          board: updateBoardAfterCombat(
+            newState.player.board,
+            target.instanceId,
+            combatResult.updatedTarget,
+          ),
+        };
       } else {
-        newState.player.board = updateBoardAfterCombat(
-          newState.player.board,
-          attacker.instanceId,
-          combatResult.updatedAttacker,
-        );
-        newState.ai.board = updateBoardAfterCombat(
-          newState.ai.board,
-          target.instanceId,
-          combatResult.updatedTarget,
-        );
+        newState.player = {
+          ...newState.player,
+          board: updateBoardAfterCombat(
+            newState.player.board,
+            attacker.instanceId,
+            combatResult.updatedAttacker,
+          ),
+        };
+        newState.ai = {
+          ...newState.ai,
+          board: updateBoardAfterCombat(
+            newState.ai.board,
+            target.instanceId,
+            combatResult.updatedTarget,
+          ),
+        };
       }
 
       // Process deathrattles
       if (combatResult.targetDied && target.abilities) {
-        newState = processAbilities(target, "deathrattle", newState, !isAI);
+        newState = processAbilities(target, "deathrattle", newState, !isAISide);
       }
       if (combatResult.attackerDied && attacker.abilities) {
-        newState = processAbilities(attacker, "deathrattle", newState, isAI);
+        newState = processAbilities(
+          attacker,
+          "deathrattle",
+          newState,
+          isAISide,
+        );
       }
       break;
     }
@@ -251,42 +279,63 @@ function executeAction(
     case "attack_face": {
       if (gameAction.attackerIndex === undefined) break;
 
-      const attacker = (isAI ? newState.ai : newState.player).board[
+      const attacker = (isAISide ? newState.ai : newState.player).board[
         gameAction.attackerIndex
       ];
       if (!attacker) break;
 
-      if (isAI) {
-        newState.player.health -= attacker.attack;
-        newState.ai.board = newState.ai.board.map((m) =>
-          m.instanceId === attacker.instanceId ? { ...m, canAttack: false } : m,
-        );
+      if (isAISide) {
+        newState.player = {
+          ...newState.player,
+          health: newState.player.health - attacker.attack,
+        };
+        newState.ai = {
+          ...newState.ai,
+          board: newState.ai.board.map((m) =>
+            m.instanceId === attacker.instanceId
+              ? { ...m, canAttack: false }
+              : m,
+          ),
+        };
       } else {
-        newState.ai.health -= attacker.attack;
-        newState.player.board = newState.player.board.map((m) =>
-          m.instanceId === attacker.instanceId ? { ...m, canAttack: false } : m,
-        );
+        newState.ai = {
+          ...newState.ai,
+          health: newState.ai.health - attacker.attack,
+        };
+        newState.player = {
+          ...newState.player,
+          board: newState.player.board.map((m) =>
+            m.instanceId === attacker.instanceId
+              ? { ...m, canAttack: false }
+              : m,
+          ),
+        };
       }
       break;
     }
 
     case "end_turn": {
-      const current = isAI ? newState.ai : newState.player;
-      const opponent = isAI ? newState.player : newState.ai;
+      // The acting side ends its turn, handing off to the receiving side.
+      // startTurn draws a card, increments mana and refreshes canAttack
+      // for whoever is about to start their turn.
+      //
+      // Turn number increments when the AI side ends its turn;
+      // that marks the completion of one full round (AI acted, then player acted)
+      const actingSide = isAISide ? newState.ai : newState.player;
+      const receivingSide = isAISide ? newState.player : newState.ai;
 
-      // All turn logic handled in incrementTurn
-      const turnResult = incrementTurn(
-        newState.turnNumber,
-        current.maxMana,
-        current,
-        opponent,
-      );
+      const turnStartResult = startTurn(receivingSide, receivingSide.maxMana);
+
+      // Only increment turn number after both players have taken their turn
+      const newTurnNumber = isAISide
+        ? incrementTurnNumber(newState.turnNumber)
+        : newState.turnNumber;
 
       newState = {
         ...newState,
-        ai: isAI ? turnResult.ai : turnResult.opponent,
-        player: isAI ? turnResult.opponent : turnResult.ai,
-        turnNumber: turnResult.turnNumber,
+        ai: isAISide ? actingSide : turnStartResult.player,
+        player: isAISide ? turnStartResult.player : actingSide,
+        turnNumber: newTurnNumber,
         currentTurn: newState.currentTurn === "ai" ? "player" : "ai",
       };
       break;
@@ -301,7 +350,10 @@ function executeAction(
   return newState;
 }
 
-// Swap perspective and take the opponent's action
+// Opponent's turn - select an action from the opponent's perspective.
+// In self-play, the same agent is used but the state is flipped first
+// so the opponent also sees itself as "ai". This is equivalent to the 
+// agent playing both sides of a chess board.
 function selectOpponentAction(
   state: BattleState,
   agent: DQNAgent,
@@ -343,7 +395,11 @@ async function playEpisode(
   while (!state.gameOver && state.turnNumber <= config.maxTurnsPerGame) {
     const prevTurnNumber = state.turnNumber;
 
-    // AI's turn
+    // AI's turn - the learning agent acts, stores the experience, and trains
+    // Experiences are only stored for the AI side because the reward function
+    // is written from the AI's perspective. Storing opponent experiences would require 
+    // flipping rewards, which is handled implicitly by self-play 
+    // perspective flipping instead
     if (state.currentTurn === "ai") {
       const prevState = { ...state };
 
@@ -370,7 +426,7 @@ async function playEpisode(
 
       // Check whether the agent had at least one legal play_card action this turn
       // Used by calculateReward to determine if the penalty for wasted mana should apply
-      const hadLegalPlay = legalActions.some(a => a >= 0 && a <= 9);
+      const hadLegalPlay = legalActions.some((a) => a >= 0 && a <= 9);
 
       // Check whether the action was a clean kill (attacker survived, target died)
       // Decoded from the action index instead of pulling in decodeAction as another dependency
@@ -386,8 +442,12 @@ async function playEpisode(
 
         // Compare the instance ids of both the attacker and the target in both the previous board state and the new board state
         if (attacker && target) {
-          const attackerSurvived = newState.ai.board.some(m => m.instanceId === attacker.instanceId);
-          const targetDied = !newState.player.board.some(m => m.instanceId === target.instanceId);
+          const attackerSurvived = newState.ai.board.some(
+            (m) => m.instanceId === attacker.instanceId,
+          );
+          const targetDied = !newState.player.board.some(
+            (m) => m.instanceId === target.instanceId,
+          );
           cleanKill = attackerSurvived && targetDied;
         }
       }
@@ -432,7 +492,6 @@ async function playEpisode(
         consecutiveSameTurns++;
 
         if (consecutiveSameTurns >= MAX_CONSECUTIVE_SAME_TURNS) {
-
           state.gameOver = true;
           state.winner = undefined; // agent is stuck, draw match
 
@@ -457,7 +516,6 @@ async function playEpisode(
       ) {
         consecutiveSameTurns++;
         if (consecutiveSameTurns >= MAX_CONSECUTIVE_SAME_TURNS) {
-
           state.gameOver = true;
           state.winner = undefined; // opponent is stuck, draw match
           break;
@@ -512,10 +570,7 @@ async function trainAgent(
   let losses = 0;
   let draws = 0;
 
-  // Progress recovery: check if training is resuming
-  const startEpisode = 0;
-
-  for (let episode = startEpisode; episode < fullConfig.episodes; episode++) {
+  for (let episode = 0; episode < fullConfig.episodes; episode++) {
     try {
       // Play one game
       const result = await playEpisode(agent, fullConfig);
@@ -540,14 +595,24 @@ async function trainAgent(
       if ((episode + 1) % fullConfig.logEveryNEpisodes === 0) {
         const stats = agent.getStats();
         const recentResults = results.slice(-100);
-        const recentWins = recentResults.filter((r) => r.winner === "ai").length;
-        const recentWinRate = (recentWins / recentResults.length * 100).toFixed(1);
-        const recentIllegalActions = recentResults.reduce((sum, r) => sum + r.illegalActions, 0);
+        const recentWins = recentResults.filter(
+          (r) => r.winner === "ai",
+        ).length;
+        const recentWinRate = (
+          (recentWins / recentResults.length) *
+          100
+        ).toFixed(1);
+        const recentIllegalActions = recentResults.reduce(
+          (sum, r) => sum + r.illegalActions,
+          0,
+        );
 
         console.log(
           `  [ep ${result.episodeNumber}/${fullConfig.episodes}] ${fullConfig.matchupKey}` +
-          ` | win% ${recentWinRate}% | Epsilon ${stats.epsilon.toFixed(3)} | avg reward ${stats.avgReward.toFixed(2)}` +
-          (recentIllegalActions > 0 ? ` | illegal actions ${recentIllegalActions}` : "")
+            ` | win% ${recentWinRate}% | Epsilon ${stats.epsilon.toFixed(3)} | avg reward ${stats.avgReward.toFixed(2)}` +
+            (recentIllegalActions > 0
+              ? ` | illegal actions ${recentIllegalActions}`
+              : ""),
         );
       }
 
@@ -601,7 +666,7 @@ export async function trainUniversalAgent(
     maxTurnsPerGame?: number;
     opponentType?: "self" | "random";
     saveEveryNBatches?: number;
-  }
+  },
 ): Promise<TrainingProgress> {
   const {
     episodesPerMatchup,
@@ -658,19 +723,16 @@ export async function trainUniversalAgent(
       const matchupKey = `${matchup.ai}_vs_${matchup.opp}`;
       console.log(`  ${matchupKey} (${batchEpisodes} episodes)...`);
 
-      const progress = await trainAgent(
-        agent,
-        {
-          episodes: batchEpisodes,
-          aiDeckType: matchup.ai,
-          opponentDeckType: matchup.opp,
-          matchupKey,
-          maxTurnsPerGame,
-          opponentType,
-          logEveryNEpisodes: Math.max(1, Math.floor(batchEpisodes / 5)),
-          saveEveryNEpisodes: 999999,
-        },
-      );
+      const progress = await trainAgent(agent, {
+        episodes: batchEpisodes,
+        aiDeckType: matchup.ai,
+        opponentDeckType: matchup.opp,
+        matchupKey,
+        maxTurnsPerGame,
+        opponentType,
+        logEveryNEpisodes: Math.max(1, Math.floor(batchEpisodes / 5)),
+        saveEveryNEpisodes: 999999,
+      });
 
       totalWins += progress.wins;
       totalLosses += progress.losses;
@@ -686,13 +748,20 @@ export async function trainUniversalAgent(
 
     // Batch boundary summary: global stats + per-matchup table
     const stats = agent.getStats();
-    const globalWinRate = (totalWins / (totalWins + totalLosses + totalDraws) * 100).toFixed(1);
+    const globalWinRate = (
+      (totalWins / (totalWins + totalLosses + totalDraws)) *
+      100
+    ).toFixed(1);
 
     console.log(`\n--- Batch ${batch + 1}/${batchesPerMatchup} complete ---`);
-    console.log(`  Episodes: ${episodesCompleted}/${totalEpisodes} | Win%: ${globalWinRate}% | Epsilon: ${stats.epsilon.toFixed(3)} | Avg reward: ${stats.avgReward.toFixed(2)}`);
+    console.log(
+      `  Episodes: ${episodesCompleted}/${totalEpisodes} | Win%: ${globalWinRate}% | Epsilon: ${stats.epsilon.toFixed(3)} | Avg reward: ${stats.avgReward.toFixed(2)}`,
+    );
     console.log(`  Matchup results:`);
     for (const [key, m] of Object.entries(agent.getMatchupStats())) {
-      console.log(`    ${key}: ${m.episodes} ep | win% ${(m.winRate * 100).toFixed(1)}% | draw% ${(m.drawRate * 100).toFixed(1)}% | avg turns ${m.avgTurns.toFixed(1)} | avg health delta ${m.avgHealthDifferential.toFixed(1)}`);
+      console.log(
+        `    ${key}: ${m.episodes} ep | win% ${(m.winRate * 100).toFixed(1)}% | draw% ${(m.drawRate * 100).toFixed(1)}% | avg turns ${m.avgTurns.toFixed(1)} | avg health delta ${m.avgHealthDifferential.toFixed(1)}`,
+      );
     }
   }
 
@@ -716,12 +785,16 @@ export async function trainUniversalAgent(
   const finalGlobalWinRate = (finalProgress.winRate * 100).toFixed(1);
 
   console.log(`\n=== Training Complete ===`);
-  console.log(`  Total episodes: ${totalEpisodes} | Win%: ${finalGlobalWinRate}% | Final Epsilon: ${finalStats.epsilon.toFixed(3)}`);
+  console.log(
+    `  Total episodes: ${totalEpisodes} | Win%: ${finalGlobalWinRate}% | Final Epsilon: ${finalStats.epsilon.toFixed(3)}`,
+  );
   console.log(`  W/L/D: ${totalWins}/${totalLosses}/${totalDraws}`);
   console.log(`  Matchup results:`);
 
   for (const [key, m] of Object.entries(agent.getMatchupStats())) {
-    console.log(`    ${key}: ${m.episodes} episodes | wins ${(m.winRate * 100).toFixed(1)}% | draws ${(m.drawRate * 100).toFixed(1)}% | avg turns ${m.avgTurns.toFixed(1)} | avg health delta ${m.avgHealthDifferential.toFixed(1)}`);
+    console.log(
+      `    ${key}: ${m.episodes} episodes | wins ${(m.winRate * 100).toFixed(1)}% | draws ${(m.drawRate * 100).toFixed(1)}% | avg turns ${m.avgTurns.toFixed(1)} | avg health delta ${m.avgHealthDifferential.toFixed(1)}`,
+    );
   }
 
   return finalProgress;
