@@ -278,10 +278,10 @@ export const createTurnSlice: StateCreator<
 // --- Delay constants ------------------------------------------------------------
 // Defined here only, timing can be adjusted without hunting through the file
 const DELAYS = {
-  THINKING: 600, // Pause before AI takes its first action
-  BEFORE_ACTION: 400, // Pause after announcing action, before executing it
-  AFTER_CARD_PLAY: 600, // Pause after a card is played before next decision
-  AFTER_ATTACK: 800, // Pause after an attack resolves before next decision
+  THINKING: 1000, // Pause before AI takes its first action
+  BEFORE_ACTION: 800, // Pause after announcing action, before executing it
+  AFTER_CARD_PLAY: 1000, // Pause after a card is played before next decision
+  AFTER_ATTACK: 1200, // Pause after an attack resolves before next decision
 } as const;
 
 // --- Helper Functions for AI Turn Logic -----------------------------------------

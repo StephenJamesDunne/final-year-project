@@ -33,9 +33,9 @@ export interface DQNAgentConfig {
 const DEFAULT_CONFIG: DQNAgentConfig = {
   epsilonStart: 1.0, // Start completely random
   epsilonEnd: 0.01, // End at 1% random (never fully deterministic)
-  epsilonDecay: 0.9995, // slower decay gives more stable early exploration
+  epsilonDecay: 0.999993, // slower decay gives more stable early exploration
   batchSize: 32, // Standard batch size
-  targetUpdateFreq: 5000, // Sync every 5000 training steps
+  targetUpdateFreq: 1000, // Sync every 1000 training steps
   minExperiences: 1000, // Wait for 1000 experiences
   replayCapacity: 100000, // Store ~250 games worth
 };

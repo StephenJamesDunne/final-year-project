@@ -12,7 +12,7 @@
 //      - AI health lost: -0.3 per point
 //      - Enemy health lost: +0.3 per point
 //      - Enemy health gained: -0.3 per point
-// 
+//
 // 3. Rewards for Board Control:
 //      - Kill enemy minion: +0.5 per minion
 //      - Lose own minion: -0.4 per minion
@@ -27,9 +27,9 @@
 //      - Waste mana: -0.02 per mana unused (ending a turn with leftover mana)
 //
 // Can tune/change these values according to the game state over time, provide a balanced AI agent
-// And make it change its strategy to better provide a win over its current strategy 
+// And make it change its strategy to better provide a win over its current strategy
 
-import { BattleState, Minion } from '@/lib/types/game';
+import { BattleState, Minion } from "@/lib/types/game";
 
 // Reward configuration: allows for easy experimentation with different playstyles
 // Weights of each can be tuned to create different AI types
@@ -38,23 +38,24 @@ export interface RewardConfig {
   // Game Over state rewards
   winReward: number;
   lossReward: number;
-  
+
   // Health rewards
-  healthChange: number;           // Reward per point of health gained/lost
-  enemyHealthChange: number;      // Reward per point of enemy health lost/gained
-  
+  healthChange: number; // Reward per point of health gained/lost
+  enemyHealthChange: number; // Reward per point of enemy health lost/gained
+
   // Board control rewards
-  minionKilled: number;           // Bonus for killing enemy minion
-  minionLost: number;             // Penalty for losing own minion
-  boardAdvantage: number;         // Reward for having stronger board
-  
+  minionKilled: number; // Bonus for killing enemy minion
+  minionLost: number; // Penalty for losing own minion
+  boardAdvantage: number; // Reward for having stronger board
+  faceDamage: number; // Bonus for dealing damage to enemy hero (encourages face damage when possible)
+
   // Card advantage rewards
-  cardDraw: number;               // Reward for drawing cards
-  
+  cardDraw: number; // Reward for drawing cards
+
   // Mana efficiency rewards
-  manaUsed: number;               // Small bonus for using mana
-  manaWasted: number;             // Small penalty for ending turn with mana
-  cleanKill: number;              // Bonues for killing an enemy minion with losing the attacker
+  manaUsed: number; // Small bonus for using mana
+  manaWasted: number; // Small penalty for ending turn with mana
+  cleanKill: number; // Bonues for killing an enemy minion with losing the attacker
 }
 
 // Default values for a configuration of rewards
@@ -63,22 +64,23 @@ export const DEFAULT_REWARDS: RewardConfig = {
   // Game over rewards - should always be largest
   winReward: 10.0,
   lossReward: -10.0,
-  
+
   // Health rewards - significant but not dominant strategy
   healthChange: 0.3,
   enemyHealthChange: 0.3,
-  
+
   // Board control - most important non-game-ending reward
   minionKilled: 0.5,
   minionLost: -0.4,
   boardAdvantage: 0.2,
-  
+  faceDamage: 0.15,
+
   // Card advantage - medium importance
   cardDraw: 0.1,
-  
+
   // Mana efficiency - nudges toward good habits
   manaUsed: 0.05,
-  manaWasted: -0.20,
+  manaWasted: -0.15,
   cleanKill: 0.8,
 };
 
@@ -90,40 +92,40 @@ export function calculateReward(
   newState: BattleState,
   done: boolean,
   config: RewardConfig = DEFAULT_REWARDS,
-  context?: {hadLegalPlay: boolean; cleanKill: boolean}
+  context?: { hadLegalPlay: boolean; cleanKill: boolean },
 ): number {
-  
   // Game over, most important
   if (done) {
-    if (newState.winner === 'ai') {
-      return config.winReward;  // +10.0 - largest reward for winning
-    } else if (newState.winner === 'player') {
+    if (newState.winner === "ai") {
+      return config.winReward; // +10.0 - largest reward for winning
+    } else if (newState.winner === "player") {
       return config.lossReward; // -10.0 - largest penalty for losing
-    }
-    else {
-      return 0;               // 0 for a draw; should mean that draws don't impact agent decision making either way
+    } else {
+      return 0; // 0 for a draw; should mean that draws don't impact agent decision making either way
     }
   }
-  
+
   // Step rewards (during game) - accumulate over time
   let reward = 0;
-  
+
   // Encourage AI to preserve own health and damage enemy
   const aiHealthDelta = newState.ai.health - prevState.ai.health;
   const playerHealthDelta = newState.player.health - prevState.player.health;
-  
-  reward += aiHealthDelta * config.healthChange;              // Gain health = positive, lose health = negative
-  reward += -playerHealthDelta * config.enemyHealthChange;    // Enemy loses health = positive, enemy gains = negative
-  
+
+  reward += aiHealthDelta * config.healthChange; // Gain health = positive, lose health = negative
+  reward += -playerHealthDelta * config.enemyHealthChange; // Enemy loses health = positive, enemy gains = negative
+
   // Encourage AI to maintain board presence and remove enemy minions
-  const aiMinionCountDelta = newState.ai.board.length - prevState.ai.board.length;
-  const playerMinionCountDelta = newState.player.board.length - prevState.player.board.length;
-  
+  const aiMinionCountDelta =
+    newState.ai.board.length - prevState.ai.board.length;
+  const playerMinionCountDelta =
+    newState.player.board.length - prevState.player.board.length;
+
   // Bonus for killing enemy minions
   if (playerMinionCountDelta < 0) {
     reward += Math.abs(playerMinionCountDelta) * config.minionKilled;
   }
-  
+
   // Penalty for losing own minions
   if (aiMinionCountDelta < 0) {
     reward += aiMinionCountDelta * config.minionLost; // minionLost is always negative
@@ -133,29 +135,38 @@ export function calculateReward(
   if (context?.cleanKill) {
     reward += config.cleanKill;
   }
-  
+
   // Board advantage reward - having stronger board is good
   const aiBoardStrength = calculateBoardStrength(newState.ai.board);
   const playerBoardStrength = calculateBoardStrength(newState.player.board);
   const prevAIBoardStrength = calculateBoardStrength(prevState.ai.board);
-  const prevPlayerBoardStrength = calculateBoardStrength(prevState.player.board);
-  
-  const boardAdvantageDelta = 
-    (aiBoardStrength - playerBoardStrength) - 
+  const prevPlayerBoardStrength = calculateBoardStrength(
+    prevState.player.board,
+  );
+
+  const boardAdvantageDelta =
+    aiBoardStrength -
+    playerBoardStrength -
     (prevAIBoardStrength - prevPlayerBoardStrength);
-  
+
   reward += boardAdvantageDelta * config.boardAdvantage;
-  
+
+  // Reward for attacking face directly
+  if (action >= 60 && action <= 66) {
+    const damage = prevState.ai.board[action - 60]?.attack ?? 0;
+    reward += damage * config.faceDamage;
+  }
+
   // Encourage drawing cards (more options = better)
   const aiCardDelta = newState.ai.hand.length - prevState.ai.hand.length;
   if (aiCardDelta > 0) {
     reward += aiCardDelta * config.cardDraw;
   }
-  
+
   // Encourage playing on curve as often as possible
   const manaUsed = prevState.ai.mana - newState.ai.mana;
   reward += manaUsed * config.manaUsed;
-  
+
   // Penalty for ending turn with unused mana, but only if the agent had a legal move
   // Using the context argument keeps RewardSystem free of dependencies on AutoPlay where
   // The legal actions are defined
@@ -163,7 +174,7 @@ export function calculateReward(
     const manaWasted = prevState.ai.mana;
     reward += manaWasted * config.manaWasted;
   }
-  
+
   return reward;
 }
 
@@ -171,9 +182,8 @@ export function calculateReward(
 // minion attack + minion health contributes to strength as flat increment
 function calculateBoardStrength(board: Minion[]): number {
   return board.reduce((total, minion) => {
-
     const strength = minion.attack + minion.currentHealth;
-    
+
     return total + strength;
   }, 0);
 }
