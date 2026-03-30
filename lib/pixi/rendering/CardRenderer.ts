@@ -8,7 +8,7 @@ import { GraphicsHelpers } from "../utils/GraphicsHelpers";
 // Art fills the upper 60% of the card, name banner overlaps the bottom of the art
 // Description sits below the name, stats badges overlap the bottom corners of the card
 // Mana cost badge in top left, attack and health badges in bottom left and right respectively
-const LAYOUT = {
+export const CARD_LAYOUT = {
   // Art area
   ART_X: 6,
   ART_Y: 12,
@@ -86,19 +86,19 @@ export class CardRenderer {
 
     if (showName) {
       const nameBanner = this.createNameBanner(card.name);
-      nameBanner.y = LAYOUT.NAME_Y;
+      nameBanner.y = CARD_LAYOUT.NAME_Y;
       container.addChild(nameBanner);
     }
 
     if (card.description) {
       const desc = this.createDescriptionArea(card.description);
-      desc.y = LAYOUT.DESC_Y;
+      desc.y = CARD_LAYOUT.DESC_Y;
       container.addChild(desc);
     }
 
     const manaCost = this.createManaCrystal(card.manaCost);
-    manaCost.x = LAYOUT.MANA_X;
-    manaCost.y = LAYOUT.MANA_Y;
+    manaCost.x = CARD_LAYOUT.MANA_X;
+    manaCost.y = CARD_LAYOUT.MANA_Y;
     container.addChild(manaCost);
 
     if (
@@ -107,13 +107,13 @@ export class CardRenderer {
       card.health !== undefined
     ) {
       const attackBadge = this.createAttackBadge(card.attack);
-      attackBadge.x = LAYOUT.BADGE_LEFT_X;
-      attackBadge.y = this.CARD_HEIGHT - LAYOUT.BADGE_Y_OFFSET;
+      attackBadge.x = CARD_LAYOUT.BADGE_LEFT_X;
+      attackBadge.y = this.CARD_HEIGHT - CARD_LAYOUT.BADGE_Y_OFFSET;
       container.addChild(attackBadge);
 
       const healthBadge = this.createHealthBadge(card.health);
-      healthBadge.x = this.CARD_WIDTH - LAYOUT.BADGE_RIGHT_X_INSET;
-      healthBadge.y = this.CARD_HEIGHT - LAYOUT.BADGE_Y_OFFSET;
+      healthBadge.x = this.CARD_WIDTH - CARD_LAYOUT.BADGE_RIGHT_X_INSET;
+      healthBadge.y = this.CARD_HEIGHT - CARD_LAYOUT.BADGE_Y_OFFSET;
       container.addChild(healthBadge);
     }
 
@@ -144,13 +144,13 @@ export class CardRenderer {
     const isDamaged = minion.currentHealth < minion.health;
 
     const attackBadge = this.createAttackBadge(minion.attack);
-    attackBadge.x = LAYOUT.BADGE_LEFT_X;
-    attackBadge.y = this.CARD_HEIGHT - LAYOUT.BADGE_Y_OFFSET;
+    attackBadge.x = CARD_LAYOUT.BADGE_LEFT_X;
+    attackBadge.y = this.CARD_HEIGHT - CARD_LAYOUT.BADGE_Y_OFFSET;
     container.addChild(attackBadge);
 
     const healthBadge = this.createHealthBadge(minion.currentHealth, isDamaged);
-    healthBadge.x = this.CARD_WIDTH - LAYOUT.BADGE_RIGHT_X_INSET;
-    healthBadge.y = this.CARD_HEIGHT - LAYOUT.BADGE_Y_OFFSET;
+    healthBadge.x = this.CARD_WIDTH - CARD_LAYOUT.BADGE_RIGHT_X_INSET;
+    healthBadge.y = this.CARD_HEIGHT - CARD_LAYOUT.BADGE_Y_OFFSET;
     container.addChild(healthBadge);
 
     return container;
@@ -260,11 +260,11 @@ export class CardRenderer {
   private createArtArea(card: Card | Minion): PIXI.Container {
     const artContainer = new PIXI.Container();
 
-    artContainer.x = LAYOUT.ART_X;
-    artContainer.y = LAYOUT.ART_Y;
+    artContainer.x = CARD_LAYOUT.ART_X;
+    artContainer.y = CARD_LAYOUT.ART_Y;
 
-    const artWidth = this.CARD_WIDTH - LAYOUT.ART_WIDTH_INSET;
-    const artHeight = LAYOUT.ART_HEIGHT;
+    const artWidth = this.CARD_WIDTH - CARD_LAYOUT.ART_WIDTH_INSET;
+    const artHeight = CARD_LAYOUT.ART_HEIGHT;
 
     // Placeholder shown until art is loaded in correctly
     const placeholder = new PIXI.Graphics();
@@ -320,21 +320,21 @@ export class CardRenderer {
     frame.stroke({
       width: 2,
       color: COLORS.UI.gold,
-      alpha: LAYOUT.FRAME_OUTER_ALPHA,
+      alpha: CARD_LAYOUT.FRAME_OUTER_ALPHA,
     });
 
     // Inner element glow
     frame.roundRect(
-      LAYOUT.FRAME_INSET,
-      LAYOUT.FRAME_INSET,
-      this.CARD_WIDTH - LAYOUT.FRAME_INSET * 2,
-      this.CARD_HEIGHT - LAYOUT.FRAME_INSET * 2,
-      LAYOUT.FRAME_INNER_RADIUS,
+      CARD_LAYOUT.FRAME_INSET,
+      CARD_LAYOUT.FRAME_INSET,
+      this.CARD_WIDTH - CARD_LAYOUT.FRAME_INSET * 2,
+      this.CARD_HEIGHT - CARD_LAYOUT.FRAME_INSET * 2,
+      CARD_LAYOUT.FRAME_INNER_RADIUS,
     );
     frame.stroke({
       width: 1,
       color: COLORS.UI.gold,
-      alpha: LAYOUT.FRAME_INNER_ALPHA,
+      alpha: CARD_LAYOUT.FRAME_INNER_ALPHA,
     });
 
     return frame;
@@ -351,10 +351,10 @@ export class CardRenderer {
 
     const bg = new PIXI.Graphics();
     bg.roundRect(
-      LAYOUT.NAME_X_INSET,
+      CARD_LAYOUT.NAME_X_INSET,
       0,
-      this.CARD_WIDTH - LAYOUT.NAME_WIDTH_INSET,
-      LAYOUT.NAME_HEIGHT,
+      this.CARD_WIDTH - CARD_LAYOUT.NAME_WIDTH_INSET,
+      CARD_LAYOUT.NAME_HEIGHT,
       4,
     );
     bg.fill({ color: COLORS.UI.darkBg, alpha: 0.92 });
@@ -370,12 +370,12 @@ export class CardRenderer {
         stroke: { color: COLORS.UI.black, width: 2 },
         align: "center",
         wordWrap: true,
-        wordWrapWidth: this.CARD_WIDTH - LAYOUT.NAME_WIDTH_INSET * 2,
+        wordWrapWidth: this.CARD_WIDTH - CARD_LAYOUT.NAME_WIDTH_INSET * 2,
       },
     });
 
     text.x = this.CARD_WIDTH / 2;
-    text.y = LAYOUT.NAME_HEIGHT / 2;
+    text.y = CARD_LAYOUT.NAME_HEIGHT / 2;
     text.anchor.set(0.5);
     banner.addChild(text);
 
@@ -387,10 +387,10 @@ export class CardRenderer {
 
     const bg = new PIXI.Graphics();
     bg.roundRect(
-      LAYOUT.NAME_X_INSET,
+      CARD_LAYOUT.NAME_X_INSET,
       0,
-      this.CARD_WIDTH - LAYOUT.NAME_WIDTH_INSET,
-      LAYOUT.DESC_HEIGHT,
+      this.CARD_WIDTH - CARD_LAYOUT.NAME_WIDTH_INSET,
+      CARD_LAYOUT.DESC_HEIGHT,
       4,
     );
     bg.fill({ color: COLORS.UI.darkBg, alpha: 0.7 });
@@ -399,16 +399,16 @@ export class CardRenderer {
     const text = new PIXI.Text({
       text: description,
       style: {
-        fontSize: LAYOUT.DESC_FONT_SIZE,
+        fontSize: CARD_LAYOUT.DESC_FONT_SIZE,
         fill: COLORS.UI.logText,
         wordWrap: true,
-        wordWrapWidth: this.CARD_WIDTH - LAYOUT.NAME_WIDTH_INSET * 2,
-        lineHeight: LAYOUT.DESC_LINE_HEIGHT,
+        wordWrapWidth: this.CARD_WIDTH - CARD_LAYOUT.NAME_WIDTH_INSET * 2,
+        lineHeight: CARD_LAYOUT.DESC_LINE_HEIGHT,
         align: "center",
       },
     });
     text.x = this.CARD_WIDTH / 2;
-    text.y = LAYOUT.DESC_HEIGHT / 2;
+    text.y = CARD_LAYOUT.DESC_HEIGHT / 2;
     text.anchor.set(0.5);
     area.addChild(text);
 

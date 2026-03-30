@@ -230,7 +230,7 @@ export const CARDS: Card[] = [
     attack: 5,
     health: 2,
     description: 'Battlecry: Deal 2 damage to your own hero.',
-    imageUrl: '',
+    imageUrl: '/images/cards/connachtberserker.png',
     abilities: [
       {
         trigger: 'battlecry',

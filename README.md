@@ -18,58 +18,7 @@ the corresponding file. I am currently updating and adding to these where necess
 
 ## Project Structure
 
---- Batch 22/30 ---
-  fire_vs_fire (50 episodes)...
-  [ep 10/50] fire_vs_fire | win% 60.0% | Epsilon 0.164 | avg reward -89.45
-  [ep 20/50] fire_vs_fire | win% 70.0% | Epsilon 0.163 | avg reward -90.11
-[DQN] Target network synced with current model.
-[DQNAgent] Synced target network at step 259000
-  [ep 30/50] fire_vs_fire | win% 63.3% | Epsilon 0.163 | avg reward -90.43
-  [ep 40/50] fire_vs_fire | win% 62.5% | Epsilon 0.162 | avg reward -91.78
-[DQN] Target network synced with current model.
-[DQNAgent] Synced target network at step 260000
-  [ep 50/50] fire_vs_fire | win% 60.0% | Epsilon 0.162 | avg reward -93.29
-[DQN] Model saved to C:\Users\steph\Desktop\Year4\FYP\fiverealms\public\models\five-realms-dqn-agent
-[ExperienceReplay] Saved 5000 experiences to C:\Users\steph\Desktop\Year4\FYP\fiverealms\models\five-realms-dqn-agent-replay.json
-[DQNAgent] Saved — Episode: 4250, Epsilon: 0.162
-
-  fire_vs_earth (50 episodes)...
-  [ep 10/50] fire_vs_earth | win% 80.0% | Epsilon 0.161 | avg reward -92.71
-[DQN] Target network synced with current model.
-[DQNAgent] Synced target network at step 261000
-  [ep 20/50] fire_vs_earth | win% 75.0% | Epsilon 0.161 | avg reward -92.90
-  [ep 30/50] fire_vs_earth | win% 66.7% | Epsilon 0.160 | avg reward -93.23
-[DQN] Target network synced with current model.
-[DQNAgent] Synced target network at step 262000
-  [ep 40/50] fire_vs_earth | win% 60.0% | Epsilon 0.159 | avg reward -94.02
-  [ep 50/50] fire_vs_earth | win% 60.0% | Epsilon 0.159 | avg reward -94.60
-[DQN] Model saved to C:\Users\steph\Desktop\Year4\FYP\fiverealms\public\models\five-realms-dqn-agent
-[ExperienceReplay] Saved 5000 experiences to C:\Users\steph\Desktop\Year4\FYP\fiverealms\models\five-realms-dqn-agent-replay.json
-[DQNAgent] Saved — Episode: 4300, Epsilon: 0.159
-
-  earth_vs_fire (50 episodes)...
-[DQN] Target network synced with current model.
-[DQNAgent] Synced target network at step 263000
-  [ep 10/50] earth_vs_fire | win% 70.0% | Epsilon 0.158 | avg reward -94.33
-[DQN] Target network synced with current model.
-[DQNAgent] Synced target network at step 264000
-  [ep 20/50] earth_vs_fire | win% 70.0% | Epsilon 0.158 | avg reward -93.38
-  [ep 30/50] earth_vs_fire | win% 66.7% | Epsilon 0.157 | avg reward -93.79
-[DQN] Target network synced with current model.
-[DQNAgent] Synced target network at step 265000
-  [ep 40/50] earth_vs_fire | win% 67.5% | Epsilon 0.156 | avg reward -93.63
-  [ep 50/50] earth_vs_fire | win% 64.0% | Epsilon 0.156 | avg reward -93.63
-[DQN] Model saved to C:\Users\steph\Desktop\Year4\FYP\fiverealms\public\models\five-realms-dqn-agent
-[ExperienceReplay] Saved 5000 experiences to C:\Users\steph\Desktop\Year4\FYP\fiverealms\models\five-realms-dqn-agent-replay.json
-[DQNAgent] Saved — Episode: 4350, Epsilon: 0.156
-
-  earth_vs_earth (50 episodes)...
-[DQN] Target network synced with current model.
-[DQNAgent] Synced target network at step 266000
-  [ep 10/50] earth_vs_earth | win% 60.0% | Epsilon 0.155 | avg reward -93.66
-  [ep 20/50] earth_vs_earth | win% 70.0% | Epsilon 0.154 | avg reward -93.71
-[DQN] Target network synced with current model.
-[DQNAgent] Synced target network at step 267000
+NOTE TO SELF THIS CURRENT TRAINING RUN IS ON PARAMETERS FROM RUN 3; THE ONLY CHANGE IS A REDUCTION TO THE MANA WASTE PENALTY
 
 ```
 fiverealms/
@@ -300,17 +249,27 @@ A Deep Q-Network implementation using TensorFlow.js. Currently falls back to rul
 
 ---
 
-## Immediate Todo
-- [ ] Refactor multiple files and remove unused/legacy code and functions
-- [ ] Extract more shared helpers into `GraphicsHelpers.ts` (noted in `MinionRenderer.ts`)
-- [ ] Consolidate card-on-board design with hand card design for better visual cohesion (`MinionRenderer.ts` TODO)
+# Weekly Task Schedule
 
-## Medium-term Todo
-- [ ] Implement sprite pooling to better improve PixiJS performance
-- [ ] Train the DQN agent and persist a model to replace the rule-based fallback
-- [ ] Build a `TrainingPanel` UI component for in-browser training visualisation
+## Bugs/fixes still needed:
+- Hover tooltip broken for hand minions — typeof card.attack === 'number' check still not preventing an error
+- Hover tooltip ability text still duplicating in some cases
+- UIManager recreating all UI elements on every state change - performance fix needed
 
-## Long-term Todo
-- [ ] Set up database for cards, accounts + logins for multiple players
-- [ ] Add WebSocket support for multiplayer
-- [ ] Implement deck builder UI, glossary for all cards and lore information
+## Card visual polish:
+- Card element proportions and layout adjustments - readjust the overall card look and badge positions
+- Hand card hover lift animation bug
+
+## Debug overlay:
+
+- DebugOverlay.tsx React component — Q-values, AI hand, next draw, toggle button
+- Wire toggle to hide Pixi combat log when debug mode is active
+- Pass debugMode and agentDebugData through battle/page.tsx and BoardState
+
+## Rendering/architecture: 
+- BoardLayout/BoardRenderer separation — background creation in wrong file
+- GraphicsHelpers consolidation — duplicate logic across multiple renderer files
+
+## Training:
+- Analyse current overnight training run results when complete
+- Decide if another training run is needed based on results
