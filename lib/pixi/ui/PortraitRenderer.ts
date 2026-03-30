@@ -47,16 +47,18 @@ export class PortraitRenderer {
 
   private createNameText(isAI: boolean): PIXI.Text {
     const text = new PIXI.Text({
+      text: isAI ? 'Enemy' : 'Player',
       style: {
         fontSize: 14,
         fontWeight: 'bold',
-        fill: isAI ? COLORS.UI.red : COLORS.UI.blue,
+        fill: COLORS.UI.white,
+        stroke: { color: COLORS.UI.black, width: 3 },
         align: 'center',
       },
     });
     text.x = this.PORTRAIT_SIZE / 2;
-    text.y = 12;
-    text.anchor.set(0.5, 0);
+    text.y = this.PORTRAIT_SIZE / 2;
+    text.anchor.set(0.5, 0.5);
     return text;
   }
 }
