@@ -313,6 +313,13 @@ export class PixiBoard {
     this.hoverCardDisplay.hide();
   }
 
+  // Returns null if scale manager is called before the board is initialized
+  // otherwise returns current scale and offset values
+  getTransform(): { scale: number; offsetX: number; offsetY: number } | null {
+    if (!this.scaleManager) return null;
+    return this.scaleManager.getTransform();
+  }
+
   destroy(): void {
     this.isDestroyed = true;
 

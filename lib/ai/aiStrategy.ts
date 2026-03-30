@@ -3,8 +3,8 @@ import { AIAction, getAIAction } from "../game/aiPlayer";
 import { encodeGameState } from "./dqn/stateEncoder";
 import { getLegalActions } from "./dqn/ActionSpace";
 import { DQNModelBrowser } from "./dqn/DQNModelBrowser";
-
-const DEBUG_QN = true;
+import { AgentDebugData } from "../store/slices/battleSlice";
+import { useBattleStore } from "../store/battleStore";
 
 // Interface that all AI implementations must follow
 // This allows swapping between rule-based and DQN seamlessly
@@ -115,21 +115,45 @@ export class DQNStrategy implements AIStrategy {
       bestAction = 67;
     }
 
-    if (DEBUG_QN) {
-      // Get top 3 legal actions by Q-value
-      const ranked = Array.from(legalActions)
-        .map((i) => ({ index: i, qValue: qValues[i] }))
-        .sort((a, b) => b.qValue - a.qValue)
-        .slice(0, 3);
+    // Pull in the Zustand store to update the debug data with the current Q-values and action descriptions
+    const store = useBattleStore.getState();
 
-      console.log("[DQN] Top 3 actions:");
-      for (const { index, qValue } of ranked) {
+    // Output debug data if debug mode is enabled in the battle store
+    if (store.debugMode) {
+      // If debug mode IS enabled, pull the top 5 legal actions by Q-value
+      const bestActions = Array.from(legalActions)
+        .map((i) => ({
+          index: i,
+          description: describeActionIndex(i, state),
+          qValue: qValues[i],
+        }))
+        .sort((a, b) => b.qValue - a.qValue)
+        .slice(0, 5);
+
+      // From the legal actions, arrange the top 5 by Q-value and
+      // include descriptions of what those actions actually do in game terms (e.g. "Play Fireball from hand" instead of just "Action 3")
+      const debugData: AgentDebugData = {
+        topActions: bestActions,
+        chosenAction: {
+          index: bestAction,
+          description: describeActionIndex(bestAction, state),
+          qValue: qValues[bestAction],
+        },
+        aiHand: state.ai.hand,
+        nextDraw: state.ai.deck[0] ?? null,
+      };
+
+      store.setAgentDebugData(debugData);
+
+      // Console logging for additional debugging
+      console.log("[DQN] Top actions:");
+      for (const action of bestActions) {
         console.log(
-          `  [${index}] ${describeActionIndex(index, state)} → Q: ${qValue.toFixed(3)}`,
+          `  [${action.index}] ${action.description} → Q: ${action.qValue.toFixed(3)}`,
         );
       }
       console.log(
-        `  → Chose: [${bestAction}] ${describeActionIndex(bestAction, state)}`,
+        `  → Chose: [${bestAction}] ${debugData.chosenAction.description}`,
       );
     }
 

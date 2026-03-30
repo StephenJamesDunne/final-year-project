@@ -29,13 +29,24 @@
  */
 
 import { StateCreator } from 'zustand';
-import { BattleState } from '../../types/game';
+import { BattleState, Card } from '../../types/game';
+
+export interface AgentDebugData {
+  topActions: { index: number; description: string; qValue: number }[];
+  chosenAction: { index: number; description: string; qValue: number };
+  aiHand: Card[];
+  nextDraw: Card | null;
+}
 
 export interface BattleSlice extends BattleState {
   initialized: boolean;
   aiAction: string | undefined; // Current AI action being shown
   selectedMinion: string | null;
   selectMinion: (minionId: string | null) => void;
+  debugMode: boolean;
+  agentDebugData: AgentDebugData | null;
+  toggleDebugMode: () => void;
+  setAgentDebugData: (data: AgentDebugData | null) => void;
 }
 
 export const createBattleSlice: StateCreator<BattleSlice> = (set) => ({
@@ -65,6 +76,10 @@ export const createBattleSlice: StateCreator<BattleSlice> = (set) => ({
   aiAction: undefined,
   selectedMinion: null,
   initialized: false,
+  debugMode: false,
+  agentDebugData: null,
+  toggleDebugMode: () => set((state) => ({ debugMode: !state.debugMode })),
+  setAgentDebugData: (data) => set({ agentDebugData: data }),
 
   selectMinion: (minionId) => {
     set({ selectedMinion: minionId });
