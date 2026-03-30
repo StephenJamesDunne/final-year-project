@@ -286,11 +286,11 @@ export class BoardLayout {
   }
 
   getAIDeckPosition(): Position {
-    return { x: this.width * 0.90, y: this.height * 0.06 };
+    return { x: this.width * 0.855, y: this.height * 0.06 };
   }
 
   getPlayerDeckPosition(): Position {
-    return { x: this.width * 0.90, y: this.height * 0.72 };
+    return { x: this.width * 0.855, y: this.height * 0.72 };
   }
 
   getEndTurnButtonPosition(): Position {

@@ -12,14 +12,14 @@ const LAYOUT = {
   // Art area
   ART_X: 6,
   ART_Y: 12,
-  ART_WIDTH_INSET: 12,      // artWidth = CARD_WIDTH - ART_WIDTH_INSET
-  ART_HEIGHT: 82,           // roughly 60% of the card height
+  ART_WIDTH_INSET: 12, // artWidth = CARD_WIDTH - ART_WIDTH_INSET
+  ART_HEIGHT: 82, // roughly 60% of the card height
 
   // Name banner
-  NAME_Y: 82,               // Overlaps bottom of art
+  NAME_Y: 82, // Overlaps bottom of art
   NAME_HEIGHT: 20,
-  NAME_X_INSET: 4,          // horizontal padding from the edge of a card
-  NAME_WIDTH_INSET: 8,      // CARD_WIDTH - 8
+  NAME_X_INSET: 4, // horizontal padding from the edge of a card
+  NAME_WIDTH_INSET: 8, // CARD_WIDTH - 8
 
   // Description area
   DESC_Y: 106,
@@ -28,13 +28,13 @@ const LAYOUT = {
   DESC_LINE_HEIGHT: 9,
 
   // Badges
-  BADGE_Y_OFFSET: 20,       // How far badges hang below card bottom
+  BADGE_Y_OFFSET: 20, // How far badges hang below card bottom
   BADGE_LEFT_X: -8,
-  BADGE_RIGHT_X_INSET: 20,  // rightBadgeX = CARD_WIDTH - BADGE_RIGHT_X_INSET
+  BADGE_RIGHT_X_INSET: 20, // rightBadgeX = CARD_WIDTH - BADGE_RIGHT_X_INSET
 
   // Mana crystal
-    MANA_X: -8,
-    MANA_Y: -8,
+  MANA_X: -8,
+  MANA_Y: -8,
 
   // Decorative frame elements
   FRAME_OUTER_ALPHA: 0.6,
@@ -80,9 +80,9 @@ export class CardRenderer {
         CARD_DIMENSIONS.BORDER_RADIUS,
       ),
     );
-    container.addChild(this.createCardBackground(card));
+    container.addChild(this.createCardBackground());
     container.addChild(this.createArtArea(card));
-    container.addChild(this.createCardFrame(card.element));
+    container.addChild(this.createCardFrame());
 
     if (showName) {
       const nameBanner = this.createNameBanner(card.name);
@@ -137,9 +137,9 @@ export class CardRenderer {
         CARD_DIMENSIONS.BORDER_RADIUS,
       ),
     );
-    container.addChild(this.createCardBackground(minion));
+    container.addChild(this.createCardBackground());
     container.addChild(this.createArtArea(minion));
-    container.addChild(this.createCardFrame(minion.element));
+    container.addChild(this.createCardFrame());
 
     const isDamaged = minion.currentHealth < minion.health;
 
@@ -236,10 +236,10 @@ export class CardRenderer {
     return glow;
   }
 
-  // --- Structural Components ---------------------------------------------------  
+  // --- Structural Components ---------------------------------------------------
 
   // Dark background with element-colored border
-  private createCardBackground(card: Card | Minion): PIXI.Graphics {
+  private createCardBackground(): PIXI.Graphics {
     const bg = new PIXI.Graphics();
 
     bg.roundRect(
@@ -249,8 +249,8 @@ export class CardRenderer {
       this.CARD_HEIGHT,
       CARD_DIMENSIONS.BORDER_RADIUS,
     );
-    bg.fill({ color: COLORS.UI.darkBg, alpha: 1.0 });
-    bg.stroke({ width: 3, color: this.getElementBorderColor(card.element) });
+    bg.fill({ color: COLORS.UI.cardBg, alpha: 1.0 });
+    bg.stroke({ width: 3, color: COLORS.UI.gold });
 
     return bg;
   }
@@ -307,7 +307,7 @@ export class CardRenderer {
   }
 
   // Decorative frame overlay - element-coloured inner glow
-  private createCardFrame(element: string): PIXI.Graphics {
+  private createCardFrame(): PIXI.Graphics {
     const frame = new PIXI.Graphics();
 
     frame.roundRect(
@@ -317,17 +317,23 @@ export class CardRenderer {
       this.CARD_HEIGHT,
       CARD_DIMENSIONS.BORDER_RADIUS,
     );
-    frame.stroke({ width: 2, color: COLORS.UI.gold, alpha: LAYOUT.FRAME_OUTER_ALPHA });
+    frame.stroke({
+      width: 2,
+      color: COLORS.UI.gold,
+      alpha: LAYOUT.FRAME_OUTER_ALPHA,
+    });
 
     // Inner element glow
-    frame.roundRect(LAYOUT.FRAME_INSET,
+    frame.roundRect(
+      LAYOUT.FRAME_INSET,
       LAYOUT.FRAME_INSET,
       this.CARD_WIDTH - LAYOUT.FRAME_INSET * 2,
       this.CARD_HEIGHT - LAYOUT.FRAME_INSET * 2,
-      LAYOUT.FRAME_INNER_RADIUS,);
+      LAYOUT.FRAME_INNER_RADIUS,
+    );
     frame.stroke({
       width: 1,
-      color: this.getElementBorderColor(element),
+      color: COLORS.UI.gold,
       alpha: LAYOUT.FRAME_INNER_ALPHA,
     });
 
@@ -344,7 +350,13 @@ export class CardRenderer {
     const banner = new PIXI.Container();
 
     const bg = new PIXI.Graphics();
-    bg.roundRect(LAYOUT.NAME_X_INSET, 0, this.CARD_WIDTH - LAYOUT.NAME_WIDTH_INSET, LAYOUT.NAME_HEIGHT, 4);
+    bg.roundRect(
+      LAYOUT.NAME_X_INSET,
+      0,
+      this.CARD_WIDTH - LAYOUT.NAME_WIDTH_INSET,
+      LAYOUT.NAME_HEIGHT,
+      4,
+    );
     bg.fill({ color: COLORS.UI.darkBg, alpha: 0.92 });
     bg.stroke({ width: 1, color: COLORS.UI.gold, alpha: 0.8 });
     banner.addChild(bg);
@@ -374,7 +386,13 @@ export class CardRenderer {
     const area = new PIXI.Container();
 
     const bg = new PIXI.Graphics();
-    bg.roundRect(LAYOUT.NAME_X_INSET, 0, this.CARD_WIDTH - LAYOUT.NAME_WIDTH_INSET, LAYOUT.DESC_HEIGHT, 4);
+    bg.roundRect(
+      LAYOUT.NAME_X_INSET,
+      0,
+      this.CARD_WIDTH - LAYOUT.NAME_WIDTH_INSET,
+      LAYOUT.DESC_HEIGHT,
+      4,
+    );
     bg.fill({ color: COLORS.UI.darkBg, alpha: 0.7 });
     area.addChild(bg);
 
@@ -441,7 +459,7 @@ export class CardRenderer {
   }
 
   // --- Utility functions ---------------------------------------------------
-    private hasTauntAbility(minion: Minion): boolean {
+  private hasTauntAbility(minion: Minion): boolean {
     return (
       minion.abilities?.some(
         (ability) =>

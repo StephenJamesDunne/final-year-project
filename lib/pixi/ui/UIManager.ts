@@ -8,6 +8,7 @@ import { DeckIndicator } from './DeckIndicator';
 import { TurnIndicator } from './TurnIndicator';
 import { COLORS } from '../utils/StyleConstants';
 import { boardHasTaunt } from '@/lib/game/gameLogic';
+import { CardRenderer } from '../rendering/CardRenderer';
 
 export class UIManager {
   private portraitRenderer: PortraitRenderer;
@@ -26,12 +27,12 @@ export class UIManager {
   private turnIndicatorDisplay!: PIXI.Container;
   private endTurnButtonDisplay!: PIXI.Container;
 
-  constructor(layout: BoardLayout) {
+  constructor(layout: BoardLayout, cardRenderer: CardRenderer) {
     this.layout = layout;
     this.portraitRenderer = new PortraitRenderer();
     this.combatLogRenderer = new CombatLogRenderer();
     this.endTurnButton = new EndTurnButton();
-    this.deckIndicator = new DeckIndicator();
+    this.deckIndicator = new DeckIndicator(cardRenderer);
     this.turnIndicator = new TurnIndicator();
   }
 

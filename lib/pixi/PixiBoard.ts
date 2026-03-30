@@ -116,7 +116,7 @@ export class PixiBoard {
     
     this.boardLayout = new BoardLayout();
     this.cardRenderer = new CardRenderer();
-    this.uiManager = new UIManager(this.boardLayout);
+    this.uiManager = new UIManager(this.boardLayout, this.cardRenderer);
     this.handRenderer = new HandRenderer(this.cardRenderer, this.boardLayout, hoverHandler);
     this.minionRenderer = new MinionRenderer(this.cardRenderer, this.boardLayout, hoverHandler);
     this.boardRenderer = new BoardRenderer(this.boardLayout);

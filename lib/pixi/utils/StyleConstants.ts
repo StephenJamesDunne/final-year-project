@@ -33,6 +33,7 @@ export const COLORS = {
     baseBG: 0x0a0e1a,        // Very dark blue - Main background
     darkBg: 0x1e293b,        // Slate-800 - Card text backgrounds
     deckBg: 0x2d1810,        // Dark brown - Deck/card back
+    cardBg: 0x2a1a0e,        // Warm dark brown - card background
 
     // Team Colors  
     blue: 0x3b82f6,          // Blue-500 - Player elements

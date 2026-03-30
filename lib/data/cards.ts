@@ -82,7 +82,7 @@ export const CARDS: Card[] = [
   },
   {
     id: 'f_epic_2',
-    name: 'Fomorian Pyromaniac',
+    name: 'Fomorian Pyromancer',
     element: 'fire',
     type: 'minion',
     rarity: 'epic',
@@ -90,7 +90,7 @@ export const CARDS: Card[] = [
     attack: 5,
     health: 5,
     description: 'Battlecry: Give all friendly minions +1 Attack.',
-    imageUrl: '',
+    imageUrl: '/images/cards/fomorianpyromancer.png',
     abilities: [
       {
         trigger: 'battlecry',
@@ -162,7 +162,7 @@ export const CARDS: Card[] = [
     attack: 3,
     health: 2,
     description: 'Battlecry: Deal 3 damage to your own hero.',
-    imageUrl: '',
+    imageUrl: '/images/cards/flameimp.png',
     abilities: [
       {
         trigger: 'battlecry',
@@ -183,7 +183,7 @@ export const CARDS: Card[] = [
     attack: 3,
     health: 1,
     description: 'Charge',
-    imageUrl: '',
+    imageUrl: '/images/cards/wildfirespirit.png',
     abilities: [
       {
         trigger: 'passive',
@@ -205,7 +205,7 @@ export const CARDS: Card[] = [
     manaCost: 1,
     attack: 2,
     health: 1,
-    description: 'Fast and fragile.',
+    description: 'A skilled scout of the forests.',
     imageUrl: '/images/cards/fiannascout.png'
   },
   {
@@ -218,7 +218,7 @@ export const CARDS: Card[] = [
     attack: 3,
     health: 2,
     description: 'Loyal soldier of Queen Maedhbh.',
-    imageUrl: ''
+    imageUrl: '/images/cards/warriorofmaedhbh.png'
   },
   {
     id: 'f_common_3',
