@@ -283,7 +283,8 @@ export const CARDS: Card[] = [
     manaCost: 4,
     attack: 5,
     health: 3,
-    description: 'A heavy hitter.'
+    description: 'A heavy hitter.',
+    imageUrl: '/images/cards/furbolgbruiser.png'
   },
   {
     id: 'f_common_7',

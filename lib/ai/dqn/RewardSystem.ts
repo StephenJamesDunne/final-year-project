@@ -54,7 +54,6 @@ export interface RewardConfig {
 
   // Mana efficiency rewards
   manaUsed: number; // Small bonus for using mana
-  manaWasted: number; // Small penalty for ending turn with mana
   cleanKill: number; // Bonues for killing an enemy minion with losing the attacker
 }
 
@@ -72,15 +71,14 @@ export const DEFAULT_REWARDS: RewardConfig = {
   // Board control - most important non-game-ending reward
   minionKilled: 0.5,
   minionLost: -0.4,
-  boardAdvantage: 0.2,
-  faceDamage: 0.15,
+  boardAdvantage: 0.15,
+  faceDamage: 0.25,
 
   // Card advantage - medium importance
   cardDraw: 0.1,
 
   // Mana efficiency - nudges toward good habits
-  manaUsed: 0.05,
-  manaWasted: -0.15,
+  manaUsed: 0.3,
   cleanKill: 0.8,
 };
 
@@ -166,14 +164,6 @@ export function calculateReward(
   // Encourage playing on curve as often as possible
   const manaUsed = prevState.ai.mana - newState.ai.mana;
   reward += manaUsed * config.manaUsed;
-
-  // Penalty for ending turn with unused mana, but only if the agent had a legal move
-  // Using the context argument keeps RewardSystem free of dependencies on AutoPlay where
-  // The legal actions are defined
-  if (action === 67 && context?.hadLegalPlay) {
-    const manaWasted = prevState.ai.mana;
-    reward += manaWasted * config.manaWasted;
-  }
 
   return reward;
 }

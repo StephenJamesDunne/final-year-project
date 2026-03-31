@@ -4,14 +4,14 @@ import { CARD_DIMENSIONS } from '../utils/StyleConstants';
 import { CardRenderer } from '../rendering/CardRenderer';
 
 // Tooltip renders the card again, just scaled up
-const SCALE = 2;
+const CARD_SCALE = 2;
 
 export class HoverCardDisplay {
     private container: PIXI.Container;
     private cardRenderer: CardRenderer;
 
-    private readonly WIDTH = CARD_DIMENSIONS.WIDTH * SCALE;
-    private readonly HEIGHT = CARD_DIMENSIONS.HEIGHT * SCALE;
+    private readonly WIDTH = CARD_DIMENSIONS.WIDTH * CARD_SCALE;
+    private readonly HEIGHT = CARD_DIMENSIONS.HEIGHT * CARD_SCALE;
 
     private readonly CURSOR_OFFSET = 50;
     private readonly EDGE_PADDING = 50;
@@ -38,12 +38,12 @@ export class HoverCardDisplay {
 
         // Using the actual card renderer - board minions get createMinionCard,
         // hand cards and spells get createCard
-        const cardDisplay = 
-        "currentHealth" in card
-            ? this.cardRenderer.createMinionCard(card as Minion)
-            : this.cardRenderer.createCard(card);
-
-        cardDisplay.scale.set(SCALE);
+        const cardDisplay = this.cardRenderer.createCard(
+            card,
+            true,
+            1,
+            2,
+        );
 
         this.container.addChild(cardDisplay);
 
