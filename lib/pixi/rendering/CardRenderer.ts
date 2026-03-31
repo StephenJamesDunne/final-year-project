@@ -48,25 +48,6 @@ export class CardRenderer {
   private readonly CARD_WIDTH = CARD_DIMENSIONS.WIDTH;
   private readonly CARD_HEIGHT = CARD_DIMENSIONS.HEIGHT;
 
-  // Must be called once before any card creation to load shared assets
-  async loadAssets(): Promise<void> {
-    console.log("CardRenderer: Loading assets...");
-
-    try {
-      await this.textureLoader.loadTexture(
-        "card-frame",
-        "/images/default/card-frame.png",
-      );
-      await this.textureLoader.loadTexture(
-        "card-back",
-        "/images/default/card-back.png",
-      );
-      console.log("CardRenderer: Assets loaded successfully");
-    } catch {
-      console.warn("CardRenderer: Some assets failed to load, using fallbacks");
-    }
-  }
-
   // --- Card Creation ---------------------------------------------------
 
   // Full card for hand: shows art, name desctiption, mana cost, attack/health

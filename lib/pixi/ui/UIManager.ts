@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BoardState, BoardCallbacks } from '../PixiBoard';
+import { BoardCallbacks, BoardState } from '../PixiBoard';
 import { BoardLayout } from '../layout/BoardLayout';
 import { PortraitRenderer } from './PortraitRenderer';
 import { CombatLogRenderer } from './CombatLogRenderer';
@@ -59,7 +59,7 @@ export class UIManager {
     container.addChild(this.endTurnButtonDisplay);
   }
 
-  updateUI(container: PIXI.Container, state: BoardState, callbacks: BoardCallbacks): void {
+  updateUI(container: PIXI.Container, state: BoardState, callbacks: BoardCallbacks, prev: BoardState | null): void {
     this.destroyOldElements();
 
     // Remove old elements

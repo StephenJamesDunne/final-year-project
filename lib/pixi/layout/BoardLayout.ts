@@ -44,12 +44,15 @@ export class BoardLayout {
   // Enemy board zone (top of screen)
   // Player board zone (bottom of screen)
   // Center battlefield divider line
-  createBackground(): PIXI.Graphics {
+  createBackground(): PIXI.Container {
+    const root = new PIXI.Container();
+
     const bg = new PIXI.Graphics();
 
     // Base background - dark fantasy theme
     bg.rect(0, 0, this.width, this.height);
     bg.fill(COLORS.UI.baseBG);
+    root.addChild(bg);
 
     // Enemy territory (top third)
     const enemyZone = this.createBoardZone(
@@ -57,7 +60,7 @@ export class BoardLayout {
       this.height * 0.20, // Y position (20% down from very top of screen)
       this.height * 0.18  // Height (18% of screen)
     );
-    bg.addChild(enemyZone);
+    root.addChild(enemyZone);
 
     // Player territory (middle of screen)
     const playerZone = this.createBoardZone(
@@ -65,12 +68,14 @@ export class BoardLayout {
       this.height * 0.50, // Y position (50% down from top)
       this.height * 0.18  // Height (18% of screen)
     );
-    bg.addChild(playerZone);
+    root.addChild(playerZone);
 
     // Center battlefield line
-    this.drawBattleLine(bg);
+    const battleLine = new PIXI.Graphics();
+    this.drawBattleLine(battleLine);
+    root.addChild(battleLine);
 
-    return bg;
+    return root;
   }
 
   // Create a baord zone, either player or enemy territory

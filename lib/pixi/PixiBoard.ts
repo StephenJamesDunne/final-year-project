@@ -103,6 +103,10 @@ export class PixiBoard {
   // Z-ordering here is important, similar to SFML, PIXI renders bottom to top:
   private containers: RenderingContainers | null = null;
 
+  // Last rendered state - used to diff against incoming state in update()
+  // Null until the first update() call
+  private prevState: BoardState | null = null;
+
   // Creates instances of each renderer before initializing PIXI instance
   constructor(callbacks: BoardCallbacks) {
     this.callbacks = callbacks;
@@ -175,9 +179,6 @@ export class PixiBoard {
     // Align board size to fit the screen size
     this.boardLayout.updateDimensions();
 
-    // Load card art and frame assets
-    await this.cardRenderer.loadAssets();
-
     // Check for board destruction again after second async operation
     if (this.isDestroyed || !this.app) return;
 
@@ -247,46 +248,87 @@ export class PixiBoard {
   update(state: BoardState): void {
     if (!this.containers) return;
 
-    this.clearDynamicContainers();
+    const prev = this.prevState;
 
-    this.handRenderer.renderAIHand(this.containers.aiHand, state.aiHandCount);
-    this.minionRenderer.renderAIBoard(
-      this.containers.aiBoard,
-      state.aiBoard,
-      state.selectedMinion,
-      state.currentTurn,
-      this.callbacks.onTargetClick,
-    );
-    this.minionRenderer.renderPlayerBoard(
-      this.containers.playerBoard,
-      state.playerBoard,
-      state.selectedMinion,
-      state.currentTurn,
-      state.gameOver,
-      this.callbacks.onMinionClick,
-    );
-    this.handRenderer.renderPlayerHand(
-      this.containers.playerHand,
-      state.playerHand,
-      state.playerMana,
-      state.currentTurn,
-      state.gameOver,
-      state.playerBoard.length,
-      this.callbacks.onCardPlay,
-    );
+    // Tooltip always hidden before re-rendering; the card container
+    // gets destroyed and recreated, so the hover state is lost, and this prevents
+    // any tooltip bugs where the tooltip gets stuck on screen after a card is hovered
+    this.hoverCardDisplay.hide();
 
-    this.uiManager.updateUI(this.containers.ui, state, this.callbacks);
-  }
+    // --- AI Hand ---
+    // Only rebuild if the card count changed
+    if (!prev || prev.aiHandCount !== state.aiHandCount) {
+      this.destroyChildren(this.containers.aiHand);
+      this.handRenderer.renderAIHand(this.containers.aiHand, state.aiHandCount);
+    }
 
-  // Clear containers that change every update
-  // Only dynamic elements: hands, boards, UI
-  private clearDynamicContainers(): void {
-    if (!this.containers) return;
+    // --- AI Board ---
+    // Rebuild if the board composition changed (minions added/removed)
+    // or if the selected minion changed (for hover glow)
+    if (!prev ||
+      prev.aiBoard !== state.aiBoard ||
+      prev.selectedMinion !== state.selectedMinion || 
+      prev.currentTurn !== state.currentTurn
+    ) {
+      this.destroyChildren(this.containers.aiBoard);
+      this.minionRenderer.renderAIBoard(
+        this.containers.aiBoard,
+        state.aiBoard,
+        state.selectedMinion,
+        state.currentTurn,
+        this.callbacks.onTargetClick,
+      );
+    }
 
-    this.destroyChildren(this.containers.aiHand);
-    this.destroyChildren(this.containers.aiBoard);
-    this.destroyChildren(this.containers.playerBoard);
-    this.destroyChildren(this.containers.playerHand);
+    // --- Player Board ---
+    // Rebuild if the board composition changed
+    // or if the selected minion changed (for hover glow)
+    if (
+      !prev ||
+      prev.playerBoard !== state.playerBoard ||
+      prev.selectedMinion !== state.selectedMinion ||
+      prev.currentTurn !== state.currentTurn ||
+      prev.gameOver !== state.gameOver
+    ) {
+      this.destroyChildren(this.containers.playerBoard);
+      this.minionRenderer.renderPlayerBoard(
+        this.containers.playerBoard,
+        state.playerBoard,
+        state.selectedMinion,
+        state.currentTurn,
+        state.gameOver,
+        this.callbacks.onMinionClick,
+      );
+    }
+
+    // --- Player Hand ---
+    // Rebuild if hand composition changed or if mana changed (for playability)
+    // Board size also affects playability of minion cards, so that is included in the check as well
+    if (
+      !prev ||
+      prev.playerHand !== state.playerHand ||
+      prev.playerMana !== state.playerMana ||
+      prev.currentTurn !== state.currentTurn ||
+      prev.gameOver !== state.gameOver ||
+      prev.playerBoard.length !== state.playerBoard.length
+    ) {
+      this.destroyChildren(this.containers.playerHand);
+      this.handRenderer.renderPlayerHand(
+        this.containers.playerHand,
+        state.playerHand,
+        state.playerMana,
+        state.currentTurn,
+        state.gameOver,
+        state.playerBoard.length,
+        this.callbacks.onCardPlay,
+      );
+    }
+
+    // --- UI ---
+    // Pass previous state so UIManager can do its own diffing
+    this.uiManager.updateUI(this.containers.ui, state, this.callbacks, prev);
+
+    this.prevState = state;
   }
 
   // Destroy all children of a container
@@ -299,6 +341,8 @@ export class PixiBoard {
     }
   }
 
+  // Handle window resize - re-render background and reposition UI elements
+  // Just reposition elements and re-render background to fill new screen dimensions
   private handleResize(): void {
     if (!this.app || !this.containers || !this.scaleManager) return;
 
@@ -356,5 +400,6 @@ export class PixiBoard {
     this.containers = null;
     this.scaleManager = null;
     this.rootContainer = null;
+    this.prevState = null;    // clear stale state so next init gets a full render
   }
 }
