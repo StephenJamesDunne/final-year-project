@@ -38,6 +38,8 @@ export class HandRenderer {
             cardContainer.x = positions[i].x;
             cardContainer.y = positions[i].y;
 
+            const baseY = positions[i].y;
+
             const isPlayable =
                 currentTurn === 'player' &&
                 !gameOver &&
@@ -45,15 +47,16 @@ export class HandRenderer {
                 (card.type !== 'minion' || boardSize < 7);
 
             cardContainer.eventMode = 'static';
+
             cardContainer.on('pointerover', (e: PIXI.FederatedPointerEvent) => {
                 cardContainer.scale.set(1.1);
-                cardContainer.y -= 20;
+                cardContainer.y = baseY - 20; // <- absolute position, not relative
                 this.onHover?.(card, e.globalX, e.globalY);
             });
 
             cardContainer.on('pointerout', () => {
                 cardContainer.scale.set(1.0);
-                cardContainer.y = positions[i].y;
+                cardContainer.y = baseY;
                 this.onHover?.(null, 0, 0);
             });
 

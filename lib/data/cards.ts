@@ -251,7 +251,7 @@ export const CARDS: Card[] = [
     attack: 1,
     health: 2,
     description: 'Deathrattle: Deal 2 damage to the enemy hero.',
-    imageUrl: '',
+    imageUrl: '/images/cards/embersprite.png',
     abilities: [
       {
         trigger: 'deathrattle',
@@ -272,7 +272,7 @@ export const CARDS: Card[] = [
     attack: 4,
     health: 2,
     description: 'Aggressive raider from the west.',
-    imageUrl: ''
+    imageUrl: '/images/cards/connachtraider.png'
   },
   {
     id: 'f_common_6',

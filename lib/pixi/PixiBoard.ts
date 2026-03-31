@@ -6,18 +6,21 @@
 // MinionRenderer = Rendering minions played onto the board
 // UIManager = player/AI portraits, buttons, combat log elements
 
-import * as PIXI from 'pixi.js';
-import { Card, Minion } from '@/lib/types/game';
-import { CardRenderer } from './rendering/CardRenderer';
-import { BoardLayout } from './layout/BoardLayout';
-import { UIManager } from './ui/UIManager';
-import { HandRenderer } from './rendering/HandRenderer';
-import { MinionRenderer } from './rendering/MinionRenderer';
-import { BoardRenderer } from './rendering/BoardRenderer';
-import { COLORS } from './utils/StyleConstants';
-import { HoverCardDisplay } from './ui/HoverCardDisplay';
-import { ScaleManager, DESIGN_WIDTH, DESIGN_HEIGHT } from './utils/ScaleManager';
-
+import * as PIXI from "pixi.js";
+import { Card, Minion } from "@/lib/types/game";
+import { CardRenderer } from "./rendering/CardRenderer";
+import { BoardLayout } from "./layout/BoardLayout";
+import { UIManager } from "./ui/UIManager";
+import { HandRenderer } from "./rendering/HandRenderer";
+import { MinionRenderer } from "./rendering/MinionRenderer";
+import { BoardRenderer } from "./rendering/BoardRenderer";
+import { COLORS } from "./utils/StyleConstants";
+import { HoverCardDisplay } from "./ui/HoverCardDisplay";
+import {
+  ScaleManager,
+  DESIGN_WIDTH,
+  DESIGN_HEIGHT,
+} from "./utils/ScaleManager";
 
 // Callbacks passed from React to handle all user interactions are here.
 // PixiJS detects clicks and calls corresponding functions to communicate with
@@ -40,7 +43,7 @@ export interface BoardState {
   playerDeckCount: number;
   aiDeckCount: number;
   selectedMinion: string | null;
-  currentTurn: 'player' | 'ai';
+  currentTurn: "player" | "ai";
   playerMana: number;
   playerMaxMana: number;
   playerHealth: number;
@@ -48,7 +51,7 @@ export interface BoardState {
   aiMaxMana: number;
   aiHealth: number;
   gameOver: boolean;
-  winner?: 'player' | 'ai';
+  winner?: "player" | "ai";
   combatLog: string[];
   turnNumber: number;
   aiAction?: string;
@@ -93,7 +96,7 @@ export class PixiBoard {
 
   // Reference to bound resize handler
   // If this is passed as a callback without being bound, it'll lose its context
-  // and "this" will become undefined, so binding prevents new function calls with 
+  // and "this" will become undefined, so binding prevents new function calls with
   // wrong data
   private boundHandleResize: (() => void) | null = null;
 
@@ -105,22 +108,29 @@ export class PixiBoard {
     this.callbacks = callbacks;
 
     // hover functionality for detailed view of cards highlighted
-    const hoverHandler = (card: Card | Minion | null, x: number, y:number) => {
+    const hoverHandler = (card: Card | Minion | null, x: number, y: number) => {
       if (card) {
         this.showHoverCard(card, x, y);
       } else {
         this.hideHoverCard();
       }
-    }
+    };
 
-    
     this.boardLayout = new BoardLayout();
     this.cardRenderer = new CardRenderer();
     this.uiManager = new UIManager(this.boardLayout, this.cardRenderer);
-    this.handRenderer = new HandRenderer(this.cardRenderer, this.boardLayout, hoverHandler);
-    this.minionRenderer = new MinionRenderer(this.cardRenderer, this.boardLayout, hoverHandler);
+    this.handRenderer = new HandRenderer(
+      this.cardRenderer,
+      this.boardLayout,
+      hoverHandler,
+    );
+    this.minionRenderer = new MinionRenderer(
+      this.cardRenderer,
+      this.boardLayout,
+      hoverHandler,
+    );
     this.boardRenderer = new BoardRenderer(this.boardLayout);
-    this.hoverCardDisplay = new HoverCardDisplay();
+    this.hoverCardDisplay = new HoverCardDisplay(this.cardRenderer);
   }
 
   // Initialization of PixiJS, set up rendering
@@ -151,6 +161,8 @@ export class PixiBoard {
       autoDensity: true,
     });
 
+    this.app.renderer.resolution = 2;
+
     // Check if board is destroyed during async init
     if (this.isDestroyed || !this.app) return;
 
@@ -180,7 +192,7 @@ export class PixiBoard {
 
     // Listen for window resize events
     this.boundHandleResize = this.handleResize.bind(this);
-    window.addEventListener('resize', this.boundHandleResize);
+    window.addEventListener("resize", this.boundHandleResize);
   }
 
   // Create and add rendering containers to stage
@@ -243,7 +255,7 @@ export class PixiBoard {
       state.aiBoard,
       state.selectedMinion,
       state.currentTurn,
-      this.callbacks.onTargetClick
+      this.callbacks.onTargetClick,
     );
     this.minionRenderer.renderPlayerBoard(
       this.containers.playerBoard,
@@ -251,7 +263,7 @@ export class PixiBoard {
       state.selectedMinion,
       state.currentTurn,
       state.gameOver,
-      this.callbacks.onMinionClick
+      this.callbacks.onMinionClick,
     );
     this.handRenderer.renderPlayerHand(
       this.containers.playerHand,
@@ -260,7 +272,7 @@ export class PixiBoard {
       state.currentTurn,
       state.gameOver,
       state.playerBoard.length,
-      this.callbacks.onCardPlay
+      this.callbacks.onCardPlay,
     );
 
     this.uiManager.updateUI(this.containers.ui, state, this.callbacks);
@@ -302,11 +314,17 @@ export class PixiBoard {
   // Functions to allow show/hide functionality for the tooltip
   showHoverCard(card: Card | Minion, globalX: number, globalY: number): void {
     if (!this.app || !this.rootContainer) return;
-    
+
     const scale = this.rootContainer.scale.x;
     const localX = (globalX - this.rootContainer.x) / scale;
     const localY = (globalY - this.rootContainer.y) / scale;
-    this.hoverCardDisplay.show(card, localX, localY, DESIGN_WIDTH, DESIGN_HEIGHT);
+    this.hoverCardDisplay.show(
+      card,
+      localX,
+      localY,
+      DESIGN_WIDTH,
+      DESIGN_HEIGHT,
+    );
   }
 
   hideHoverCard(): void {
@@ -324,14 +342,14 @@ export class PixiBoard {
     this.isDestroyed = true;
 
     if (this.boundHandleResize) {
-      window.removeEventListener('resize', this.boundHandleResize);
+      window.removeEventListener("resize", this.boundHandleResize);
       this.boundHandleResize = null;
     }
 
     if (this.app?.renderer) {
       this.app.destroy(true, {
         children: true,
-        texture: true
+        texture: true,
       });
     }
     this.app = null;
