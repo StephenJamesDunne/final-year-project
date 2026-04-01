@@ -10,14 +10,20 @@ export class DeckIndicator {
     this.cardRenderer = cardRenderer;
   }
 
-  createIndicator(cardCount: number, isAI: boolean): PIXI.Container {
-    const container = new PIXI.Container();
+  // Card back is static, only the count badge text changes
+  createIndicator(
+    cardCount: number,
+    isAI: boolean,
+  ): PIXI.Container & { updateCount: (value: number) => void } {
+    const container = new PIXI.Container() as PIXI.Container & {
+      updateCount: (value: number) => void;
+    };
 
-    // Card back visual — reuses the same design as AI hand cards
+    // Static card back created once
     const cardBack = this.cardRenderer.createCardBack();
     container.addChild(cardBack);
 
-    // Count badge overlaid on top right corner of the card back
+    // Count badge, keep reference for updates during gameplay
     const badge = GraphicsHelpers.createCircleBadge(
       cardCount,
       isAI ? COLORS.UI.red : COLORS.UI.blue,
@@ -26,6 +32,12 @@ export class DeckIndicator {
     badge.x = 82;
     badge.y = -8;
     container.addChild(badge);
+
+    // Update just the badge text node on count changes, not the whole card back
+    container.updateCount = (value: number) => {
+      const text = badge.getChildAt(1) as PIXI.Text;
+      text.text = value.toString();
+    };
 
     return container;
   }

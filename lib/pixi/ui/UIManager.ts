@@ -1,14 +1,14 @@
-import * as PIXI from 'pixi.js';
-import { BoardCallbacks, BoardState } from '../PixiBoard';
-import { BoardLayout } from '../layout/BoardLayout';
-import { PortraitRenderer } from './PortraitRenderer';
-import { CombatLogRenderer } from './CombatLogRenderer';
-import { EndTurnButton } from './EndTurnButton';
-import { DeckIndicator } from './DeckIndicator';
-import { TurnIndicator } from './TurnIndicator';
-import { COLORS } from '../utils/StyleConstants';
-import { boardHasTaunt } from '@/lib/game/gameLogic';
-import { CardRenderer } from '../rendering/CardRenderer';
+import * as PIXI from "pixi.js";
+import { BoardCallbacks, BoardState } from "../PixiBoard";
+import { BoardLayout } from "../layout/BoardLayout";
+import { PortraitRenderer } from "./PortraitRenderer";
+import { CombatLogRenderer } from "./CombatLogRenderer";
+import { EndTurnButton } from "./EndTurnButton";
+import { DeckIndicator } from "./DeckIndicator";
+import { TurnIndicator } from "./TurnIndicator";
+import { COLORS } from "../utils/StyleConstants";
+import { boardHasTaunt } from "@/lib/game/gameLogic";
+import { CardRenderer } from "../rendering/CardRenderer";
 
 export class UIManager {
   private portraitRenderer: PortraitRenderer;
@@ -18,14 +18,15 @@ export class UIManager {
   private turnIndicator: TurnIndicator;
   private layout: BoardLayout;
 
-  // UI element references
-  private aiHealthDisplay!: PIXI.Container;
-  private playerHealthDisplay!: PIXI.Container;
-  private aiDeckIndicator!: PIXI.Container;
-  private playerDeckIndicator!: PIXI.Container;
-  private combatLogDisplay!: PIXI.Container;
-  private turnIndicatorDisplay!: PIXI.Container;
-  private endTurnButtonDisplay!: PIXI.Container;
+  // Persistent element references: created once in createInitialUI,
+  // updated in place by updateUI
+  private aiPortrait!: ReturnType<PortraitRenderer["createHeroPortrait"]>;
+  private playerPortrait!: ReturnType<PortraitRenderer["createHeroPortrait"]>;
+  private aiDeck!: ReturnType<DeckIndicator["createIndicator"]>;
+  private playerDeck!: ReturnType<DeckIndicator["createIndicator"]>;
+  private combatLog!: ReturnType<CombatLogRenderer["createCombatLog"]>;
+  private turnIndicatorDisplay!: ReturnType<TurnIndicator["createIndicator"]>;
+  private endTurnButtonDisplay!: ReturnType<EndTurnButton["createButton"]>;
 
   constructor(layout: BoardLayout, cardRenderer: CardRenderer) {
     this.layout = layout;
@@ -36,122 +37,148 @@ export class UIManager {
     this.turnIndicator = new TurnIndicator();
   }
 
+  // Called only once on init. Creates all elements and adds them to the container
   createInitialUI(container: PIXI.Container, callbacks: BoardCallbacks): void {
     // Create all UI elements
-    this.aiHealthDisplay = this.portraitRenderer.createHeroPortrait(30, 1, 1, true);
-    this.playerHealthDisplay = this.portraitRenderer.createHeroPortrait(30, 1, 1, false);
-    this.aiDeckIndicator = this.deckIndicator.createIndicator(30, true);
-    this.playerDeckIndicator = this.deckIndicator.createIndicator(30, false);
-    this.combatLogDisplay = this.combatLogRenderer.createCombatLog([]);
-    this.turnIndicatorDisplay = this.turnIndicator.createIndicator(1, 'player');
-    this.endTurnButtonDisplay = this.endTurnButton.createButton(true, callbacks.onEndTurn);
+    this.aiPortrait = this.portraitRenderer.createHeroPortrait(30, 1, 1, true);
+    this.playerPortrait = this.portraitRenderer.createHeroPortrait(
+      30,
+      1,
+      1,
+      false,
+    );
+    this.aiDeck = this.deckIndicator.createIndicator(30, true);
+    this.playerDeck = this.deckIndicator.createIndicator(30, false);
+    this.combatLog = this.combatLogRenderer.createCombatLog([]);
+    this.turnIndicatorDisplay = this.turnIndicator.createIndicator(1, "player");
+    this.endTurnButtonDisplay = this.endTurnButton.createButton(
+      true,
+      callbacks.onEndTurn,
+    );
 
     // Position everything
     this.positionElements();
 
     // Add to container
-    container.addChild(this.aiHealthDisplay);
-    container.addChild(this.playerHealthDisplay);
-    container.addChild(this.aiDeckIndicator);
-    container.addChild(this.playerDeckIndicator);
-    container.addChild(this.combatLogDisplay);
+    container.addChild(this.aiPortrait);
+    container.addChild(this.playerPortrait);
+    container.addChild(this.aiDeck);
+    container.addChild(this.playerDeck);
+    container.addChild(this.combatLog);
     container.addChild(this.turnIndicatorDisplay);
     container.addChild(this.endTurnButtonDisplay);
   }
 
-  updateUI(container: PIXI.Container, state: BoardState, callbacks: BoardCallbacks, prev: BoardState | null): void {
-    this.destroyOldElements();
+  updateUI(
+    container: PIXI.Container,
+    state: BoardState,
+    callbacks: BoardCallbacks,
+    prev: BoardState | null,
+  ): void {
+    // Portraits - update health and mana values
+    if (
+      !prev ||
+      prev.aiHealth !== state.aiHealth ||
+      prev.aiMana !== state.aiMana ||
+      prev.aiMaxMana !== state.aiMaxMana
+    ) {
+      this.aiPortrait.updateHealth(state.aiHealth);
+      this.aiPortrait.updateMana(state.aiMana, state.aiMaxMana);
+    }
 
-    // Remove old elements
-    this.removeElements(container);
+    if (
+      !prev ||
+      prev.playerHealth !== state.playerHealth ||
+      prev.playerMana !== state.playerMana ||
+      prev.playerMaxMana !== state.playerMaxMana
+    ) {
+      this.playerPortrait.updateHealth(state.playerHealth);
+      this.playerPortrait.updateMana(state.playerMana, state.playerMaxMana);
+    }
 
-    // Recreate with new state
-    this.aiHealthDisplay = this.portraitRenderer.createHeroPortrait(
-      state.aiHealth,
-      state.aiMana,
-      state.aiMaxMana,
-      true
-    );
+    if (
+      !prev ||
+      prev.selectedMinion !== state.selectedMinion ||
+      prev.currentTurn !== state.currentTurn ||
+      prev.aiBoard !== state.aiBoard
+    ) {
+      this.aiPortrait.removeAllListeners();
+      this.aiPortrait.eventMode = "none";
+      this.aiPortrait.tint = 0xffffff;
+      this.aiPortrait.alpha = 1;
 
-    // Make AI targetable if needed
-    if (state.selectedMinion && state.currentTurn === 'player') {
-      const canTargetFace = !boardHasTaunt(state.aiBoard);
-
-      if (canTargetFace) {
-        this.aiHealthDisplay.tint = COLORS.UI.aiTint2;
-        this.aiHealthDisplay.eventMode = 'static';
-        this.aiHealthDisplay.cursor = 'pointer';
-        this.aiHealthDisplay.on('pointerdown', callbacks.onAIFaceClick);
-      } else {
-        // Dim the portrait to show it can't be targeted
-        this.aiHealthDisplay.alpha = 0.5;
+      if (state.selectedMinion && state.currentTurn === "player") {
+        const canTargetFace = !boardHasTaunt(state.aiBoard);
+        if (canTargetFace) {
+          this.aiPortrait.tint = COLORS.UI.aiTint2;
+          this.aiPortrait.eventMode = "static";
+          this.aiPortrait.cursor = "pointer";
+          this.aiPortrait.on("pointerdown", callbacks.onAIFaceClick);
+        } else {
+          this.aiPortrait.alpha = 0.5;
+        }
       }
     }
 
-    this.playerHealthDisplay = this.portraitRenderer.createHeroPortrait(
-      state.playerHealth,
-      state.playerMana,
-      state.playerMaxMana,
-      false
-    );
+    // Deck counts
+    if (!prev || prev.aiDeckCount !== state.aiDeckCount) {
+      this.aiDeck.updateCount(state.aiDeckCount);
+    }
 
-    // Change deck count calculation to use the new properties from BoardState
-    // This was incorrectly calculating deck size by subtracting hand and board counts from the initial deck size, which doesn't account for cards drawn or played
-    const aiCardsRemaining = state.aiDeckCount;
-    const playerCardsRemaining = state.playerDeckCount;
+    if (!prev || prev.playerDeckCount !== state.playerDeckCount) {
+      this.playerDeck.updateCount(state.playerDeckCount);
+    }
 
-    this.aiDeckIndicator = this.deckIndicator.createIndicator(aiCardsRemaining, true);
-    this.playerDeckIndicator = this.deckIndicator.createIndicator(playerCardsRemaining, false);
-    this.combatLogDisplay = this.combatLogRenderer.createCombatLog(
-      state.combatLog
-    );
-    this.turnIndicatorDisplay = this.turnIndicator.createIndicator(
-      state.turnNumber,
-      state.currentTurn
-    );
-    this.endTurnButtonDisplay = this.endTurnButton.createButton(
-      state.currentTurn === 'player' && !state.gameOver,
-      callbacks.onEndTurn
-    );
+    // Combat log
+    if (!prev || prev.combatLog !== state.combatLog) {
+      this.combatLog.updateLog(state.combatLog);
+    }
 
-    // Position and add to container
-    this.positionElements();
-    this.addElements(container);
+    // Turn indicator
+    if (
+      !prev ||
+      prev.turnNumber !== state.turnNumber ||
+      prev.currentTurn !== state.currentTurn
+    ) {
+      this.turnIndicatorDisplay.updateTurn(state.turnNumber, state.currentTurn);
+    }
+
+    // End turn button - only changes when turn or game over changes
+    if (
+      !prev ||
+      prev.currentTurn !== state.currentTurn ||
+      prev.gameOver !== state.gameOver
+    ) {
+      const enabled = state.currentTurn === "player" && !state.gameOver;
+      this.endTurnButtonDisplay.updateEnabled(enabled, callbacks.onEndTurn);
+    }
   }
 
-  private destroyOldElements(): void {
-    // Destroy each element if it exists
-    // children: true destroys nested elements
-    this.aiHealthDisplay?.destroy({children: true});
-    this.playerHealthDisplay?.destroy({ children: true });
-    this.aiDeckIndicator?.destroy({ children: true });
-    this.playerDeckIndicator?.destroy({ children: true });
-    this.combatLogDisplay?.destroy({ children: true });
-    this.turnIndicatorDisplay?.destroy({ children: true });
-    this.endTurnButtonDisplay?.destroy({ children: true });
+  repositionOnResize(): void {
+    this.positionElements();
   }
 
   private positionElements(): void {
     const aiPortraitPos = this.layout.getAIPortraitPosition();
-    this.aiHealthDisplay.x = aiPortraitPos.x;
-    this.aiHealthDisplay.y = aiPortraitPos.y;
+    this.aiPortrait.x = aiPortraitPos.x;
+    this.aiPortrait.y = aiPortraitPos.y;
 
     const playerPortraitPos = this.layout.getPlayerPortraitPosition();
-    this.playerHealthDisplay.x = playerPortraitPos.x;
-    this.playerHealthDisplay.y = playerPortraitPos.y;
+    this.playerPortrait.x = playerPortraitPos.x;
+    this.playerPortrait.y = playerPortraitPos.y;
 
     const aiDeckPos = this.layout.getAIDeckPosition();
-    this.aiDeckIndicator.x = aiDeckPos.x;
-    this.aiDeckIndicator.y = aiDeckPos.y;
+    this.aiDeck.x = aiDeckPos.x;
+    this.aiDeck.y = aiDeckPos.y;
 
     const playerDeckPos = this.layout.getPlayerDeckPosition();
-    this.playerDeckIndicator.x = playerDeckPos.x;
-    this.playerDeckIndicator.y = playerDeckPos.y;
+    this.playerDeck.x = playerDeckPos.x;
+    this.playerDeck.y = playerDeckPos.y;
 
     const logPos = this.layout.getCombatLogPosition();
-    this.combatLogDisplay.x = logPos.x;
-    this.combatLogDisplay.y = logPos.y;
-    this.combatLogDisplay.alpha = 0.8;
+    this.combatLog.x = logPos.x;
+    this.combatLog.y = logPos.y;
+    this.combatLog.alpha = 0.8;
 
     const turnPos = this.layout.getTurnIndicatorPosition();
     this.turnIndicatorDisplay.x = turnPos.x;
@@ -160,29 +187,5 @@ export class UIManager {
     const buttonPos = this.layout.getEndTurnButtonPosition();
     this.endTurnButtonDisplay.x = buttonPos.x;
     this.endTurnButtonDisplay.y = buttonPos.y;
-  }
-
-  private removeElements(container: PIXI.Container): void {
-    container.removeChild(this.aiHealthDisplay);
-    container.removeChild(this.playerHealthDisplay);
-    container.removeChild(this.aiDeckIndicator);
-    container.removeChild(this.playerDeckIndicator);
-    container.removeChild(this.combatLogDisplay);
-    container.removeChild(this.turnIndicatorDisplay);
-    container.removeChild(this.endTurnButtonDisplay);
-  }
-
-  private addElements(container: PIXI.Container): void {
-    container.addChild(this.aiHealthDisplay);
-    container.addChild(this.playerHealthDisplay);
-    container.addChild(this.aiDeckIndicator);
-    container.addChild(this.playerDeckIndicator);
-    container.addChild(this.combatLogDisplay);
-    container.addChild(this.turnIndicatorDisplay);
-    container.addChild(this.endTurnButtonDisplay);
-  }
-
-  repositionOnResize(): void {
-    this.positionElements();
   }
 }

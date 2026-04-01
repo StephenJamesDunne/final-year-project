@@ -1,32 +1,70 @@
-import * as PIXI from 'pixi.js';
-import { COLORS } from '../utils/StyleConstants';
+import * as PIXI from "pixi.js";
+import { COLORS } from "../utils/StyleConstants";
 
 export class CombatLogRenderer {
   private readonly WIDTH = 320;
   private readonly HEIGHT = 520;
   private readonly LINE_HEIGHT = 36;
   private readonly MAX_ENTRIES = 12;
+  private readonly START_Y = 55;
+  private readonly PADDING = 15;
 
-  createCombatLog(combatLog: string[]): PIXI.Container {
-    const container = new PIXI.Container();
+  createCombatLog(
+    combatLog: string[],
+  ): PIXI.Container & { updateLog: (combatLog: string[]) => void } {
+    const container = new PIXI.Container() as PIXI.Container & {
+      updateLog: (combatLog: string[]) => void;
+    };
 
-    // Background
-    const bg = this.createBackground();
-    container.addChild(bg);
+    container.addChild(this.createBackground());
+    container.addChild(this.createTitle());
+    container.addChild(this.createDivider());
 
-    // Title
-    const title = this.createTitle();
-    container.addChild(title);
+    // Separate container for log entries, so they can be cleared/redrawn
+    // when the log updates without needing to recreate the whole background/title/divider
+    const entriesContainer = new PIXI.Container();
+    container.addChild(entriesContainer);
 
-    // Divider
-    const divider = this.createDivider();
-    container.addChild(divider);
+    // Render initial entries
+    this.renderEntries(entriesContainer, combatLog);
 
-    // Log entries
-    const recentLogs = combatLog.slice(-this.MAX_ENTRIES).reverse();
-    this.renderLogEntries(container, recentLogs);
+    // Updates to the container should only replace the entries container contents,
+    // not the whole log
+    container.updateLog = (newLog: string[]) => {
+      while (entriesContainer.children.length > 0) {
+        const child = entriesContainer.children[0];
+        entriesContainer.removeChild(child);
+        child.destroy({ children: true });
+      }
+      this.renderEntries(entriesContainer, newLog);
+    };
 
     return container;
+  }
+
+  private renderEntries(container: PIXI.Container, combatLog: string[]): void {
+    const recentLogs = combatLog.slice(-this.MAX_ENTRIES).reverse();
+
+    recentLogs.forEach((log, index) => {
+      const logText = new PIXI.Text({
+        text: log.startsWith("═") || log.startsWith("─") ? log : `• ${log}`,
+        style: {
+          fontSize: 14,
+          fill:
+            log.includes("VICTORY") || log.includes("DEFEAT")
+              ? COLORS.UI.victory
+              : COLORS.UI.logText,
+          fontWeight:
+            log.startsWith("═") || log.startsWith("─") ? "bold" : "normal",
+          wordWrap: true,
+          wordWrapWidth: this.WIDTH - this.PADDING * 2,
+          lineHeight: 18,
+        },
+      });
+      logText.x = this.PADDING;
+      logText.y = this.START_Y + index * this.LINE_HEIGHT;
+      container.addChild(logText);
+    });
   }
 
   private createBackground(): PIXI.Graphics {
@@ -39,10 +77,10 @@ export class CombatLogRenderer {
 
   private createTitle(): PIXI.Text {
     const title = new PIXI.Text({
-      text: 'Combat Log',
+      text: "Combat Log",
       style: {
         fontSize: 22,
-        fontWeight: 'bold',
+        fontWeight: "bold",
         fill: COLORS.UI.victory,
       },
     });
@@ -58,27 +96,5 @@ export class CombatLogRenderer {
     divider.lineTo(this.WIDTH - 10, 45);
     divider.stroke({ width: 1, color: COLORS.UI.grayStroke });
     return divider;
-  }
-
-  private renderLogEntries(container: PIXI.Container, logs: string[]): void {
-    const startY = 55;
-    const padding = 15;
-
-    logs.forEach((log, i) => {
-      const logText = new PIXI.Text({
-        text: log.startsWith('═') || log.startsWith('─') ? log : `• ${log}`,
-        style: {
-          fontSize: 14,
-          fill: log.includes('VICTORY') || log.includes('DEFEAT') ? COLORS.UI.victory : COLORS.UI.logText,
-          fontWeight: log.startsWith('═') || log.startsWith('─') ? 'bold' : 'normal',
-          wordWrap: true,
-          wordWrapWidth: this.WIDTH - padding * 2,
-          lineHeight: 18,
-        },
-      });
-      logText.x = padding;
-      logText.y = startY + i * this.LINE_HEIGHT;
-      container.addChild(logText);
-    });
   }
 }
