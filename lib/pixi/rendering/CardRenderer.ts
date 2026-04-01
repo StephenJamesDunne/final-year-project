@@ -10,10 +10,10 @@ import { GraphicsHelpers } from "../utils/GraphicsHelpers";
 // Mana cost badge in top left, attack and health badges in bottom left and right respectively
 export const CARD_LAYOUT = {
   // Art area
-  ART_X: 6,
-  ART_Y: 12,
-  ART_WIDTH_INSET: 12, // artWidth = CARD_WIDTH - ART_WIDTH_INSET
-  ART_HEIGHT: 82, // roughly 60% of the card height
+  ART_X: 4,
+  ART_Y: 5,
+  ART_WIDTH_INSET: 8, // artWidth = CARD_WIDTH - ART_WIDTH_INSET
+  ART_HEIGHT: 90, // roughly 60% of the card height
 
   // Name banner
   NAME_Y: 82, // Overlaps bottom of art
@@ -22,19 +22,10 @@ export const CARD_LAYOUT = {
   NAME_WIDTH_INSET: 8, // CARD_WIDTH - 8
 
   // Description area
-  DESC_Y: 106,
-  DESC_HEIGHT: 24,
-  DESC_FONT_SIZE: 7,
-  DESC_LINE_HEIGHT: 9,
-
-  // Badges
-  BADGE_Y_OFFSET: 20, // How far badges hang below card bottom
-  BADGE_LEFT_X: -8,
-  BADGE_RIGHT_X_INSET: 20, // rightBadgeX = CARD_WIDTH - BADGE_RIGHT_X_INSET
-
-  // Mana crystal
-  MANA_X: -8,
-  MANA_Y: -8,
+  DESC_Y: 103,
+  DESC_HEIGHT: 36,
+  DESC_FONT_SIZE: 8,
+  DESC_LINE_HEIGHT: 12,
 
   // Decorative frame elements
   FRAME_OUTER_ALPHA: 0.6,
@@ -51,35 +42,38 @@ export class CardRenderer {
   // --- Card Creation ---------------------------------------------------
 
   // Full card for hand: shows art, name desctiption, mana cost, attack/health
-  createCard(card: Card, showName: boolean = true): PIXI.Container {
+  createCard(
+    card: Card,
+    showName: boolean = true,
+    badgeScale: number = 1,
+    cardScale: number = 1,
+  ): PIXI.Container {
     const container = new PIXI.Container();
+    const W = this.CARD_WIDTH * cardScale;
+    const H = this.CARD_HEIGHT * cardScale;
+    const R = CARD_DIMENSIONS.BORDER_RADIUS * cardScale;
 
-    container.addChild(
-      GraphicsHelpers.createShadow(
-        this.CARD_WIDTH,
-        this.CARD_HEIGHT,
-        CARD_DIMENSIONS.BORDER_RADIUS,
-      ),
-    );
-    container.addChild(this.createCardBackground());
-    container.addChild(this.createArtArea(card));
-    container.addChild(this.createCardFrame());
+    container.addChild(GraphicsHelpers.createShadow(W, H, R));
+    container.addChild(this.createCardBackground(W, H, R));
+    container.addChild(this.createArtArea(card, W, cardScale));
+    container.addChild(this.createCardFrame(W, H, R));
 
     if (showName) {
-      const nameBanner = this.createNameBanner(card.name);
-      nameBanner.y = CARD_LAYOUT.NAME_Y;
+      const nameBanner = this.createNameBanner(card.name, false, W, cardScale);
+      nameBanner.y = CARD_LAYOUT.NAME_Y * cardScale;
       container.addChild(nameBanner);
     }
 
     if (card.description) {
-      const desc = this.createDescriptionArea(card.description);
-      desc.y = CARD_LAYOUT.DESC_Y;
+      const desc = this.createDescriptionArea(card.description, W, cardScale);
+      desc.y = CARD_LAYOUT.DESC_Y * cardScale;
       container.addChild(desc);
     }
 
-    const manaCost = this.createManaCrystal(card.manaCost);
-    manaCost.x = CARD_LAYOUT.MANA_X;
-    manaCost.y = CARD_LAYOUT.MANA_Y;
+    const manaSize = 16 * badgeScale;
+    const manaCost = this.createManaCrystal(card.manaCost, badgeScale);
+    manaCost.x = -manaSize;
+    manaCost.y = -manaSize;
     container.addChild(manaCost);
 
     if (
@@ -87,14 +81,20 @@ export class CardRenderer {
       card.attack !== undefined &&
       card.health !== undefined
     ) {
-      const attackBadge = this.createAttackBadge(card.attack);
-      attackBadge.x = CARD_LAYOUT.BADGE_LEFT_X;
-      attackBadge.y = this.CARD_HEIGHT - CARD_LAYOUT.BADGE_Y_OFFSET;
+      const badgeRadius = 16 * badgeScale;
+
+      const attackBadge = this.createAttackBadge(card.attack, badgeScale);
+      attackBadge.x = -badgeRadius;
+      attackBadge.y = H - badgeRadius;
       container.addChild(attackBadge);
 
-      const healthBadge = this.createHealthBadge(card.health);
-      healthBadge.x = this.CARD_WIDTH - CARD_LAYOUT.BADGE_RIGHT_X_INSET;
-      healthBadge.y = this.CARD_HEIGHT - CARD_LAYOUT.BADGE_Y_OFFSET;
+      const healthBadge = this.createHealthBadge(
+        card.health,
+        false,
+        badgeScale,
+      );
+      healthBadge.x = W - badgeRadius;
+      healthBadge.y = H - badgeRadius;
       container.addChild(healthBadge);
     }
 
@@ -119,19 +119,21 @@ export class CardRenderer {
       ),
     );
     container.addChild(this.createCardBackground());
-    container.addChild(this.createArtArea(minion));
+    container.addChild(this.createArtArea(minion, this.CARD_WIDTH, 1, true));
     container.addChild(this.createCardFrame());
 
     const isDamaged = minion.currentHealth < minion.health;
 
+    const badgeRadius = 16;
+
     const attackBadge = this.createAttackBadge(minion.attack);
-    attackBadge.x = CARD_LAYOUT.BADGE_LEFT_X;
-    attackBadge.y = this.CARD_HEIGHT - CARD_LAYOUT.BADGE_Y_OFFSET;
+    attackBadge.x = -badgeRadius;
+    attackBadge.y = this.CARD_HEIGHT - badgeRadius;
     container.addChild(attackBadge);
 
     const healthBadge = this.createHealthBadge(minion.currentHealth, isDamaged);
-    healthBadge.x = this.CARD_WIDTH - CARD_LAYOUT.BADGE_RIGHT_X_INSET;
-    healthBadge.y = this.CARD_HEIGHT - CARD_LAYOUT.BADGE_Y_OFFSET;
+    healthBadge.x = this.CARD_WIDTH - badgeRadius;
+    healthBadge.y = this.CARD_HEIGHT - badgeRadius;
     container.addChild(healthBadge);
 
     return container;
@@ -220,16 +222,14 @@ export class CardRenderer {
   // --- Structural Components ---------------------------------------------------
 
   // Dark background with element-colored border
-  private createCardBackground(): PIXI.Graphics {
+  private createCardBackground(
+    W: number = this.CARD_WIDTH,
+    H: number = this.CARD_HEIGHT,
+    R: number = CARD_DIMENSIONS.BORDER_RADIUS,
+  ): PIXI.Graphics {
     const bg = new PIXI.Graphics();
 
-    bg.roundRect(
-      0,
-      0,
-      this.CARD_WIDTH,
-      this.CARD_HEIGHT,
-      CARD_DIMENSIONS.BORDER_RADIUS,
-    );
+    bg.roundRect(0, 0, W, H, R);
     bg.fill({ color: COLORS.UI.cardBg, alpha: 1.0 });
     bg.stroke({ width: 3, color: COLORS.UI.gold });
 
@@ -238,24 +238,32 @@ export class CardRenderer {
 
   // Art area - loads image async if available, falls back to styled placeholder
   // Both hand cards and board minions use this same art area
-  private createArtArea(card: Card | Minion): PIXI.Container {
+  private createArtArea(
+    card: Card | Minion,
+    W: number = this.CARD_WIDTH,
+    cardScale: number = 1,
+    fullHeight: boolean = false,
+  ): PIXI.Container {
     const artContainer = new PIXI.Container();
 
-    artContainer.x = CARD_LAYOUT.ART_X;
-    artContainer.y = CARD_LAYOUT.ART_Y;
+    artContainer.x = CARD_LAYOUT.ART_X * cardScale;
+    artContainer.y = CARD_LAYOUT.ART_Y * cardScale;
 
-    const artWidth = this.CARD_WIDTH - CARD_LAYOUT.ART_WIDTH_INSET;
-    const artHeight = CARD_LAYOUT.ART_HEIGHT;
+    const artWidth = W - CARD_LAYOUT.ART_WIDTH_INSET * cardScale;
+    // Full height fills to card bottom minus the ART_Y offset and badge overlap
+    const artHeight = fullHeight
+        ? (this.CARD_HEIGHT - CARD_LAYOUT.ART_Y - 4) * cardScale
+        : CARD_LAYOUT.ART_HEIGHT * cardScale;
 
     // Placeholder shown until art is loaded in correctly
     const placeholder = new PIXI.Graphics();
-    placeholder.roundRect(0, 0, artWidth, artHeight, 4);
+    placeholder.roundRect(0, 0, artWidth, artHeight, 4 * cardScale);
     placeholder.fill({ color: COLORS.UI.placeholder, alpha: 1 });
     artContainer.addChild(placeholder);
 
     // Element colour tint on placeholder so cards are visually distinct without art
     const elementTint = new PIXI.Graphics();
-    elementTint.roundRect(0, 0, artWidth, artHeight, 4);
+    elementTint.roundRect(0, 0, artWidth, artHeight, 4 * cardScale);
     elementTint.fill({
       color: this.getElementColor(card.element),
       alpha: 0.15,
@@ -264,7 +272,7 @@ export class CardRenderer {
 
     // Clip mask to keep art within the art area bounds
     const mask = new PIXI.Graphics();
-    mask.roundRect(0, 0, artWidth, artHeight, 4);
+    mask.roundRect(0, 0, artWidth, artHeight, 4 * cardScale);
     mask.fill(COLORS.UI.cardFill);
     artContainer.addChild(mask);
 
@@ -288,16 +296,10 @@ export class CardRenderer {
   }
 
   // Decorative frame overlay - element-coloured inner glow
-  private createCardFrame(): PIXI.Graphics {
+  private createCardFrame(W: number = this.CARD_WIDTH, H: number = this.CARD_HEIGHT, R: number = CARD_DIMENSIONS.BORDER_RADIUS): PIXI.Graphics {
     const frame = new PIXI.Graphics();
 
-    frame.roundRect(
-      0,
-      0,
-      this.CARD_WIDTH,
-      this.CARD_HEIGHT,
-      CARD_DIMENSIONS.BORDER_RADIUS,
-    );
+    frame.roundRect(0, 0, W, H, R);
     frame.stroke({
       width: 2,
       color: COLORS.UI.gold,
@@ -308,8 +310,8 @@ export class CardRenderer {
     frame.roundRect(
       CARD_LAYOUT.FRAME_INSET,
       CARD_LAYOUT.FRAME_INSET,
-      this.CARD_WIDTH - CARD_LAYOUT.FRAME_INSET * 2,
-      this.CARD_HEIGHT - CARD_LAYOUT.FRAME_INSET * 2,
+      W - CARD_LAYOUT.FRAME_INSET * 2,
+      H - CARD_LAYOUT.FRAME_INSET * 2,
       CARD_LAYOUT.FRAME_INNER_RADIUS,
     );
     frame.stroke({
@@ -327,93 +329,120 @@ export class CardRenderer {
   private createNameBanner(
     name: string,
     compact: boolean = false,
+    W: number = this.CARD_WIDTH,
+    cardScale: number = 1,
   ): PIXI.Container {
     const banner = new PIXI.Container();
+    const HEIGHT = CARD_LAYOUT.NAME_HEIGHT * cardScale;
 
     const bg = new PIXI.Graphics();
     bg.roundRect(
-      CARD_LAYOUT.NAME_X_INSET,
+      CARD_LAYOUT.NAME_X_INSET * cardScale,
       0,
-      this.CARD_WIDTH - CARD_LAYOUT.NAME_WIDTH_INSET,
-      CARD_LAYOUT.NAME_HEIGHT,
-      4,
+      W - CARD_LAYOUT.NAME_WIDTH_INSET * cardScale,
+      HEIGHT,
+      4 * cardScale,
     );
-    bg.fill({ color: COLORS.UI.darkBg, alpha: 0.92 });
+    bg.fill({ color: COLORS.UI.innercardBg, alpha: 0.92 });
     bg.stroke({ width: 1, color: COLORS.UI.gold, alpha: 0.8 });
     banner.addChild(bg);
 
     const text = new PIXI.Text({
       text: name,
       style: {
-        fontSize: compact ? 8 : FONTS.CARD_NAME.fontSize,
+        fontSize: (compact ? 8 : FONTS.CARD_NAME.fontSize) * cardScale,
         fontWeight: FONTS.CARD_NAME.fontWeight as "bold",
         fill: FONTS.CARD_NAME.fill,
         stroke: { color: COLORS.UI.black, width: 2 },
         align: "center",
         wordWrap: true,
-        wordWrapWidth: this.CARD_WIDTH - CARD_LAYOUT.NAME_WIDTH_INSET * 2,
+        wordWrapWidth: W - CARD_LAYOUT.NAME_WIDTH_INSET * cardScale * 2,
       },
     });
 
-    text.x = this.CARD_WIDTH / 2;
-    text.y = CARD_LAYOUT.NAME_HEIGHT / 2;
+    text.x = W / 2;
+    text.y = HEIGHT / 2;
     text.anchor.set(0.5);
     banner.addChild(text);
 
     return banner;
   }
 
-  private createDescriptionArea(description: string): PIXI.Container {
+  private createDescriptionArea(
+    description: string,
+    W: number = this.CARD_WIDTH,
+    cardScale: number = 1,
+  ): PIXI.Container {
     const area = new PIXI.Container();
+    const HEIGHT = CARD_LAYOUT.DESC_HEIGHT * cardScale;
 
     const bg = new PIXI.Graphics();
     bg.roundRect(
-      CARD_LAYOUT.NAME_X_INSET,
+      CARD_LAYOUT.NAME_X_INSET * cardScale,
       0,
-      this.CARD_WIDTH - CARD_LAYOUT.NAME_WIDTH_INSET,
-      CARD_LAYOUT.DESC_HEIGHT,
-      4,
+      W - CARD_LAYOUT.NAME_WIDTH_INSET * cardScale,
+      HEIGHT,
+      4 * cardScale,
     );
-    bg.fill({ color: COLORS.UI.darkBg, alpha: 0.7 });
+    bg.fill({ color: COLORS.UI.innercardBg, alpha: 0.7 });
     area.addChild(bg);
 
     const text = new PIXI.Text({
       text: description,
       style: {
-        fontSize: CARD_LAYOUT.DESC_FONT_SIZE,
-        fill: COLORS.UI.logText,
-        wordWrap: true,
-        wordWrapWidth: this.CARD_WIDTH - CARD_LAYOUT.NAME_WIDTH_INSET * 2,
-        lineHeight: CARD_LAYOUT.DESC_LINE_HEIGHT,
+        fontSize: CARD_LAYOUT.DESC_FONT_SIZE * cardScale,
+        fill: FONTS.CARD_NAME.fill,
+        stroke: { color: COLORS.UI.black, width: 1.5 },
         align: "center",
+        wordWrap: true,
+        wordWrapWidth: (W - CARD_LAYOUT.NAME_WIDTH_INSET * cardScale * 2),
+        lineHeight: CARD_LAYOUT.DESC_LINE_HEIGHT * cardScale,
       },
     });
-    text.x = this.CARD_WIDTH / 2;
-    text.y = CARD_LAYOUT.DESC_HEIGHT / 2;
+    text.x = W / 2;
+    text.y = HEIGHT / 2;
     text.anchor.set(0.5);
+
+    // Mask to keep description text within the description area bounds
+    const mask = new PIXI.Graphics();
+    mask.roundRect(
+      CARD_LAYOUT.NAME_X_INSET * cardScale,
+      0,
+      W - CARD_LAYOUT.NAME_WIDTH_INSET * cardScale,
+      HEIGHT,
+      4 * cardScale,
+    );
+    mask.fill(0xffffff);
+    area.addChild(mask);
     area.addChild(text);
+    text.mask = mask;
 
     return area;
   }
 
   // --- Badge Elements ---------------------------------------------------
 
-  private createManaCrystal(cost: number): PIXI.Container {
-    return GraphicsHelpers.createHexagon(16, COLORS.UI.blue, cost);
+  private createManaCrystal(cost: number, scale: number = 1): PIXI.Container {
+    return GraphicsHelpers.createHexagon(16 * scale, COLORS.UI.blue, cost);
   }
 
-  private createAttackBadge(attack: number): PIXI.Container {
-    return GraphicsHelpers.createCircleBadge(attack, COLORS.ELEMENTS.fire, 16);
+  private createAttackBadge(attack: number, scale: number = 1): PIXI.Container {
+    return GraphicsHelpers.createCircleBadge(
+      attack,
+      COLORS.ELEMENTS.fire,
+      16 * scale,
+    );
   }
 
   private createHealthBadge(
     health: number,
     isDamaged: boolean = false,
+    scale: number = 1,
   ): PIXI.Container {
     return GraphicsHelpers.createCircleBadge(
       health,
       isDamaged ? COLORS.ELEMENTS.fire : COLORS.ELEMENTS.earth,
-      16,
+      16 * scale,
     );
   }
 
@@ -454,13 +483,6 @@ export class CardRenderer {
     return (
       COLORS.ELEMENTS[element as keyof typeof COLORS.ELEMENTS] ||
       COLORS.ELEMENTS.neutral
-    );
-  }
-
-  private getElementBorderColor(element: string): number {
-    return (
-      COLORS.BORDERS[element as keyof typeof COLORS.BORDERS] ||
-      COLORS.BORDERS.neutral
     );
   }
 }

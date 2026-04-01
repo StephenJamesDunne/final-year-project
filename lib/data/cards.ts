@@ -296,6 +296,7 @@ export const CARDS: Card[] = [
     attack: 2,
     health: 2,
     description: 'Battlecry: Deal 1 damage to the enemy hero.',
+    imageUrl: '/images/cards/burningzealot.png',
     abilities: [
       {
         trigger: 'battlecry',
@@ -316,6 +317,7 @@ export const CARDS: Card[] = [
     rarity: 'common',
     manaCost: 2,
     description: 'Deal 3 damage to the enemy hero.',
+    imageUrl: '/images/cards/bealtaineflames.png',
     abilities: [
       {
         trigger: 'battlecry',
@@ -334,6 +336,7 @@ export const CARDS: Card[] = [
     rarity: 'common',
     manaCost: 4,
     description: 'Deal 5 damage to the enemy hero.',
+    imageUrl: '/images/cards/fireblast.png',
     abilities: [
       {
         trigger: 'battlecry',
@@ -351,7 +354,8 @@ export const CARDS: Card[] = [
     type: 'spell',
     rarity: 'rare',
     manaCost: 3,
-    description: 'Deal 2 damage to a random enemy minion. Deal 2 damage to the enemy hero.',
+    description: 'Deal 2 damage to the enemy hero and a random enemy minion.',
+    imageUrl: '/images/cards/wildfire.png',
     abilities: [
       {
         trigger: 'battlecry',
@@ -804,6 +808,7 @@ export const CARDS: Card[] = [
     attack: 3,
     health: 3,
     description: 'Battlecry: Draw a card.',
+    imageUrl: '/images/cards/villageelder.png',
     abilities: [
       {
         trigger: 'battlecry',
@@ -824,6 +829,7 @@ export const CARDS: Card[] = [
     attack: 3,
     health: 5,
     description: 'Tells tales of ancient heroes.',
+    imageUrl: '/images/cards/wanderingbard.png'
   },
   {
     id: 'n_rare_1',
@@ -835,6 +841,7 @@ export const CARDS: Card[] = [
     attack: 4,
     health: 4,
     description: 'Battlecry: Give all friendly minions +1/+1.',
+    imageUrl: '/images/cards/brianboru.png',
     abilities: [
       {
         trigger: 'battlecry',
