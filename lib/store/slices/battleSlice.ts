@@ -47,6 +47,8 @@ export interface BattleSlice extends BattleState {
   agentDebugData: AgentDebugData | null;
   toggleDebugMode: () => void;
   setAgentDebugData: (data: AgentDebugData | null) => void;
+  lastTurnActions: string[];
+  setLastTurnActions: (actions: string[]) => void;
 }
 
 export const createBattleSlice: StateCreator<BattleSlice> = (set) => ({
@@ -80,6 +82,8 @@ export const createBattleSlice: StateCreator<BattleSlice> = (set) => ({
   agentDebugData: null,
   toggleDebugMode: () => set((state) => ({ debugMode: !state.debugMode })),
   setAgentDebugData: (data) => set({ agentDebugData: data }),
+  lastTurnActions: [],
+  setLastTurnActions: (actions) => set({ lastTurnActions: actions}),
 
   selectMinion: (minionId) => {
     set({ selectedMinion: minionId });

@@ -577,6 +577,7 @@ export const CARDS: Card[] = [
     attack: 2,
     health: 5,
     description: 'Taunt.',
+    imageUrl: '/images/cards/earthenprotector.png',
     abilities: [
       {
         trigger: 'passive',

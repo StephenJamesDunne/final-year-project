@@ -36,6 +36,10 @@ export class DQNStrategy implements AIStrategy {
   // True if a saved model was found and loaded successfully; false if no model found (will use fallback AI)
   private modelFound: boolean = false;
 
+  // Container for all logged actions for the debug overlay; only for the AI agent's chosen actions
+  // During each of its turns. For showcase use only
+  private turnActionLog: string[] = [];
+
   constructor() {
     this.fallbackAI = new RuleBasedAI();
     this.loadModel();
@@ -115,23 +119,12 @@ export class DQNStrategy implements AIStrategy {
       bestAction = 67;
     }
 
-    const qValuesCheck = this.dqnModel!.predict(encoded);
-    console.log(
-      "[DQN] Raw Q-values for actions 0-9 (play card):",
-      Array.from(qValues.slice(0, 10)),
-    );
-    console.log("[DQN] Q-value for action 67 (end turn):", qValuesCheck[67]);
-    console.log("[DQN] Max Q-value overall:", Math.max(...Array.from(qValuesCheck)));
-    console.log("[DQN] Min Q-value overall:", Math.min(...Array.from(qValuesCheck)));
-    console.log('[DQN] Action 67 (end turn) Q-value:', qValuesCheck[67]);
-
     // Pull in the Zustand store to update the debug data with the current Q-values and action descriptions
     const store = useBattleStore.getState();
 
     // Output debug data if debug mode is enabled in the battle store
     if (store.debugMode) {
-      // If debug mode IS enabled, pull the top 5 legal actions by Q-value
-      const bestActions = Array.from(legalActions)
+      const ranked = Array.from(legalActions)
         .map((i) => ({
           index: i,
           description: describeActionIndex(i, state),
@@ -140,36 +133,37 @@ export class DQNStrategy implements AIStrategy {
         .sort((a, b) => b.qValue - a.qValue)
         .slice(0, 5);
 
-      // From the legal actions, arrange the top 5 by Q-value and
-      // include descriptions of what those actions actually do in game terms (e.g. "Play Fireball from hand" instead of just "Action 3")
-      const debugData: AgentDebugData = {
-        topActions: bestActions,
-        chosenAction: {
-          index: bestAction,
-          description: describeActionIndex(bestAction, state),
-          qValue: qValues[bestAction],
-        },
-        aiHand: state.ai.hand,
-        nextDraw: state.ai.deck[0] ?? null,
-      };
+      if (bestAction === 67) {
+        // End turn — persist last meaningful Q-values, save turn log
+        store.setLastTurnActions([...this.turnActionLog]);
+        this.turnActionLog = [];
+      } else {
+        // Meaningful action — update Q-values and append to turn log
+        const debugData: AgentDebugData = {
+          topActions: ranked,
+          chosenAction: {
+            index: bestAction,
+            description: describeActionIndex(bestAction, state),
+            qValue: qValues[bestAction],
+          },
+          aiHand: state.ai.hand,
+          nextDraw: state.ai.deck[0] ?? null,
+        };
 
-      store.setAgentDebugData(debugData);
+        store.setAgentDebugData(debugData);
+        this.turnActionLog.push(describeActionIndex(bestAction, state));
 
-      // Console logging for additional debugging
-      console.log("[DQN] Top actions:");
-      for (const action of bestActions) {
+        console.log("[DQN] Top actions:");
+        for (const action of ranked) {
+          console.log(
+            `  [${action.index}] ${action.description} -> Q: ${action.qValue.toFixed(3)}`,
+          );
+        }
         console.log(
-          `  [${action.index}] ${action.description} → Q: ${action.qValue.toFixed(3)}`,
+          `  -> Chose: [${bestAction}] ${debugData.chosenAction.description}`,
         );
       }
-      console.log(
-        `  → Chose: [${bestAction}] ${debugData.chosenAction.description}`,
-      );
     }
-
-    console.log("[DQN] State vector length:", encoded.length);
-    console.log("[DQN] First 9 values:", encoded.slice(0, 9));
-    console.log("[DQN] AI hand size encoded:", encoded.slice(9, 49));
 
     // The returned action then needs to be converted back to the AIAction format
     // turnSlice and executeAIPlayCard both expect a full AIAction object
