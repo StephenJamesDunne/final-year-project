@@ -2,7 +2,6 @@ import * as PIXI from "pixi.js";
 import { BoardCallbacks, BoardState } from "../PixiBoard";
 import { BoardLayout } from "../layout/BoardLayout";
 import { PortraitRenderer } from "./PortraitRenderer";
-import { CombatLogRenderer } from "./CombatLogRenderer";
 import { EndTurnButton } from "./EndTurnButton";
 import { DeckIndicator } from "./DeckIndicator";
 import { TurnIndicator } from "./TurnIndicator";
@@ -12,7 +11,6 @@ import { CardRenderer } from "../rendering/CardRenderer";
 
 export class UIManager {
   private portraitRenderer: PortraitRenderer;
-  private combatLogRenderer: CombatLogRenderer;
   private endTurnButton: EndTurnButton;
   private deckIndicator: DeckIndicator;
   private turnIndicator: TurnIndicator;
@@ -24,14 +22,12 @@ export class UIManager {
   private playerPortrait!: ReturnType<PortraitRenderer["createHeroPortrait"]>;
   private aiDeck!: ReturnType<DeckIndicator["createIndicator"]>;
   private playerDeck!: ReturnType<DeckIndicator["createIndicator"]>;
-  private combatLog!: ReturnType<CombatLogRenderer["createCombatLog"]>;
   private turnIndicatorDisplay!: ReturnType<TurnIndicator["createIndicator"]>;
   private endTurnButtonDisplay!: ReturnType<EndTurnButton["createButton"]>;
 
   constructor(layout: BoardLayout, cardRenderer: CardRenderer) {
     this.layout = layout;
     this.portraitRenderer = new PortraitRenderer();
-    this.combatLogRenderer = new CombatLogRenderer();
     this.endTurnButton = new EndTurnButton();
     this.deckIndicator = new DeckIndicator(cardRenderer);
     this.turnIndicator = new TurnIndicator();
@@ -49,7 +45,6 @@ export class UIManager {
     );
     this.aiDeck = this.deckIndicator.createIndicator(30, true);
     this.playerDeck = this.deckIndicator.createIndicator(30, false);
-    this.combatLog = this.combatLogRenderer.createCombatLog([]);
     this.turnIndicatorDisplay = this.turnIndicator.createIndicator(1, "player");
     this.endTurnButtonDisplay = this.endTurnButton.createButton(
       true,
@@ -64,7 +59,6 @@ export class UIManager {
     container.addChild(this.playerPortrait);
     container.addChild(this.aiDeck);
     container.addChild(this.playerDeck);
-    container.addChild(this.combatLog);
     container.addChild(this.turnIndicatorDisplay);
     container.addChild(this.endTurnButtonDisplay);
   }
@@ -129,11 +123,6 @@ export class UIManager {
       this.playerDeck.updateCount(state.playerDeckCount);
     }
 
-    // Combat log
-    if (!prev || prev.combatLog !== state.combatLog) {
-      this.combatLog.updateLog(state.combatLog);
-    }
-
     // Turn indicator
     if (
       !prev ||
@@ -174,11 +163,6 @@ export class UIManager {
     const playerDeckPos = this.layout.getPlayerDeckPosition();
     this.playerDeck.x = playerDeckPos.x;
     this.playerDeck.y = playerDeckPos.y;
-
-    const logPos = this.layout.getCombatLogPosition();
-    this.combatLog.x = logPos.x;
-    this.combatLog.y = logPos.y;
-    this.combatLog.alpha = 0.8;
 
     const turnPos = this.layout.getTurnIndicatorPosition();
     this.turnIndicatorDisplay.x = turnPos.x;

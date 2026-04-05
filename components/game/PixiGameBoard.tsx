@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { PixiBoard, BoardCallbacks, BoardState } from '@/lib/pixi/PixiBoard';
+import { useEffect, useRef, useState } from "react";
+import { PixiBoard, BoardCallbacks, BoardState } from "@/lib/pixi/PixiBoard";
+import { GamePanel } from "./GamePanel";
 
 // Props for the PixiGameBoard component, need to pass in game state and callbacks
 // Saves having to re-instantiate PixiBoard on every render
@@ -9,8 +10,8 @@ interface BoardProps {
 }
 
 export function PixiGameBoard({ state, callbacks }: BoardProps) {
-
-  // using refs for PixiBoard instance and canvas element so they persist across renders (init and errors use state):
+  // using refs for PixiBoard instance and canvas element so they persist across renders
+  // Init and errors use state since they need to trigger re-renders
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixiBoardRef = useRef<PixiBoard | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -29,7 +30,7 @@ export function PixiGameBoard({ state, callbacks }: BoardProps) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) {
-      setInitError('Canvas not available');
+      setInitError("Canvas not available");
       return;
     }
 
@@ -41,7 +42,8 @@ export function PixiGameBoard({ state, callbacks }: BoardProps) {
         // Wrap callbacks to always use the latest from callbacksRef
         const wrappedCallbacks: BoardCallbacks = {
           onCardPlay: (index) => callbacksRef.current.onCardPlay(index),
-          onMinionClick: (id, isPlayer) => callbacksRef.current.onMinionClick(id, isPlayer),
+          onMinionClick: (id, isPlayer) =>
+            callbacksRef.current.onMinionClick(id, isPlayer),
           onTargetClick: (id) => callbacksRef.current.onTargetClick(id),
           onAIFaceClick: () => callbacksRef.current.onAIFaceClick(),
           onEndTurn: () => callbacksRef.current.onEndTurn(),
@@ -85,15 +87,17 @@ export function PixiGameBoard({ state, callbacks }: BoardProps) {
 
   return (
     <div className="relative w-screen h-screen bg-slate-900">
-      <canvas
-        ref={canvasRef}
-        className="w-full h-full block"
-      />
+      <canvas ref={canvasRef} className="w-full h-full block" />
+
+      {/* GamePanel overlays the Pixi canvas on the left side, replacing the Pixi combat log */}
+      {isInitialized && (
+        <GamePanel/>
+      )}
 
       {!isInitialized && (
         <div className="absolute inset-0 bg-slate-900/90 flex items-center justify-center">
           <span className="text-white text-2xl font-bold">
-            {initError ? `Error: ${initError}` : 'Loading Five Realms...'}
+            {initError ? `Error: ${initError}` : "Loading Five Realms..."}
           </span>
         </div>
       )}

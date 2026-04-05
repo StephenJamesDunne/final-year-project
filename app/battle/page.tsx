@@ -119,8 +119,6 @@ function BattleScreen() {
   const turnNumber = useBattleStore((state) => state.turnNumber);
   const gameOver = useBattleStore((state) => state.gameOver);
   const winner = useBattleStore((state) => state.winner);
-  const combatLog = useBattleStore((state) => state.combatLog);
-  const aiAction = useBattleStore((state) => state.aiAction);
   const selectedMinion = useBattleStore((state) => state.selectedMinion);
 
   // Build state object for PixiBoard
@@ -142,9 +140,7 @@ function BattleScreen() {
       aiHealth: ai.health,
       gameOver,
       winner,
-      combatLog,
       turnNumber,
-      aiAction,
     }),
     [
       player.board,
@@ -163,9 +159,7 @@ function BattleScreen() {
       currentTurn,
       gameOver,
       winner,
-      combatLog,
       turnNumber,
-      aiAction,
     ],
   );
 

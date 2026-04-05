@@ -52,9 +52,7 @@ export interface BoardState {
   aiHealth: number;
   gameOver: boolean;
   winner?: "player" | "ai";
-  combatLog: string[];
   turnNumber: number;
-  aiAction?: string;
 }
 
 // Rendering layer containers
