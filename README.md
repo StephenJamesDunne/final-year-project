@@ -18,8 +18,6 @@ the corresponding file. I am currently updating and adding to these where necess
 
 ## Project Structure
 
-NOTE TO SELF THIS CURRENT TRAINING RUN IS ON PARAMETERS FROM RUN 3; THE ONLY CHANGE IS A REDUCTION TO THE MANA WASTE PENALTY
-
 ```
 fiverealms/
 ├── app/                          # Next.js App Router
@@ -249,19 +247,10 @@ A Deep Q-Network implementation using TensorFlow.js. Currently falls back to rul
 
 ---
 
-# Weekly Task Schedule
-
 ## Bugs/fixes still needed:
-- Hover tooltip broken for hand minions — typeof card.attack === 'number' check still not preventing an error
-- Hover tooltip ability text still duplicating in some cases
 - UIManager recreating all UI elements on every state change - performance fix needed
 
-## Card visual polish:
-- Card element proportions and layout adjustments - readjust the overall card look and badge positions
-- Hand card hover lift animation bug
-
 ## Debug overlay:
-
 - DebugOverlay.tsx React component — Q-values, AI hand, next draw, toggle button
 - Wire toggle to hide Pixi combat log when debug mode is active
 - Pass debugMode and agentDebugData through battle/page.tsx and BoardState
@@ -269,7 +258,3 @@ A Deep Q-Network implementation using TensorFlow.js. Currently falls back to rul
 ## Rendering/architecture: 
 - BoardLayout/BoardRenderer separation — background creation in wrong file
 - GraphicsHelpers consolidation — duplicate logic across multiple renderer files
-
-## Training:
-- Analyse current overnight training run results when complete
-- Decide if another training run is needed based on results

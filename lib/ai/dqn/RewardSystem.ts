@@ -61,25 +61,25 @@ export interface RewardConfig {
 // Blanaced, Tempo style approach to gameplay
 export const DEFAULT_REWARDS: RewardConfig = {
   // Game over rewards - should always be largest
-  winReward: 10.0,
-  lossReward: -10.0,
+  winReward: 1.0,
+  lossReward: -1.0,
 
   // Health rewards - significant but not dominant strategy
-  healthChange: 0.3,
-  enemyHealthChange: 0.3,
+  healthChange: 0.03,
+  enemyHealthChange: 0.03,
 
   // Board control - most important non-game-ending reward
-  minionKilled: 0.5,
-  minionLost: -0.4,
-  boardAdvantage: 0.15,
-  faceDamage: 0.25,
+  minionKilled: 0.05,
+  minionLost: -0.04,
+  boardAdvantage: 0.03,  // Reward for improving board state relative to opponent
+  faceDamage: 0.04, // Bonus for dealing damage to enemy hero, encourages face damage when possible
 
   // Card advantage - medium importance
-  cardDraw: 0.1,
+  cardDraw: 0.0, // changed to 0 to remove card draw incentive, which was leading to some weird behavior where the AI would prefer to draw cards over playing them
 
   // Mana efficiency - nudges toward good habits
-  manaUsed: 0.3,
-  cleanKill: 0.8,
+  manaUsed: 0.05,
+  cleanKill: 0.12,
 };
 
 // Calculate reward for a state transition

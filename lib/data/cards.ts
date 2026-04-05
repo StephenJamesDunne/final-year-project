@@ -391,6 +391,7 @@ export const CARDS: Card[] = [
     attack: 4,
     health: 7,
     description: 'Taunt Battlecry: Restore 6 Health to your hero.',
+    imageUrl: '/images/cards/stbrigid.png',
     abilities: [
       {
         trigger: 'passive',

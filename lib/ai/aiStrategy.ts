@@ -115,6 +115,16 @@ export class DQNStrategy implements AIStrategy {
       bestAction = 67;
     }
 
+    const qValuesCheck = this.dqnModel!.predict(encoded);
+    console.log(
+      "[DQN] Raw Q-values for actions 0-9 (play card):",
+      Array.from(qValues.slice(0, 10)),
+    );
+    console.log("[DQN] Q-value for action 67 (end turn):", qValuesCheck[67]);
+    console.log("[DQN] Max Q-value overall:", Math.max(...Array.from(qValuesCheck)));
+    console.log("[DQN] Min Q-value overall:", Math.min(...Array.from(qValuesCheck)));
+    console.log('[DQN] Action 67 (end turn) Q-value:', qValuesCheck[67]);
+
     // Pull in the Zustand store to update the debug data with the current Q-values and action descriptions
     const store = useBattleStore.getState();
 
@@ -156,6 +166,10 @@ export class DQNStrategy implements AIStrategy {
         `  → Chose: [${bestAction}] ${debugData.chosenAction.description}`,
       );
     }
+
+    console.log("[DQN] State vector length:", encoded.length);
+    console.log("[DQN] First 9 values:", encoded.slice(0, 9));
+    console.log("[DQN] AI hand size encoded:", encoded.slice(9, 49));
 
     // The returned action then needs to be converted back to the AIAction format
     // turnSlice and executeAIPlayCard both expect a full AIAction object

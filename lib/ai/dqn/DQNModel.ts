@@ -23,7 +23,7 @@ export class DQNModel {
 
   // Hyperparameters
   private readonly LEARNING_RATE = 0.00001; // how fast the network learns
-  private readonly DISCOUNT_FACTOR = 0.99; // how much future rewards are valued
+  private readonly DISCOUNT_FACTOR = 0.95; // how much future rewards are valued
 
   constructor() {
     console.log("[DQN] Initializing model...");
