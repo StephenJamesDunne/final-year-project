@@ -10,7 +10,7 @@ import { AgentDebugData } from "@/lib/store/slices/battleSlice";
 // width: 320/1920 = 16.67%, height: 520/1080 = 48.15%
 const PANEL_STYLE: React.CSSProperties = {
   position: "absolute",
-  left: "5.0%",
+  left: "0.5%",
   top: "19.8%",
   width: "16.67%",
   height: "48.15%",

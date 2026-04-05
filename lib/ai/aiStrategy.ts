@@ -137,6 +137,16 @@ export class DQNStrategy implements AIStrategy {
         // End turn — persist last meaningful Q-values, save turn log
         store.setLastTurnActions([...this.turnActionLog]);
         this.turnActionLog = [];
+
+        // Update the hand in the existing debug data to reflect what the AI ended with
+        const current = store.agentDebugData;
+        if (current) {
+          store.setAgentDebugData({
+            ...current,
+            aiHand: state.ai.hand,
+            nextDraw: state.ai.deck[0] ?? null,
+          });
+        }
       } else {
         // Meaningful action — update Q-values and append to turn log
         const debugData: AgentDebugData = {

@@ -600,7 +600,7 @@ export const CARDS: Card[] = [
     attack: 1,
     health: 6,
     description: 'Sturdy defender of the ancient lands.',
-    imageUrl: ''
+    imageUrl: '/images/cards/furbolgdefender.png'
   },
   {
     id: 'e_common_2',
