@@ -419,7 +419,7 @@ export const CARDS: Card[] = [
     attack: 5,
     health: 8,
     description: 'Taunt. Battlecry: Restore 4 Health to your hero. Draw a card.',
-    imageUrl: '',
+    imageUrl: '/images/cards/thedagda.png',
     abilities: [
       {
         trigger: 'passive',
@@ -456,7 +456,7 @@ export const CARDS: Card[] = [
     attack: 6,
     health: 10,
     description: 'Taunt.',
-    imageUrl: '',
+    imageUrl: '/images/cards/cromcruach.png',
     abilities: [
       {
         trigger: 'passive',
@@ -477,7 +477,7 @@ export const CARDS: Card[] = [
     attack: 3,
     health: 8,
     description: 'Taunt. Deathrattle: Restore 5 Health to your hero.',
-    imageUrl: '',
+    imageUrl: '/images/cards/ancientoflife.png',
     abilities: [
       {
         trigger: 'passive',
@@ -507,7 +507,7 @@ export const CARDS: Card[] = [
     attack: 2,
     health: 6,
     description: 'Battlecry: Restore 4 Health to your hero.',
-    imageUrl: '',
+    imageUrl: '/images/cards/diancécht.png',
     abilities: [
       {
         trigger: 'battlecry',
@@ -528,7 +528,7 @@ export const CARDS: Card[] = [
     attack: 2,
     health: 8,
     description: 'Taunt. Deathrattle: Restore 3 Health to your hero.',
-    imageUrl: '',
+    imageUrl: '/images/cards/ancientoak.png',
     abilities: [
       {
         trigger: 'passive',
@@ -556,7 +556,7 @@ export const CARDS: Card[] = [
     attack: 4,
     health: 8,
     description: 'Taunt.',
-    imageUrl: '',
+    imageUrl: '/images/cards/mossgiant.png',
     abilities: [
       {
         trigger: 'passive',

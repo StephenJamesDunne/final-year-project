@@ -1,10 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { COLORS } from './StyleConstants';
 
-/* TODO: Extract more helper functions from the lib/pixi/layout, lib/pixi/rendering and lib/pixi/ui into this file
-to unify all repeated functions into one place. Currently too many functions and repeated logic in many files related 
-to Pixi functionality. */
-
 export class GraphicsHelpers {
     static createShadow(width: number, height: number, radius: number): PIXI.Graphics {
         const shadow = new PIXI.Graphics();
