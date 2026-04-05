@@ -10,11 +10,16 @@ npm install
 
 # Run development server
 npm run dev
+
+# Run DQN training
+npm run train
+
+# Analyse latest training run
+npm run analyse
 ```
 
 ## File Documentation
-All files I've personally added to the project (not ones installed by the framework/libraries) will have their own documentation commented in headers at the top of 
-the corresponding file. I am currently updating and adding to these where necessary.
+All files personally added to the project (not ones installed by the framework/libraries) have their own documentation commented in headers at the top of the corresponding file.
 
 ## Project Structure
 
@@ -23,78 +28,94 @@ fiverealms/
 ├── app/                          # Next.js App Router
 │   ├── layout.tsx               # Root layout with fonts & metadata
 │   ├── page.tsx                 # Home page with navigation
-│   └── battle/
-│       └── page.tsx             # Battle page (React wrapper)
+│   ├── battle/
+│   │   └── page.tsx             # Battle page — deck selection + game board
+│   ├── training/
+│   │   └── page.tsx             # DQN training dashboard
+│   └── api/
+│       └── training-stats/
+│           └── route.ts         # API route: reads agent state JSON for dashboard
 │
 ├── components/
 │   ├── game/
-│   │   └── PixiGameBoard.tsx    # PixiJS canvas wrapper component
+│   │   ├── PixiGameBoard.tsx    # PixiJS canvas wrapper component
+│   │   └── GamePanel.tsx        # Tabbed React panel: Combat Log + Agent Debug overlay
 │   ├── AISelector.tsx           # AI type selection UI (Rule-Based vs DQN)
 │   └── DeckSelector.tsx         # Deck selection UI
 │
 ├── lib/
 │   ├── ai/                      # AI System
-│   │   ├── aiStrategy.ts        # Strategy interface + RuleBasedAI + DQNAgent stub
+│   │   ├── aiStrategy.ts        # Strategy interface + RuleBasedAI + DQNStrategy
 │   │   └── dqn/                 # Deep Q-Network Implementation
 │   │       ├── ActionSpace.ts       # Action encoding/decoding (68 actions)
 │   │       ├── AutoPlay.ts          # Self-play training loop
-│   │       ├── DQNAgent.ts          # Agent brain (epsilon-greedy, replay)
-│   │       ├── DQNModel.ts          # TensorFlow.js neural network
-│   │       ├── ExperienceReplay.ts  # Replay buffer (circular, 50k capacity)
+│   │       ├── DQNAgent.ts          # Agent brain (epsilon-greedy, replay buffer)
+│   │       ├── DQNModel.ts          # TensorFlow.js neural network (Node.js, training)
+│   │       ├── DQNModelBrowser.ts   # TensorFlow.js model loader (browser, inference)
+│   │       ├── ExperienceReplay.ts  # Circular replay buffer (100k capacity)
 │   │       ├── RewardSystem.ts      # Reward shaping & configs
-│   │       └── stateEncoder.ts      # Game state → 121-feature vector
+│   │       └── stateEncoder.ts      # Game state -> 121-feature vector
 │   │
 │   ├── pixi/                    # PixiJS Rendering Engine
-│   │   ├── PixiBoard.ts         # Main board orchestrator
+│   │   ├── PixiBoard.ts         # Main board orchestrator — diffs state before re-rendering
 │   │   ├── index.ts             # Public exports
 │   │   ├── layout/
-│   │   │   └── BoardLayout.ts   # Hearthstone-style positioning
+│   │   │   └── BoardLayout.ts   # Position calculations for all game elements
 │   │   ├── rendering/
-│   │   │   ├── CardRenderer.ts      # Card visual creation
-│   │   │   ├── HandRenderer.ts      # Hand rendering
+│   │   │   ├── CardRenderer.ts      # Unified Hearthstone-style card creation
+│   │   │   ├── HandRenderer.ts      # Player and AI hand rendering
 │   │   │   ├── MinionRenderer.ts    # Board minion rendering
-│   │   │   └── BoardRenderer.ts     # Background rendering
+│   │   │   └── BoardRenderer.ts     # Static background rendering
 │   │   ├── ui/
-│   │   │   ├── UIManager.ts         # UI orchestration
-│   │   │   ├── HoverCardDisplay.ts  # Card hover tooltip (detailed view)
-│   │   │   ├── PortraitRenderer.ts  # Hero portraits
-│   │   │   ├── CombatLogRenderer.ts # Combat log
-│   │   │   ├── EndTurnButton.ts     # Turn button
-│   │   │   ├── DeckIndicator.ts     # Deck counters
-│   │   │   └── TurnIndicator.ts     # Turn display
+│   │   │   ├── UIManager.ts         # UI orchestration — updates elements in place
+│   │   │   ├── HoverCardDisplay.ts  # Card hover tooltip (2x scaled card via CardRenderer)
+│   │   │   ├── PortraitRenderer.ts  # Hero portraits with in-place health/mana updates
+│   │   │   ├── EndTurnButton.ts     # Turn button with in-place enabled/disabled updates
+│   │   │   ├── DeckIndicator.ts     # Deck counters using card back visual
+│   │   │   └── TurnIndicator.ts     # Turn display with in-place updates
 │   │   └── utils/
-│   │       ├── TextureLoader.ts     # Asset loading
-│   │       ├── GraphicsHelpers.ts   # Reusable graphics components
-│   │       └── StyleConstants.ts    # Visual constants & colors
+│   │       ├── TextureLoader.ts     # Singleton texture asset loader
+│   │       ├── GraphicsHelpers.ts   # Reusable graphics primitives
+│   │       ├── ScaleManager.ts      # Letterbox scaling for 1920x1080 design space
+│   │       └── StyleConstants.ts    # Visual constants, colours, card dimensions
 │   │
 │   ├── game/                    # Pure Game Logic
-│   │   ├── gameLogic.ts         # Core combat & minion logic
-│   │   ├── deckManager.ts       # Deck building & card drawing
-│   │   ├── abilitySystem.ts     # Card ability processing
-│   │   └── aiPlayer.ts          # Rule-based AI decision-making
+│   │   ├── gameLogic.ts         # Core combat, minion, turn and fatigue logic
+│   │   ├── deckManager.ts       # Deck building, card drawing, hand management
+│   │   ├── abilitySystem.ts     # Card ability processing (battlecry, deathrattle)
+│   │   └── aiPlayer.ts          # Rule-based AI decision-making and scoring
 │   │
 │   ├── store/
-│   │   ├── battleStore.ts       # Main Zustand store
-│   │   └── slices/              # Modular state slices
-│   │       ├── battleSlice.ts        # Core battle state
+│   │   ├── battleStore.ts       # Main Zustand store — composes all slices
+│   │   └── slices/
+│   │       ├── battleSlice.ts        # Core battle state + debug mode + agent debug data
 │   │       ├── deckSlice.ts          # Deck + AI type selection
-│   │       ├── gameActionsSlice.ts   # Play/attack actions
-│   │       ├── turnSlice.ts          # Turn management & AI (strategy pattern)
-│   │       └── initializationSlice.ts # Game initialization
+│   │       ├── gameActionsSlice.ts   # Player action handlers (play card, attack, attack hero)
+│   │       ├── turnSlice.ts          # Turn management + FSM-based AI turn execution
+│   │       └── initializationSlice.ts # Battle initialization on Start Battle
 │   │
 │   ├── data/
-│   │   └── cards.ts             # Temporary card database
+│   │   ├── cards.ts             # Card database — all Fire, Earth and Neutral cards
+│   │   └── decks.ts             # Structure deck definitions — 30-card curated decks
 │   │
 │   ├── types/
-│   │   └── game.ts              # TypeScript interfaces
+│   │   └── game.ts              # TypeScript interfaces (Card, Minion, Player, BattleState)
 │   │
 │   └── utils/
 │       ├── cardHelpers.ts       # Card utility functions
-│       └── constants.ts         # Game constants & styling
+│       └── constants.ts         # Game constants
 │
-└── public/images/               # Game Assets
-    ├── cards/                   # Card artwork (PNG)
-    └── default/                 # Placeholder images
+├── models/                      # Training artefacts (gitignored)
+│   ├── five-realms-dqn-agent-state.json   # Agent training state
+│   └── five-realms-dqn-agent-replay.json  # Experience replay buffer
+│
+└── public/
+    ├── models/
+    │   └── five-realms-dqn-agent/
+    │       └── weights.json     # Trained model weights (loaded by browser for inference)
+    └── images/
+        ├── cards/               # Card artwork (PNG)
+        └── default/             # Placeholder images
 ```
 
 ## Architecture Overview
@@ -102,7 +123,7 @@ fiverealms/
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    React UI Layer                           │
-│  (battle/page.tsx → PixiGameBoard.tsx → PixiBoard.ts)       │
+│  battle/page.tsx → PixiGameBoard.tsx + GamePanel.tsx        │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
@@ -114,19 +135,19 @@ fiverealms/
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
 │              Pure Game Logic Layer                          │
-│  (gameLogic.ts, deckManager.ts, abilitySystem.ts, etc.)     │
+│  (gameLogic.ts, deckManager.ts, abilitySystem.ts)           │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                   AI Layer                                  │
-│  (aiStrategy.ts → RuleBasedAI | DQNAgent → dqn/)           │
+│  (aiStrategy.ts → RuleBasedAI | DQNStrategy → dqn/)        │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
 │              Data & Types Layer                             │
-│              (cards.ts, game.ts)                            │
+│              (cards.ts, decks.ts, game.ts)                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -144,7 +165,7 @@ graph LR
     F --> G[shuffleDeck]
     G --> H[drawCards]
     H --> I[Initialize player & AI state]
-    I --> J[Render with PixiBoard]
+    I --> J[Render with PixiBoard + GamePanel]
 ```
 
 ### **2. Player Action Flow**
@@ -168,11 +189,11 @@ graph LR
     B --> C[aiStrategy.selectAction]
     C --> D{AI Type}
     D -->|Rule-Based| E[RuleBasedAI - heuristic logic]
-    D -->|DQN| F[DQNAgent - neural network]
+    D -->|DQN| F[DQNStrategy - neural network inference]
     E --> G{Action Type}
     F --> G
     G -->|Play Card| H[executeAIPlayCard]
-    G -->|Attack| I[executeAIAttacks]
+    G -->|Attack| I[executeAttack]
     H --> J[Process abilities]
     I --> J
     J --> K[Update state]
@@ -201,6 +222,20 @@ graph LR
     M --> C
 ```
 
+### **5. Debug Overlay Flow**
+
+```mermaid
+graph LR
+    A[AI turn begins] --> B[DQNStrategy.selectAction]
+    B --> C[Predict Q-values]
+    C --> D{debugMode enabled?}
+    D -->|Yes| E[Build AgentDebugData]
+    E --> F[store.setAgentDebugData]
+    F --> G[GamePanel re-renders]
+    G --> H[Q-value bars + AI hand + next draw]
+    D -->|No| I[Select best legal action]
+```
+
 ---
 
 ## AI System
@@ -208,20 +243,21 @@ graph LR
 The AI system uses the **Strategy Pattern** so opponent types can be swapped without changing game logic. Both implement the `AIStrategy` interface, making them interchangeable.
 
 ### Rule-Based AI (`aiStrategy.ts` → `aiPlayer.ts`)
-A simple heuristic opponent that plays on curve, makes favorable board trades, and prioritises lethal damage. No training required.
+A heuristic opponent that plays on curve, makes favourable board trades, and prioritises lethal damage. No training required.
 
 ### DQN Agent (`lib/ai/dqn/`)
-A Deep Q-Network implementation using TensorFlow.js. Currently falls back to rule-based logic until a trained model is loaded.
+A Deep Q-Network trained via self-play using TensorFlow.js. Training runs in Node.js; inference runs in the browser using the saved weights. Falls back to rule-based logic if no trained model is found.
 
 | Component | File | Purpose |
 |-----------|------|---------|
 | Agent brain | `DQNAgent.ts` | Epsilon-greedy action selection, training loop |
-| Neural network | `DQNModel.ts` | 121→128→128→64→68 feed-forward network |
-| Memory | `ExperienceReplay.ts` | Circular replay buffer (50k capacity) |
+| Training network | `DQNModel.ts` | 121->128->128->64->68 feed-forward network (Node.js) |
+| Inference network | `DQNModelBrowser.ts` | Same architecture, weights loaded via fetch (browser) |
+| Memory | `ExperienceReplay.ts` | Circular replay buffer (100k capacity) |
 | Actions | `ActionSpace.ts` | Encodes/decodes 68 possible game actions |
-| Rewards | `RewardSystem.ts` | Configurable reward shaping (aggressive/defensive/tempo) |
+| Rewards | `RewardSystem.ts` | Configurable reward shaping |
 | State | `stateEncoder.ts` | Converts game state to 121-feature vector |
-| Training | `AutoPlay.ts` | Self-play loop, universal training across all matchups |
+| Training loop | `AutoPlay.ts` | Self-play across all deck matchups |
 
 **Action Space (68 total):**
 - `0–9`: Play card from hand
@@ -229,7 +265,27 @@ A Deep Q-Network implementation using TensorFlow.js. Currently falls back to rul
 - `60–66`: Attack enemy hero (7 attackers)
 - `67`: End turn
 
-**State Vector (121 features):** Player/opponent vitals (9), hand cards × 4 features (40), player board × 5 features (35), opponent board × 5 features (35), deck sizes (2), normalised to `[0, 1]`.
+**State Vector (121 features):** Player/opponent vitals (9), hand cards × 4 features (40), player board × 5 features (35), opponent board × 5 features (35), deck sizes (2) — all normalised to `[0, 1]`.
+
+**Training configuration:**
+- Discount factor: 0.95
+- Learning rate: 0.00001
+- Epsilon decay: 0.999993 (1.0 -> 0.01)
+- Replay buffer: 100,000 experiences
+- Target network sync: every 1,000 steps
+- Training: 1,500 episodes per matchup × 4 matchups = 6,000 episodes per run
+
+---
+
+## Rendering Architecture
+
+The rendering layer is split between PixiJS (canvas) and React (overlay):
+
+**PixiJS (`lib/pixi/`)** handles all game board rendering — cards in hand, minions on board, hero portraits, deck indicators, end turn button, and the hover card tooltip. `PixiBoard.ts` diffs incoming state against the previous render and only rebuilds containers that have actually changed. All UI elements are created once and updated in place rather than being destroyed and recreated on every state change.
+
+**React (`components/game/GamePanel.tsx`)** renders the left-side panel as an absolutely positioned overlay on the canvas. The panel uses a tab system to switch between the Combat Log (fed directly from Zustand) and the Agent Debug view (Q-value bars, AI hand mini cards, next draw). The debug tooltip is a React component rendered at `position: fixed` with high z-index, avoiding canvas z-order limitations.
+
+**ScaleManager** letterboxes the 1920×1080 design space to fit any screen size. The React panel is positioned using percentage-based CSS to approximately match the Pixi coordinate space.
 
 ---
 
@@ -239,22 +295,23 @@ A Deep Q-Network implementation using TensorFlow.js. Currently falls back to rul
 |-------------------|------------|-------------------------------------|
 | **Framework**     | Next.js    | React framework with App Router     |
 | **UI Library**    | React      | Component-based UI                  |
-| **Language**      | TypeScript | Type safety                         |
+| **Language**      | TypeScript | Type safety throughout              |
 | **Rendering**     | PixiJS     | WebGL canvas rendering              |
 | **State**         | Zustand    | Lightweight state management        |
-| **Styling**       | Tailwind   | Inlining CSS styles for ease of use |
-| **ML**            | TensorFlow.js | DQN neural network (browser-side) |
+| **Styling**       | Tailwind   | Utility CSS for React components    |
+| **ML (training)** | TensorFlow.js (Node) | DQN training in Node.js  |
+| **ML (inference)**| TensorFlow.js (browser) | Forward pass during gameplay |
 
 ---
 
-## Bugs/fixes still needed:
-- UIManager recreating all UI elements on every state change - performance fix needed
+## Deck System
 
-## Debug overlay:
-- DebugOverlay.tsx React component — Q-values, AI hand, next draw, toggle button
-- Wire toggle to hide Pixi combat log when debug mode is active
-- Pass debugMode and agentDebugData through battle/page.tsx and BoardState
+Two playable structure decks are defined in `lib/data/decks.ts`, each 30 cards with a specific mana curve and strategy:
 
-## Rendering/architecture: 
-- BoardLayout/BoardRenderer separation — background creation in wrong file
-- GraphicsHelpers consolidation — duplicate logic across multiple renderer files
+**Connacht Warriors (Fire)** — aggressive tempo deck. Fast minions, charge effects, burn spells, and direct face damage. Wins by maintaining pressure and closing out with high-attack finishers.
+
+**Munster Endurance (Earth)** — defensive survival deck. Taunt walls, healing spells, and high-health minions. Wins by outlasting aggression and converting board advantage into late-game power.
+
+Both decks include neutral cards (Brian Boru, Village Elder, Wandering Bard) that provide utility across archetypes.
+
+Legendary cards are limited to 1 copy per deck; all other rarities allow 2 copies. A random deck mode is also available that pools all cards of the chosen element and selects 30 at random.
